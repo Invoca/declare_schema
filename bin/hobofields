@@ -1,0 +1,13 @@
+#!/usr/bin/env ruby
+require 'fileutils'
+
+if ENV["HOBO_DEV_ROOT"]
+  dev_root = File.expand_path ENV["HOBO_DEV_ROOT"], FileUtils.pwd
+  $:.unshift "#{dev_root}/hobo_support/lib"
+else
+  require 'rubygems'
+end
+
+require 'hobo_support/command'
+
+HoboSupport::Command.run(:hobofields)
