@@ -21,12 +21,13 @@ module HoboFields
     # index_specs holds IndexSpec objects for all the declared indexes.
     inheriting_cattr_reader :index_specs => []
     inheriting_cattr_reader :ignore_indexes => []
+    inheriting_cattr_reader :constraint_specs => []
 
     # eval avoids the ruby 1.9.2 "super from singleton method ..." error
     eval %(
       def self.inherited(klass)
         fields do |f|
-          f.field(inheritance_column, :string)
+          f.field(inheritance_column, :string, :null => true)
         end
         index(inheritance_column)
         super
@@ -36,6 +37,10 @@ module HoboFields
     def self.index(fields, options = {})
       # don't double-index fields
       index_specs << HoboFields::Model::IndexSpec.new(self, fields, options) unless index_specs.*.fields.include?(Array.wrap(fields).*.to_s)
+    end
+
+    def self.constraint(fkey, options={})
+      constraint_specs << HoboFields::Model::ForeignKeySpec.new(self, fkey, options ) unless constraint_specs.*.foreign_key.include?(fkey.to_s)
     end
 
     # tell the migration generator to ignore the named index. Useful for existing indexes, or for indexes
@@ -89,7 +94,14 @@ module HoboFields
       column_options[:comment] = options.delete(:comment) if options.has_key?(:comment)
 
       index_options = {}
-      index_options[:name] = options.delete(:index) if options.has_key?(:index)
+      index_options[:name]   = options.delete(:index) if options.has_key?(:index)
+      index_options[:unique] = options.delete(:unique) if options.has_key?(:unique)
+
+      fk_options = options.dup
+      fk_options[:constraint_name] = options.delete(:constraint) if options.has_key?(:constraint)
+      fk_options[:index_name] = index_options[:name]
+
+      fk_options[:dependent] = options.delete(:far_end_dependent) if options.has_key?(:far_end_dependent)
       bt = belongs_to_without_field_declarations(name, options, &block)
       refl = reflections[name.to_sym]
       fkey = refl.foreign_key
@@ -99,6 +111,8 @@ module HoboFields
         index(["#{name}_type", fkey], index_options) if index_options[:name]!=false
       else
         index(fkey, index_options) if index_options[:name]!=false
+        options[:constraint_name] = options
+        constraint(fkey, fk_options) if fk_options[:constraint_name] != false
       end
       bt
     end
@@ -170,11 +184,7 @@ module HoboFields
 
     def self.add_index_for_field(name, args, options)
       to_name = options.delete(:index)
-      unless to_name
-        # passing :unique => true doesn't do anything without an index
-        Rails.logger.error('ERROR: passing :unique => true without :index => true does nothing. Use :unique instead.') if options[:unique]
-        return
-      end
+      return unless to_name
       index_opts = {}
       index_opts[:unique] = :unique.in?(args) || options.delete(:unique)
       # support :index => true declaration

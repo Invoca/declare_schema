@@ -6,21 +6,26 @@ module HoboFields
 
     include HoboFields::Types::EnumString::DeclarationHelper
 
-    def initialize(model)
+    def initialize(model, options = {})
       @model = model
+      @options = options
     end
 
     attr_reader :model
 
 
     def timestamps
-      field(:created_at, :datetime)
-      field(:updated_at, :datetime)
+      field(:created_at, :datetime, :null => true)
+      field(:updated_at, :datetime, :null => true)
     end
 
+    def optimistic_lock
+      field(:lock_version, :integer, :default => 1, :null => false)
+    end
 
     def field(name, type, *args)
-      @model.declare_field(name, type, *args)
+      options = args.extract_options!
+      @model.declare_field(name, type, *(args + [@options.merge(options)]))
     end
 
 

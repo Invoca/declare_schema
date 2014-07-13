@@ -26,7 +26,7 @@ module Generators
           i = 0
           foreign_keys.inject({}) do |h, v|
             # some trickery to avoid an infinite loop when FieldSpec#initialize tries to call model.field_specs
-            h[v] = HoboFields::Model::FieldSpec.new(self, v, :integer, :position => i)
+            h[v] = HoboFields::Model::FieldSpec.new(self, v, :integer, :position => i, :null => false)
             i += 1
             h
           end
@@ -40,6 +40,10 @@ module Generators
           []
         end
 
+        def constraint_specs
+          []
+        end
+
       end
 
       class Migrator
@@ -48,9 +52,15 @@ module Generators
 
         @ignore_models = []
         @ignore_tables = []
+        @active_record_class = ActiveRecord::Base
 
         class << self
-          attr_accessor :ignore_models, :ignore_tables, :disable_indexing
+          attr_accessor :ignore_models, :ignore_tables, :disable_indexing, :disable_constraints, :active_record_class
+
+          def active_record_class
+            @active_record_class.is_a?(Class) or @active_record_class = @active_record_class.to_s.constantize
+            @active_record_class
+          end
         end
 
         def self.run(renames={})
@@ -125,7 +135,7 @@ module Generators
           all_models = table_model_classes
           hobo_models = all_models.select { |m| m.try.include_in_migration && m.name.underscore.not_in?(ignore_model_names) }
           non_hobo_models = all_models - hobo_models
-          db_tables = connection.tables - Migrator.ignore_tables.*.to_s - non_hobo_models.reject { |t| t.try.hobo_shim? }.*.table_name
+          db_tables = connection.tables - Migrator.ignore_tables.*.to_s - non_hobo_models.*.table_name
           [hobo_models, db_tables]
         end
 
@@ -190,93 +200,109 @@ module Generators
             defined?(CGI::Session::ActiveRecordStore::Session) &&
             defined?(ActionController::Base) &&
             ActionController::Base.session_store == CGI::Session::ActiveRecordStore
-          ['schema_info', 'schema_migrations',  sessions_table].compact
+          ['schema_info', 'schema_migrations', sessions_table].compact
         end
 
 
         def generate
-          models, db_tables = models_and_tables
-          models_by_table_name = {}
-          models.each do |m|
-            if !models_by_table_name.has_key?(m.table_name)
-              models_by_table_name[m.table_name] = m
-            elsif m.superclass==models_by_table_name[m.table_name].superclass.superclass
-              # we need to ensure that models_by_table_name contains the
-              # base class in an STI hierarchy
-              models_by_table_name[m.table_name] = m
+          begin
+            models, db_tables = models_and_tables
+            models_by_table_name = {}
+            models.each do |m|
+              if !models_by_table_name.has_key?(m.table_name)
+                models_by_table_name[m.table_name] = m
+              elsif m.superclass==models_by_table_name[m.table_name].superclass.superclass
+                # we need to ensure that models_by_table_name contains the
+                # base class in an STI hierarchy
+                models_by_table_name[m.table_name] = m
+              end
             end
-          end
-          # generate shims for HABTM models
-          habtm_tables.each do |name, refls|
-            models_by_table_name[name] = HabtmModelShim.from_reflection(refls.first)
-          end
-          model_table_names = models_by_table_name.keys
-
-          to_create = model_table_names - db_tables
-          to_drop = db_tables - model_table_names - always_ignore_tables
-          to_change = model_table_names
-
-          to_rename = extract_table_renames!(to_create, to_drop)
-
-          renames = to_rename.map do |old_name, new_name|
-            "rename_table :#{old_name}, :#{new_name}"
-          end * "\n"
-          undo_renames = to_rename.map do |old_name, new_name|
-            "rename_table :#{new_name}, :#{old_name}"
-          end * "\n"
-
-          drops = to_drop.map do |t|
-            "drop_table :#{t}"
-          end * "\n"
-          undo_drops = to_drop.map do |t|
-            revert_table(t)
-          end * "\n\n"
-
-          creates = to_create.map do |t|
-            create_table(models_by_table_name[t])
-          end * "\n\n"
-          undo_creates = to_create.map do |t|
-            "drop_table :#{t}"
-          end * "\n"
-
-          changes = []
-          undo_changes = []
-          index_changes = []
-          undo_index_changes = []
-          to_change.each do |t|
-            model = models_by_table_name[t]
-            table = to_rename.key(t) || model.table_name
-            if table.in?(db_tables)
-              change, undo, index_change, undo_index = change_table(model, table)
-              changes << change
-              undo_changes << undo
-              index_changes << index_change
-              undo_index_changes << undo_index
+            # generate shims for HABTM models
+            habtm_tables.each do |name, refls|
+              models_by_table_name[name] = HabtmModelShim.from_reflection(refls.first)
             end
+            model_table_names = models_by_table_name.keys
+
+            to_create = model_table_names - db_tables
+            to_drop = db_tables - model_table_names - always_ignore_tables
+            to_change = model_table_names
+            to_rename = extract_table_renames!(to_create, to_drop)
+
+            renames = to_rename.map do |old_name, new_name|
+              "rename_table :#{old_name}, :#{new_name}"
+            end * "\n"
+            undo_renames = to_rename.map do |old_name, new_name|
+              "rename_table :#{new_name}, :#{old_name}"
+            end * "\n"
+
+            drops = to_drop.map do |t|
+              "drop_table :#{t}"
+            end * "\n"
+            undo_drops = to_drop.map do |t|
+              revert_table(t)
+            end * "\n\n"
+
+            creates = to_create.map do |t|
+              create_table(models_by_table_name[t])
+            end * "\n\n"
+            undo_creates = to_create.map do |t|
+              "drop_table :#{t}"
+            end * "\n"
+
+            changes = []
+            undo_changes = []
+            index_changes = []
+            undo_index_changes = []
+            fk_changes = []
+            undo_fk_changes = []
+            to_change.each do |t|
+              model = models_by_table_name[t]
+              table = to_rename.key(t) || model.table_name
+              if table.in?(db_tables)
+                change, undo, index_change, undo_index, fk_change, undo_fk = change_table(model, table)
+                changes << change
+                undo_changes << undo
+                index_changes << index_change
+                undo_index_changes << undo_index
+                fk_changes << fk_change
+                undo_fk_changes << undo_fk
+              end
+            end
+
+            up = [renames, drops, creates, changes, index_changes, fk_changes].flatten.reject(&:blank?) * "\n\n"
+            down = [undo_changes, undo_renames, undo_drops, undo_creates, undo_index_changes, undo_fk_changes].flatten.reject(&:blank?) * "\n\n"
+
+            [up, down]
+          rescue Exception=>ex
+            puts "exception in generate: #{ex}"
+            puts ex.backtrace.join("\n")
+            raise
           end
-
-          up   = [renames, drops, creates, changes, index_changes].flatten.reject(&:blank?) * "\n\n"
-          down = [undo_changes, undo_renames, undo_drops, undo_creates, undo_index_changes].flatten.reject(&:blank?) * "\n\n"
-
-          [up, down]
         end
 
         def create_table(model)
           longest_field_name = model.field_specs.values.map { |f| f.sql_type.to_s.length }.max
-          if model.primary_key != "id"
-            if model.primary_key
+          disable_auto_increment = model.respond_to?(:disable_auto_increment) && model.disable_auto_increment
+          if model.primary_key != "id" || disable_auto_increment
+            if model.primary_key.nonblank? && !disable_auto_increment
               primary_key_option = ", :primary_key => :#{model.primary_key}"
             else
               primary_key_option = ", :id => false"
             end
           end
           (["create_table :#{model.table_name}#{primary_key_option} do |t|"] +
+          [( "  t.column :id, :primary_key_no_increment" if disable_auto_increment )] +
            model.field_specs.values.sort_by{|f| f.position}.map {|f| create_field(f, longest_field_name)} +
-           ["end"] + (Migrator.disable_indexing ? [] : create_indexes(model))) * "\n"
+           ["end"] + (Migrator.disable_indexing ? [] : create_indexes(model) + create_constraints(model))
+          ).compact * "\n"
         end
 
         def create_indexes(model)
           model.index_specs.map { |i| i.to_add_statement(model.table_name) }
+        end
+
+        def create_constraints(model)
+          model.constraint_specs.map { |fk| fk.to_add_statement(model.table_name) }
         end
 
         def create_field(field_spec, field_name_width)
@@ -288,16 +314,16 @@ module Generators
           new_table_name = model.table_name
 
           db_columns = model.connection.columns(current_table_name).index_by{|c|c.name}
-          key_missing = db_columns[model.primary_key].nil? && model.primary_key
-          db_columns -= [model.primary_key]
+          key_missing = db_columns[model.primary_key].nil? && model.primary_key.nonblank?
+          db_columns -= [model.primary_key.nonblank?]
 
           model_column_names = model.field_specs.keys.*.to_s
           db_column_names = db_columns.keys.*.to_s
 
           to_add = model_column_names - db_column_names
-          to_add += [model.primary_key] if key_missing && model.primary_key
+          to_add += [model.primary_key] if key_missing && model.primary_key.nonblank?
           to_remove = db_column_names - model_column_names
-          to_remove = to_remove - [model.primary_key.to_sym] if model.primary_key
+          to_remove = to_remove - [model.primary_key.to_sym] if model.primary_key.nonblank?
 
           to_rename = extract_column_renames!(to_add, to_remove, new_table_name)
 
@@ -315,7 +341,7 @@ module Generators
           to_add = to_add.sort_by {|c| model.field_specs[c].position }
           adds = to_add.map do |c|
             spec = model.field_specs[c]
-            args = [":#{spec.sql_type}"] + format_options(spec.options, spec.sql_type)
+            args = [":#{spec.sql_type}"] + format_options(spec.sql_options, spec.sql_type)
             "add_column :#{new_table_name}, :#{c}, #{args * ', '}"
           end
           undo_adds = to_add.map do |c|
@@ -355,15 +381,19 @@ module Generators
           end.compact
 
           index_changes, undo_index_changes = change_indexes(model, current_table_name)
+          fk_changes, undo_fk_changes = change_foreign_key_constraints(model, current_table_name)
 
           [(renames + adds + removes + changes) * "\n",
            (undo_renames + undo_adds + undo_removes + undo_changes) * "\n",
            index_changes * "\n",
-           undo_index_changes * "\n"]
+           undo_index_changes * "\n",
+           fk_changes * "\n",
+           undo_fk_changes * "\n"
+           ]
         end
 
         def change_indexes(model, old_table_name)
-          return [[],[]] if Migrator.disable_indexing || model.is_a?(HabtmModelShim)
+          return [[],[]] if Migrator.disable_constraints || model.is_a?(HabtmModelShim)
           new_table_name = model.table_name
           existing_indexes = HoboFields::Model::IndexSpec.for_model(model, old_table_name)
           model_indexes = model.index_specs
@@ -386,9 +416,35 @@ module Generators
         def drop_index(table, name)
           # see https://hobo.lighthouseapp.com/projects/8324/tickets/566
           # for why the rescue exists
-          max_length = connection.index_name_length
-          name = name[0,max_length] if name.length > max_length
           "remove_index :#{table}, :name => :#{name} rescue ActiveRecord::StatementInvalid"
+        end
+
+        def change_foreign_key_constraints(model, old_table_name)
+          return [[],[]] if Migrator.disable_indexing || model.is_a?(HabtmModelShim)
+          new_table_name = model.table_name
+          existing_fks = HoboFields::Model::ForeignKeySpec.for_model(model, old_table_name)
+          model_fks = model.constraint_specs
+          add_fks = model_fks - existing_fks
+          drop_fks = existing_fks - model_fks
+          undo_add_fks = []
+          undo_drop_fks = []
+
+          add_fks.map! do |fk|
+            #next if fk.parent.constantize.abstract_class || fk.parent == fk.model.class_name
+            undo_add_fks << drop_foreign_key(old_table_name, fk.options[:constraint_name])
+            fk.to_add_statement
+          end.compact
+
+          drop_fks.map! do |fk|
+            undo_drop_fks << fk.to_add_statement
+            drop_foreign_key(new_table_name, fk.options[:constraint_name])
+          end
+
+          [drop_fks + add_fks, undo_add_fks + undo_drop_fks]
+        end
+
+        def drop_foreign_key(old_table_name, fk_name)
+          "drop_foreign_key('#{old_table_name}','#{fk_name}')"
         end
 
         def format_options(options, type, changing=false)

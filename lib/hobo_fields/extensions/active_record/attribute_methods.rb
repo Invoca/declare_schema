@@ -1,10 +1,9 @@
 ActiveRecord::Base.class_eval do
   class << self
-
     def can_wrap_with_hobo_type?(attr_name)
       if connected?
         type_wrapper = try.attr_type(attr_name)
-        type_wrapper.is_a?(Class) && type_wrapper.not_in?(HoboFields::PLAIN_TYPES.values)
+        type_wrapper.is_a?(Class) && type_wrapper.not_in?(HoboFields::PLAIN_TYPES.values) && type_wrapper != Symbol # enum is Symbol
       else
         false
       end
@@ -59,7 +58,12 @@ ActiveRecord::Base.class_eval do
     def define_method_attribute=(attr_name)
       if can_wrap_with_hobo_type?(attr_name)
         src = "begin; wrapper_type = self.class.attr_type(:#{attr_name}); " +
-          "if !new_value.is_a?(wrapper_type) && HoboFields.can_wrap?(wrapper_type, new_value); wrapper_type.new(new_value); else; new_value; end; end"
+                 "if !new_value.is_a?(wrapper_type) && HoboFields.can_wrap?(wrapper_type, new_value);
+                    wrapper_type.new(new_value);
+                  else;
+                    new_value;
+                  end;
+               end"
         generated_attribute_methods.module_eval("def #{attr_name}=(new_value); write_attribute('#{attr_name}', #{src}); end", __FILE__, __LINE__)
       else
         super
