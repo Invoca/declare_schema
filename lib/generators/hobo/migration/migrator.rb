@@ -200,7 +200,7 @@ module Generators
             defined?(CGI::Session::ActiveRecordStore::Session) &&
             defined?(ActionController::Base) &&
             ActionController::Base.session_store == CGI::Session::ActiveRecordStore
-          ['schema_info', 'schema_migrations', sessions_table].compact
+          ['schema_info', 'schema_migrations',  'simple_sesions'].compact
         end
 
 
@@ -222,33 +222,33 @@ module Generators
               models_by_table_name[name] = HabtmModelShim.from_reflection(refls.first)
             end
             model_table_names = models_by_table_name.keys
-
+    
             to_create = model_table_names - db_tables
             to_drop = db_tables - model_table_names - always_ignore_tables
             to_change = model_table_names
             to_rename = extract_table_renames!(to_create, to_drop)
-
+    
             renames = to_rename.map do |old_name, new_name|
               "rename_table :#{old_name}, :#{new_name}"
             end * "\n"
             undo_renames = to_rename.map do |old_name, new_name|
               "rename_table :#{new_name}, :#{old_name}"
             end * "\n"
-
+    
             drops = to_drop.map do |t|
               "drop_table :#{t}"
             end * "\n"
             undo_drops = to_drop.map do |t|
               revert_table(t)
             end * "\n\n"
-
+    
             creates = to_create.map do |t|
               create_table(models_by_table_name[t])
             end * "\n\n"
             undo_creates = to_create.map do |t|
               "drop_table :#{t}"
             end * "\n"
-
+    
             changes = []
             undo_changes = []
             index_changes = []
@@ -268,13 +268,13 @@ module Generators
                 undo_fk_changes << undo_fk
               end
             end
-
+    
             up = [renames, drops, creates, changes, index_changes, fk_changes].flatten.reject(&:blank?) * "\n\n"
             down = [undo_changes, undo_renames, undo_drops, undo_creates, undo_index_changes, undo_fk_changes].flatten.reject(&:blank?) * "\n\n"
-
+    
             [up, down]
           rescue Exception=>ex
-            puts "exception in generate: #{ex}"
+            puts "Caught exception: #{ex}"
             puts ex.backtrace.join("\n")
             raise
           end
@@ -291,10 +291,10 @@ module Generators
             end
           end
           (["create_table :#{model.table_name}#{primary_key_option} do |t|"] +
-          [( "  t.column :id, :primary_key_no_increment" if disable_auto_increment )] +
+          [( disable_auto_increment ? '  t.column :id, :primary_key_no_increment' : nil )] +
            model.field_specs.values.sort_by{|f| f.position}.map {|f| create_field(f, longest_field_name)} +
-           ["end"] + (Migrator.disable_indexing ? [] : create_indexes(model) + create_constraints(model))
-          ).compact * "\n"
+           ["end"] + (Migrator.disable_indexing ? [] : create_indexes(model) +
+           create_constraints(model))).compact * "\n"
         end
 
         def create_indexes(model)
@@ -302,7 +302,7 @@ module Generators
         end
 
         def create_constraints(model)
-          model.constraint_specs.map { |fk| fk.to_add_statement(model.table_name) }
+          model.constraint_specs.map { |fk| fk.to_add_statement(model.table_name)}
         end
 
         def create_field(field_spec, field_name_width)
@@ -428,19 +428,20 @@ module Generators
           drop_fks = existing_fks - model_fks
           undo_add_fks = []
           undo_drop_fks = []
-
+    
           add_fks.map! do |fk|
             #next if fk.parent.constantize.abstract_class || fk.parent == fk.model.class_name
             undo_add_fks << drop_foreign_key(old_table_name, fk.options[:constraint_name])
             fk.to_add_statement
           end.compact
-
+    
           drop_fks.map! do |fk|
             undo_drop_fks << fk.to_add_statement
             drop_foreign_key(new_table_name, fk.options[:constraint_name])
           end
-
+          
           [drop_fks + add_fks, undo_add_fks + undo_drop_fks]
+    
         end
 
         def drop_foreign_key(old_table_name, fk_name)

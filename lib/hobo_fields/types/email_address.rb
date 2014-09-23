@@ -6,18 +6,12 @@ module HoboFields
 
       COLUMN_TYPE = :string
 
-      MAILBOX           = " [a-z0-9#{ Regexp.escape "!#~%&'=./$*+-?^_`{}|" }]+ "
-      SUB_DOMAIN        = %q< [-a-z0-9]+ >
-      TOP_LEVEL_DOMAIN  = %q< [a-z]{2,}  >
-      DOMAIN            = "(?:#{SUB_DOMAIN}\\.)+ #{TOP_LEVEL_DOMAIN}"
-      ADDRESS_REGEXP    = /\A ( #{MAILBOX} ) @ ( #{DOMAIN} ) \z/ix
-
       def validate
         I18n.t("errors.messages.invalid") unless valid? || blank?
       end
 
       def valid?
-        self =~ ADDRESS_REGEXP
+        self =~ EmailAddress::ADDRESS_REGEXP
       end
 
       def to_html(xmldoctype = true)

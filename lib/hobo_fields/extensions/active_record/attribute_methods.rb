@@ -1,9 +1,11 @@
 ActiveRecord::Base.class_eval do
   class << self
+    ENUM_TYPE = Symbol
     def can_wrap_with_hobo_type?(attr_name)
       if connected?
         type_wrapper = try.attr_type(attr_name)
-        type_wrapper.is_a?(Class) && type_wrapper.not_in?(HoboFields::PLAIN_TYPES.values) && type_wrapper != Symbol # enum is Symbol
+         # RingRevenue patch - cannot wrap with hobo types if it's a Symbol; klass for enum fields is Symbol
+        type_wrapper.is_a?(Class) && type_wrapper.not_in?(HoboFields::PLAIN_TYPES.values) && type_wrapper != ENUM_TYPE
       else
         false
       end
@@ -59,7 +61,7 @@ ActiveRecord::Base.class_eval do
       if can_wrap_with_hobo_type?(attr_name)
         src = "begin; wrapper_type = self.class.attr_type(:#{attr_name}); " +
                  "if !new_value.is_a?(wrapper_type) && HoboFields.can_wrap?(wrapper_type, new_value);
-                    wrapper_type.new(new_value);
+                   wrapper_type.new(new_value);
                   else;
                     new_value;
                   end;

@@ -90,7 +90,7 @@ module HoboFields
     # Extend belongs_to so that it creates a FieldSpec for the foreign key
     def self.belongs_to_with_field_declarations(name, options={}, &block)
       column_options = {}
-      column_options[:null] = options.delete(:null) if options.has_key?(:null)
+      column_options[:null] = options.delete(:null) || false
       column_options[:comment] = options.delete(:comment) if options.has_key?(:comment)
 
       index_options = {}
