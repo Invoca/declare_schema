@@ -70,8 +70,8 @@ module HoboFields
         #Empty constraint lets mysql generate the name
       end
   
-      def self.for_model(model, old_table_name = nil)
-        show_create_table = model.connection.select_rows("show create table #{model.connection.quote_table_name(model.table_name)}").first.last
+      def self.for_model(model, old_table_name)
+        show_create_table = model.connection.select_rows("show create table #{model.connection.quote_table_name(old_table_name)}").first.last
         constraints = show_create_table.split("\n").map { |line| line.strip if line['CONSTRAINT'] }.compact
   
         constraints.map do |fkc|
