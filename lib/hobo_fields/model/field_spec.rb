@@ -29,12 +29,6 @@ module HoboFields
       TYPE_SYNONYMS = [[:timestamp, :datetime]]
 
       begin
-        MYSQL_COLUMN_CLASS = ActiveRecord::ConnectionAdapters::Mysql2Adapter::Column
-      rescue NameError
-        MYSQL_COLUMN_CLASS = NilClass
-      end
-
-      begin
         SQLITE_COLUMN_CLASS = ActiveRecord::ConnectionAdapters::SQLiteColumn
       rescue NameError
         SQLITE_COLUMN_CLASS = NilClass
@@ -103,10 +97,10 @@ module HoboFields
             end
           end ||
           begin
-            native_type = Generators::Hobo::Migration::Migrator.native_types[type]
+            native_type = native_types[type]
             check_attributes = [:null, :default]
             check_attributes += [:precision, :scale] if sql_type == :decimal && !col_spec.is_a?(SQLITE_COLUMN_CLASS)  # remove when rails fixes https://rails.lighthouseapp.com/projects/8994-ruby-on-rails/tickets/2872
-            check_attributes -= [:default] if sql_type == :text && col_spec.is_a?(MYSQL_COLUMN_CLASS)
+            check_attributes -= [:default] if sql_type == :text && col_spec.class.name =~ /mysql/i
             check_attributes << :limit if sql_type.in?([:string, :text, :binary, :integer, :enum])
             check_attributes.any? do |k|
               if k==:default && sql_type==:datetime
