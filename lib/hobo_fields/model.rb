@@ -39,6 +39,10 @@ module HoboFields
       index_specs << HoboFields::Model::IndexSpec.new(self, fields, options) unless index_specs.*.fields.include?(Array.wrap(fields).*.to_s)
     end
 
+    def self.primary_key_index(*fields)
+      index(fields.flatten, unique: true, name: "PRIMARY_KEY")
+    end
+
     def self.constraint(fkey, options={})
       constraint_specs << HoboFields::Model::ForeignKeySpec.new(self, fkey, options ) unless constraint_specs.*.foreign_key.include?(fkey.to_s)
     end
@@ -50,6 +54,18 @@ module HoboFields
     end
 
     private
+
+    def self.index_specs_with_primary_key
+      if index_specs.any? &:primary_key?
+        index_specs
+      else
+        index_specs + [rails_default_primary_key]
+      end
+    end
+
+    def self.rails_default_primary_key
+      HoboFields::Model::IndexSpec.new(self, [primary_key.to_sym], unique: true, name: HoboFields::Model::IndexSpec::PRIMARY_KEY_NAME)
+    end
 
     # Declares that a virtual field that has a rich type (e.g. created
     # by attr_accessor :foo, :type => :email_address) should be subject
@@ -148,6 +164,11 @@ module HoboFields
     # declarations.
     def self.declare_field(name, type, *args)
       options = args.extract_options!
+      if type == :text
+        options[:limit] or raise ":text field must have :limit: #{self.name}##{name}: #{options.inspect}"
+        options = options.merge(:char_limit => options[:limit])
+        options.delete(:limit)
+      end
       try.field_added(name, type, args, options)
       add_formatting_for_field(name, type, args)
       add_validations_for_field(name, type, args)

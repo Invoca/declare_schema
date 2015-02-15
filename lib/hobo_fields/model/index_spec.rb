@@ -4,38 +4,65 @@ module HoboFields
     class IndexSpec
       include Comparable
       
-      attr_accessor :table, :fields, :name, :unique
+      attr_accessor :table, :fields, :explicit_name, :name, :unique
+
+      PRIMARY_KEY_NAME = "PRIMARY_KEY"
 
       def initialize(model, fields, options={})
         @model = model
         self.table = options.delete(:table_name) || model.table_name
         self.fields = Array.wrap(fields).*.to_s
-        self.name = options.delete(:name) || model.connection.index_name(self.table, :column => self.fields)
-        self.unique = options.delete(:unique) || false
-        @name = options[:name] if options[:name]
+        self.explicit_name = options[:name]
+        self.name = options.delete(:name) || model.connection.index_name(self.table, :column => self.fields).gsub(/index.*_on_/, 'on_')
+        self.unique = options.delete(:unique) || (name == 'PRIMARY_KEY')
       end
 
       # extract IndexSpecs from an existing table
       def self.for_model(model, old_table_name=nil)
         t = old_table_name || model.table_name
-        model.connection.indexes(t).map do |i|
+        connection = model.connection.dup
+        class << connection              # defeat Rails code that skips the primary keys by changing their name to PRIMARY_KEY_NAME
+          def each_hash(result)
+            super do |hash|
+              if hash[:Key_name] == "PRIMARY"
+                hash[:Key_name] = PRIMARY_KEY_NAME
+              end
+              yield hash
+            end
+          end
+        end
+        connection.indexes(t).map do |i|
           self.new(model, i.columns, :name => i.name, :unique => i.unique, :table_name => old_table_name) unless model.ignore_indexes.include?(i.name)
         end.compact
       end
 
-      def default_name?
-        name == @model.connection.index_name(table, :column => fields)
+      def primary_key?
+        name == PRIMARY_KEY_NAME
       end
 
-      def to_add_statement(new_table_name)
-        r = "add_index :#{new_table_name}, #{fields.*.to_sym.inspect}"
-        r += ", :unique => true" if unique
-        r += ", :name => '#{name}'" unless default_name?
-        r
+      def to_add_statement(new_table_name, existing_primary_key)
+        if primary_key?
+          to_add_primary_key_statement(new_table_name, existing_primary_key)
+        else
+          r = "add_index :#{new_table_name}, #{fields.*.to_sym.inspect}"
+          r += ", :unique => true" if unique
+          r += ", :name => '#{name}'"
+          r
+        end
+      end
+
+      def to_add_primary_key_statement(new_table_name, existing_primary_key)
+        drop = "DROP PRIMARY KEY, " if existing_primary_key
+        statement = "ALTER TABLE #{new_table_name} #{drop}ADD PRIMARY KEY (#{fields.join(', ')})"
+        "execute #{statement.inspect}"
       end
 
       def to_key
         @key ||= [table, fields, name, unique].map { |key| key.to_s }
+      end
+
+      def settings
+        @settings ||= [table, fields, unique].map { |setting| setting.to_s }
       end
 
       def hash
@@ -44,6 +71,14 @@ module HoboFields
 
       def <=>(rhs)
         to_key <=> rhs.to_key
+      end
+
+      def equivalent?(rhs)
+        settings == rhs.settings
+      end
+
+      def with_name(new_name)
+        self.class.new(@model, @fields, table_name: @table_name, index_name: @index_name, unique: @unique, name: new_name)
       end
 
       alias_method :eql?, :==
@@ -57,7 +92,7 @@ module HoboFields
   
       def initialize(model, foreign_key, options={})
         @model = model
-        @foreign_key = foreign_key
+        @foreign_key = foreign_key.presence
         @options = options
   
         @child_table = model.table_name #unless a table rename, which would happen when a class is renamed??
@@ -103,14 +138,12 @@ module HoboFields
       def parent_table_name=(name)
         @parent_table_name = name
       end
-  
-      def to_add_statement(unused = true)
-        %Q{execute "ALTER TABLE #{@child_table} ADD CONSTRAINT #{@constraint_name} FOREIGN KEY #{@index_name}(#{@foreign_key_name}) REFERENCES #{parent_table_name}(id) #{'ON DELETE CASCADE' if on_delete_cascade}"}
+
+      def to_add_statement(_ = true)
+        statement = "ALTER TABLE #{@child_table} ADD CONSTRAINT #{@constraint_name} FOREIGN KEY #{@index_name}(#{@foreign_key_name}) REFERENCES #{parent_table_name}(id) #{'ON DELETE CASCADE' if on_delete_cascade}"
+        "execute #{statement.inspect}"
       end
-  # child_table = new_table_name
-  # r = "add_foreign_key('#{parent_table}', '#{child_table}', #{(dependent==:delete).inspect}, '#{foreign_key}', '#{name}')"
-  # r
-  
+
       def to_key
         @key ||= [@child_table, parent_table_name, @foreign_key_name, @on_delete_cascade].map { |key| key.to_s }
       end

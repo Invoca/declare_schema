@@ -3,6 +3,8 @@ module HoboFields
 
     class FieldSpec
 
+      UTF8_BYTES_PER_CHAR = 3
+
       class UnknownSqlTypeError < RuntimeError; end
 
       def initialize(model, name, type, options={})
@@ -12,6 +14,13 @@ module HoboFields
         self.type = type.is_a?(String) ? type.to_sym : type
         position = options.delete(:position)
         self.options = options
+        if options[:char_limit]
+          self.options = self.options.merge(:limit => options[:char_limit] * UTF8_BYTES_PER_CHAR)
+        end
+        if type == :text
+          self.options[:limit] or raise "limit must be given for :text field #{model}##{name}: #{self.options.inspect}"
+          self.options[:default] and raise "default may not be given for :text field #{model}##{name}"
+        end
         self.position = position || model.field_specs.length
       end
 
@@ -20,7 +29,7 @@ module HoboFields
       TYPE_SYNONYMS = [[:timestamp, :datetime]]
 
       begin
-        MYSQL_COLUMN_CLASS = ActiveRecord::ConnectionAdapters::MysqlColumn
+        MYSQL_COLUMN_CLASS = ActiveRecord::ConnectionAdapters::Mysql2Adapter::Column
       rescue NameError
         MYSQL_COLUMN_CLASS = NilClass
       end
@@ -94,6 +103,7 @@ module HoboFields
             end
           end ||
           begin
+            native_type = Generators::Hobo::Migration::Migrator.native_types[type]
             check_attributes = [:null, :default]
             check_attributes += [:precision, :scale] if sql_type == :decimal && !col_spec.is_a?(SQLITE_COLUMN_CLASS)  # remove when rails fixes https://rails.lighthouseapp.com/projects/8994-ruby-on-rails/tickets/2872
             check_attributes -= [:default] if sql_type == :text && col_spec.is_a?(MYSQL_COLUMN_CLASS)
@@ -102,7 +112,11 @@ module HoboFields
               if k==:default && sql_type==:datetime
                 col_spec.default.try.to_datetime != default.try.to_datetime
               else
-                col_spec.send(k) != self.send(k)
+                col_value = col_spec.send(k)
+                if col_value.nil?
+                  col_value = native_type[k]
+                end
+                col_value != self.send(k)
               end
             end
           end
