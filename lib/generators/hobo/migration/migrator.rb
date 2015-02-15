@@ -50,8 +50,8 @@ module Generators
 
         def constraint_specs
           [
-            HoboFields::Model::ForeignKeySpec.new(self, foreign_keys.first, parent_table: foreign_key_classes.first.table_name, constraint_name: foreign_keys.first, dependent: :delete),
-            HoboFields::Model::ForeignKeySpec.new(self, foreign_keys.last,  parent_table: foreign_key_classes.last.table_name,  constraint_name: foreign_keys.last,  dependent: :delete)
+            HoboFields::Model::ForeignKeySpec.new(self, foreign_keys.first, parent_table: foreign_key_classes.first.table_name, constraint_name: "#{join_table}_FK1", dependent: :delete),
+            HoboFields::Model::ForeignKeySpec.new(self, foreign_keys.last,  parent_table: foreign_key_classes.last.table_name,  constraint_name: "#{join_table}_FK2", dependent: :delete)
           ]
         end
 
