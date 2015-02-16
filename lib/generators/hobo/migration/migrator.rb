@@ -2,20 +2,25 @@ module Generators
   module Hobo
     module Migration
 
-      class HabtmModelShim < Struct.new(:join_table, :foreign_keys, :connection)
+      class HabtmModelShim < Struct.new(:join_table, :foreign_keys, :foreign_key_classes, :connection)
 
         def self.from_reflection(refl)
-          result = self.new
-          result.join_table = refl.options[:join_table].to_s
-          result.foreign_keys = [refl.foreign_key.to_s, refl.association_foreign_key.to_s].sort
+          join_table = refl.options[:join_table].to_s
+          foreign_keys_and_classes = [
+            [refl.foreign_key.to_s, refl.active_record],
+            [refl.association_foreign_key.to_s, refl.class_name.constantize]
+          ].sort { |a, b| a.first <=> b.first }
+          foreign_keys        = foreign_keys_and_classes.map &:first
+          foreign_key_classes = foreign_keys_and_classes.map &:last
           # this may fail in weird ways if HABTM is running across two DB connections (assuming that's even supported)
           # figure that anybody who sets THAT up can deal with their own migrations...
-          result.connection = refl.active_record.connection
-          result
+          connection = refl.active_record.connection
+
+          new(join_table, foreign_keys, foreign_key_classes, connection)
         end
 
         def table_name
-          self.join_table
+          join_table
         end
 
         def table_exists?
@@ -36,12 +41,22 @@ module Generators
           false
         end
 
-        def index_specs
+        def index_specs_with_primary_key
+          [
+            HoboFields::Model::IndexSpec.new(self, foreign_keys, unique: true, name: "PRIMARY_KEY"),
+            HoboFields::Model::IndexSpec.new(self, foreign_keys.last) # not unique by itself; combines with primary key to be unique
+          ]
+        end
+
+        def ignore_indexes
           []
         end
 
         def constraint_specs
-          []
+          [
+            HoboFields::Model::ForeignKeySpec.new(self, foreign_keys.first, parent_table: foreign_key_classes.first.table_name, constraint_name: "#{join_table}_FK1", dependent: :delete),
+            HoboFields::Model::ForeignKeySpec.new(self, foreign_keys.last,  parent_table: foreign_key_classes.last.table_name,  constraint_name: "#{join_table}_FK2", dependent: :delete)
+          ]
         end
 
       end
@@ -108,6 +123,8 @@ module Generators
           case connection.class.name
           when /mysql/i
             types[:integer][:limit] ||= 11
+            types[:text][:limit]    ||= 0xffff
+            types[:binary][:limit]  ||= 0xffff
           end
           types
         end
@@ -227,7 +244,7 @@ module Generators
             to_drop = db_tables - model_table_names - always_ignore_tables
             to_change = model_table_names
             to_rename = extract_table_renames!(to_create, to_drop)
-    
+
             renames = to_rename.map do |old_name, new_name|
               "rename_table :#{old_name}, :#{new_name}"
             end * "\n"
@@ -323,7 +340,7 @@ module Generators
           to_add = model_column_names - db_column_names
           to_add += [model.primary_key] if key_missing && model.primary_key.nonblank?
           to_remove = db_column_names - model_column_names
-          to_remove = to_remove - [model.primary_key.to_sym] if model.primary_key.nonblank?
+          to_remove -= [model.primary_key.to_sym] if model.primary_key.nonblank?
 
           to_rename = extract_column_renames!(to_add, to_remove, new_table_name)
 
@@ -393,22 +410,33 @@ module Generators
         end
 
         def change_indexes(model, old_table_name)
-          return [[],[]] if Migrator.disable_constraints || model.is_a?(HabtmModelShim)
+          return [[],[]] if Migrator.disable_constraints
           new_table_name = model.table_name
           existing_indexes = HoboFields::Model::IndexSpec.for_model(model, old_table_name)
-          model_indexes = model.index_specs
-          add_indexes = model_indexes - existing_indexes
-          drop_indexes = existing_indexes - model_indexes
+          model_indexes_with_equivalents = model.index_specs_with_primary_key
+          model_indexes = model_indexes_with_equivalents.map do |i|
+            if i.explicit_name.nil?
+              if ex = existing_indexes.find { |e| i != e && e.equivalent?(i) }
+                i.with_name(ex.name)
+              end
+            end || i
+          end
+          existing_has_primary_key = existing_indexes.any? { |i| i.name == 'PRIMARY_KEY' }
+          model_has_primary_key    = model_indexes.any?    { |i| i.name == 'PRIMARY_KEY' }
+
+          add_indexes_init = model_indexes - existing_indexes
+          drop_indexes_init = existing_indexes - model_indexes
           undo_add_indexes = []
           undo_drop_indexes = []
-          add_indexes.map! do |i|
-            undo_add_indexes << drop_index(old_table_name, i.name)
-            i.to_add_statement(new_table_name)
+          add_indexes = add_indexes_init.map do |i|
+            undo_add_indexes << drop_index(old_table_name, i.name) unless i.name == "PRIMARY_KEY"
+            i.to_add_statement(new_table_name, existing_has_primary_key)
           end
-          drop_indexes.map! do |i|
-            undo_drop_indexes << i.to_add_statement(old_table_name)
-            drop_index(new_table_name, i.name)
-          end
+          drop_indexes = drop_indexes_init.map do |i|
+            undo_drop_indexes << i.to_add_statement(old_table_name, model_has_primary_key)
+            drop_index(new_table_name, i.name) unless i.name == "PRIMARY_KEY"
+          end.compact
+
           # the order is important here - adding a :unique, for instance needs to remove then add
           [drop_indexes + add_indexes, undo_add_indexes + undo_drop_indexes]
         end
@@ -420,7 +448,7 @@ module Generators
         end
 
         def change_foreign_key_constraints(model, old_table_name)
-          return [[],[]] if Migrator.disable_indexing || model.is_a?(HabtmModelShim)
+          return [[],[]] if Migrator.disable_indexing
           new_table_name = model.table_name
           existing_fks = HoboFields::Model::ForeignKeySpec.for_model(model, old_table_name)
           model_fks = model.constraint_specs
@@ -441,11 +469,10 @@ module Generators
           end
           
           [drop_fks + add_fks, undo_add_fks + undo_drop_fks]
-    
         end
 
         def drop_foreign_key(old_table_name, fk_name)
-          "drop_foreign_key('#{old_table_name}','#{fk_name}')"
+          "drop_foreign_key('#{old_table_name}', '#{fk_name}')"
         end
 
         def format_options(options, type, changing=false)
