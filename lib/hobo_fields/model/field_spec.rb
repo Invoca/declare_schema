@@ -17,9 +17,12 @@ module HoboFields
         if options[:char_limit]
           self.options = self.options.merge(:limit => options[:char_limit] * UTF8_BYTES_PER_CHAR)
         end
-        if type == :text
+        case type
+        when :text
           self.options[:limit] or raise "limit must be given for :text field #{model}##{name}: #{self.options.inspect}"
           self.options[:default] and raise "default may not be given for :text field #{model}##{name}"
+        when :string
+          self.options[:limit] or raise "limit must be given for :string field #{model}##{name}: #{self.options.inspect}; do you want 255?"
         end
         self.position = position || model.field_specs.length
       end
