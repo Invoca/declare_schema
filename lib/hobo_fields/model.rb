@@ -27,7 +27,7 @@ module HoboFields
     eval %(
       def self.inherited(klass)
         fields do |f|
-          f.field(inheritance_column, :string, :null => true)
+          f.field(inheritance_column, :string, :limit => 255, :null => true)
         end
         index(inheritance_column)
         super
@@ -141,7 +141,7 @@ module HoboFields
     # field for a polyorphic belongs_to
     def self.declare_polymorphic_type_field(name, column_options)
       type_col = "#{name}_type"
-      declare_field(type_col, :string, column_options)
+      declare_field(type_col, :string, column_options.merge(:limit => 255))
       # FIXME: Before hobo_fields was extracted, this used to now do:
       # never_show(type_col)
       # That needs doing somewhere
