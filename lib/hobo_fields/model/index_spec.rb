@@ -14,7 +14,7 @@ module HoboFields
         self.fields = Array.wrap(fields).*.to_s
         self.explicit_name = options[:name]
         self.name = options.delete(:name) || model.connection.index_name(self.table, :column => self.fields).gsub(/index.*_on_/, 'on_')
-        self.unique = options.delete(:unique) || (name == 'PRIMARY_KEY')
+        self.unique = options.delete(:unique) || name == PRIMARY_KEY_NAME
       end
 
       # extract IndexSpecs from an existing table
