@@ -6,8 +6,12 @@ module Generators
 
         def self.from_reflection(refl)
           join_table = refl.options[:join_table].to_s
-          foreign_keys = [refl.foreign_key.to_s, refl.association_foreign_key.to_s].sort
-          foreign_key_classes = [refl.active_record, refl.class_name.constantize]
+          foreign_keys_and_classes = [
+            [refl.foreign_key.to_s, refl.active_record],
+            [refl.association_foreign_key.to_s, refl.class_name.constantize]
+          ].sort { |a, b| a.first <=> b.first }
+          foreign_keys        = foreign_keys_and_classes.map &:first
+          foreign_key_classes = foreign_keys_and_classes.map &:last
           # this may fail in weird ways if HABTM is running across two DB connections (assuming that's even supported)
           # figure that anybody who sets THAT up can deal with their own migrations...
           connection = refl.active_record.connection
