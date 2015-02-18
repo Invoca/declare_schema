@@ -40,7 +40,7 @@ module HoboFields
         name == PRIMARY_KEY_NAME
       end
 
-      def to_add_statement(new_table_name, existing_primary_key)
+      def to_add_statement(new_table_name, existing_primary_key = nil)
         if primary_key?
           to_add_primary_key_statement(new_table_name, existing_primary_key)
         else

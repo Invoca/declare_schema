@@ -38,9 +38,10 @@ module Generators
         end
 
         def primary_key
-          false
+          false # no single-column primary key
         end
 
+        alias_method :index_specs, \
         def index_specs_with_primary_key
           [
             HoboFields::Model::IndexSpec.new(self, foreign_keys, unique: true, name: "PRIMARY_KEY"),
