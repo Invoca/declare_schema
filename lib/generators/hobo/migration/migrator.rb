@@ -240,7 +240,7 @@ module Generators
               models_by_table_name[name] = HabtmModelShim.from_reflection(refls.first)
             end
             model_table_names = models_by_table_name.keys
-    
+
             to_create = model_table_names - db_tables
             to_drop = db_tables - model_table_names - always_ignore_tables
             to_change = model_table_names
@@ -252,21 +252,21 @@ module Generators
             undo_renames = to_rename.map do |old_name, new_name|
               "rename_table :#{new_name}, :#{old_name}"
             end * "\n"
-    
+
             drops = to_drop.map do |t|
               "drop_table :#{t}"
             end * "\n"
             undo_drops = to_drop.map do |t|
               revert_table(t)
             end * "\n\n"
-    
+
             creates = to_create.map do |t|
               create_table(models_by_table_name[t])
             end * "\n\n"
             undo_creates = to_create.map do |t|
               "drop_table :#{t}"
             end * "\n"
-    
+
             changes = []
             undo_changes = []
             index_changes = []
@@ -286,10 +286,10 @@ module Generators
                 undo_fk_changes << undo_fk
               end
             end
-    
+
             up = [renames, drops, creates, changes, index_changes, fk_changes].flatten.reject(&:blank?) * "\n\n"
             down = [undo_changes, undo_renames, undo_drops, undo_creates, undo_index_changes, undo_fk_changes].flatten.reject(&:blank?) * "\n\n"
-    
+
             [up, down]
           rescue Exception=>ex
             puts "Caught exception: #{ex}"
@@ -302,7 +302,7 @@ module Generators
           longest_field_name = model.field_specs.values.map { |f| f.sql_type.to_s.length }.max
           disable_auto_increment = model.respond_to?(:disable_auto_increment) && model.disable_auto_increment
           if model.primary_key != "id" || disable_auto_increment
-            if model.primary_key.nonblank? && !disable_auto_increment
+            if model.primary_key.present? && !disable_auto_increment
               primary_key_option = ", :primary_key => :#{model.primary_key}"
             else
               primary_key_option = ", :id => false"
@@ -332,16 +332,16 @@ module Generators
           new_table_name = model.table_name
 
           db_columns = model.connection.columns(current_table_name).index_by{|c|c.name}
-          key_missing = db_columns[model.primary_key].nil? && model.primary_key.nonblank?
-          db_columns -= [model.primary_key.nonblank?]
+          key_missing = db_columns[model.primary_key].nil? && model.primary_key.present?
+          db_columns -= [model.primary_key.presence]
 
           model_column_names = model.field_specs.keys.*.to_s
           db_column_names = db_columns.keys.*.to_s
 
           to_add = model_column_names - db_column_names
-          to_add += [model.primary_key] if key_missing && model.primary_key.nonblank?
+          to_add += [model.primary_key] if key_missing && model.primary_key.present?
           to_remove = db_column_names - model_column_names
-          to_remove -= [model.primary_key.to_sym] if model.primary_key.nonblank?
+          to_remove -= [model.primary_key.to_sym] if model.primary_key.present?
 
           to_rename = extract_column_renames!(to_add, to_remove, new_table_name)
 
@@ -457,18 +457,18 @@ module Generators
           drop_fks = existing_fks - model_fks
           undo_add_fks = []
           undo_drop_fks = []
-    
+
           add_fks.map! do |fk|
             #next if fk.parent.constantize.abstract_class || fk.parent == fk.model.class_name
             undo_add_fks << drop_foreign_key(old_table_name, fk.options[:constraint_name])
             fk.to_add_statement
           end.compact
-    
+
           drop_fks.map! do |fk|
             undo_drop_fks << fk.to_add_statement
             drop_foreign_key(new_table_name, fk.options[:constraint_name])
           end
-          
+
           [drop_fks + add_fks, undo_add_fks + undo_drop_fks]
         end
 
@@ -524,4 +524,3 @@ module Generators
     end
   end
 end
-
