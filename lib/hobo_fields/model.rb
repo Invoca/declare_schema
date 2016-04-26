@@ -113,6 +113,7 @@ module HoboFields
       index_options = {}
       index_options[:name]   = options.delete(:index) if options.has_key?(:index)
       index_options[:unique] = options.delete(:unique) if options.has_key?(:unique)
+      index_options[:allow_equivalent] = options.delete(:allow_equivalent) if options.has_key?(:allow_equivalent)
 
       fk_options = options.dup
       fk_options[:constraint_name] = options.delete(:constraint) if options.has_key?(:constraint)
