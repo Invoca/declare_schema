@@ -26,7 +26,7 @@ module HoboFields
     # eval avoids the ruby 1.9.2 "super from singleton method ..." error
     eval %(
       def self.inherited(klass)
-        unless klass.field_specs.any? { |spec| spec.first == inheritance_column }
+        unless klass.field_specs.has_key?(inheritance_column)
           fields do |f|
             f.field(inheritance_column, :string, :limit => 255, :null => true)
           end
