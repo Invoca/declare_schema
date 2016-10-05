@@ -14,8 +14,14 @@ module HoboFields
         self.fields = Array.wrap(fields).*.to_s
         self.explicit_name = options[:name] unless options.delete(:allow_equivalent)
         self.name = options.delete(:name) || model.connection.index_name(self.table, :column => self.fields).gsub(/index.*_on_/, 'on_')
-        self.unique = options.delete(:unique) || name == PRIMARY_KEY_NAME
+        self.unique = options.delete(:unique) || name == PRIMARY_KEY_NAME || false
+        if options[:where]
+          self.where = "#{options.delete(:where)}"
+          self.where = "(#{self.where})" unless self.where.start_with?('(')
+        end
       end
+
+      # attr_accessor :table, :fields, :name, :unique, :where
 
       # extract IndexSpecs from an existing table
       def self.for_model(model, old_table_name=nil)
@@ -32,7 +38,7 @@ module HoboFields
           end
         end
         connection.indexes(t).map do |i|
-          self.new(model, i.columns, :name => i.name, :unique => i.unique, :table_name => old_table_name) unless model.ignore_indexes.include?(i.name)
+          self.new(model, i.columns, :name => i.name, :unique => i.unique, :where => i.where, :table_name => old_table_name) unless model.ignore_indexes.include?(i.name)
         end.compact
       end
 
@@ -40,14 +46,21 @@ module HoboFields
         name == PRIMARY_KEY_NAME
       end
 
-      def to_add_statement(new_table_name, existing_primary_key = nil)
+      def to_add_statement(new_table_name)
         if primary_key?
           to_add_primary_key_statement(new_table_name, existing_primary_key)
         else
           r = "add_index :#{new_table_name}, #{fields.*.to_sym.inspect}"
           r += ", :unique => true" if unique
-          r += ", :name => '#{name}'"
-          r
+          r += ", :where => '#{self.where}'" if self.where.present?
+          if default_name?
+            check_name = @model.connection.index_name(self.table, :column => self.fields)
+          else
+            r = "add_index :#{new_table_name}, #{fields.*.to_sym.inspect}"
+            r += ", :unique => true" if unique
+            r += ", :name => '#{name}'"
+            r
+          end
         end
       end
 
@@ -58,7 +71,7 @@ module HoboFields
       end
 
       def to_key
-        @key ||= [table, fields, name, unique].map { |key| key.to_s }
+        @key ||= [table, fields, name, unique, where].map { |key| key.to_s }
       end
 
       def settings

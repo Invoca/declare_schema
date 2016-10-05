@@ -91,7 +91,7 @@ module Hobo
   private
 
     def migrations_pending?
-      pending_migrations = ActiveRecord::Migrator.new(:up, 'db/migrate').pending_migrations
+      pending_migrations = ActiveRecord::Migrator.new(:up, ActiveRecord::Migrator.migrations('db/migrate')).pending_migrations
 
       if pending_migrations.any?
         say "You have #{pending_migrations.size} pending migration#{'s' if pending_migrations.size > 1}:"

@@ -1,5 +1,6 @@
 require 'rubygems'
 require 'active_record'
+require 'action_view'
 require 'tmpdir'
 
 include Rake::DSL
