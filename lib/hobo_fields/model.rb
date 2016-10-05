@@ -64,7 +64,6 @@ module HoboFields
       attrs << options unless options.empty?
       public
       attr_accessor_without_rich_types(*attrs)
-      private
 
       if type
         type = HoboFields.to_class(type)
@@ -83,15 +82,23 @@ module HoboFields
 
 
     # Extend belongs_to so that it creates a FieldSpec for the foreign key
-    def self.belongs_to_with_field_declarations(name, options={}, &block)
+    def self.belongs_to_with_field_declarations(name, *args, &block)
+      if args.size == 0 || (args.size == 1 && args[0].kind_of?(Proc))
+          options = {}
+          args.push(options)
+      elsif args.size == 1
+          options = args[0]
+      else
+          options = args[1]
+      end
       column_options = {}
       column_options[:null] = options.delete(:null) if options.has_key?(:null)
       column_options[:comment] = options.delete(:comment) if options.has_key?(:comment)
 
       index_options = {}
       index_options[:name] = options.delete(:index) if options.has_key?(:index)
-      bt = belongs_to_without_field_declarations(name, options, &block)
-      refl = reflections[name.to_sym]
+      bt = belongs_to_without_field_declarations(name, *args, &block)
+      refl = reflections[name.to_s]
       fkey = refl.foreign_key
       declare_field(fkey.to_sym, :integer, column_options)
       if refl.options[:polymorphic]
@@ -150,6 +157,7 @@ module HoboFields
       validates_presence_of   name if :required.in?(args)
       validates_uniqueness_of name, :allow_nil => !:required.in?(args) if :unique.in?(args)
 
+      # Support for custom validations in Hobo Fields
       type_class = HoboFields.to_class(type)
       if type_class && type_class.public_method_defined?("validate")
         self.validate do |record|
@@ -157,6 +165,7 @@ module HoboFields
           record.errors.add(name, v) if v.is_a?(String)
         end
       end
+
     end
 
     def self.add_formatting_for_field(name, type, args)
@@ -187,6 +196,7 @@ module HoboFields
     # automatically delcares the 'position' field
     def self.acts_as_list_with_field_declaration(options = {})
       declare_field(options.fetch(:column, "position"), :integer)
+      default_scope { order("#{self.table_name}.position ASC") }
       acts_as_list_without_field_declaration(options)
     end
 
@@ -201,7 +211,7 @@ module HoboFields
 
       attr_types[name] or
 
-        if (refl = reflections[name.to_sym])
+        if (refl = reflections[name.to_s])
           if refl.macro.in?([:has_one, :belongs_to]) && !refl.options[:polymorphic]
             refl.klass
           else

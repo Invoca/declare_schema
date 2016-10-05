@@ -7,13 +7,6 @@ Our test requires to prepare the testapp:
 
     doctest_require: 'prepare_testapp'
 
-    >>
-     ActiveRecord::Migration.create_table :articles do |t|
-       t.text :body
-       t.string :status
-     end
-    >>
-
 {.hidden}
 
 ## `to_html` method
@@ -103,7 +96,7 @@ Provides validation of correct email address format.
 
 ### `HoboFields::Types::HtmlString`
 
-`HtmlString` provides no special behavior. The main reason for using this type is that the `to_html` method does not do any html-escaping. Use this for columns that store raw HTML in the database.
+`HtmlString` provides no special behavior. The main reason for using this type is that the `to_html` method does not do any html-escaping. Use this for columns that store raw HTML in the database. Exactly the same as RawHtmlString.
 
         # no safety treatments are done by `to_html`.
         # even if `nasty.to_html` is actually unsafe, it is marked as html_safe.
@@ -111,23 +104,6 @@ Provides validation of correct email address format.
         >> nasty.to_html
         => "p1<p>p2</p>p3<nasty>p4</nasty>p5&lt;script&gt;p6<script>p7</script>p8"
         >> nasty.to_html.html_safe?
-        => true
-
-        >>
-         class Article < ActiveRecord::Base
-           fields do
-             body HoboFields::Types::HtmlString
-           end
-           attr_accessible :body
-         end
-        >> article = Article.create!(:body => "</div>>>p1<p>p2</p>p3<nasty>p4</nasty>p5&lt;script&gt;p6<script>p7</script>p8")
-        # some unsafe html fragements are removed on save,
-        # but there's no guarantees that it is well-formed
-        >> article.body
-        => "</div>>>p1<p>p2</p>p3p4p5&lt;script&gt;p6p8"
-        >> article.body == article.body.to_html
-        => true
-        >> article.body.to_html.html_safe?
         => true
 
 
@@ -148,7 +124,7 @@ Provides validation of correct email address format.
         # unsafe html behaviour depends on the parser used.
         >> markdown = HoboFields::Types::MarkdownString.new("</div>p1<script>p2")
         >> markdown.to_html
-        => "<p>&lt;/div&gt;p1</p>\n"
+        => "<p>&lt;/div&gt;p1p2</p>\n"
         # Bluecloth would return
         # => "<p></div>p1</p>"
         >> markdown.to_html.html_safe?
@@ -170,7 +146,7 @@ Provides validation of correct email address format.
         # but there's no guarantees that it is well-formed
         >> textile = HoboFields::Types::TextileString.new("</div>>>p1<script>p2")
         >> textile.to_html
-        => "<p></div>&gt;&gt;p1</p>"
+        => "<p>&gt;&gt;p1p2&lt;/p&gt;</p>"
         >> textile.to_html.html_safe?
         => true
 
@@ -339,10 +315,13 @@ Sometimes it's nice to have a proper type name. Here's one way you might go abou
 Named EnumString's may be translated.   Here is an example fr.yml:
 
     fr:
-      article/statuses:
+      article/statuss:
         draft: "esquisse"
         approved: "approuvé"
         published: "publiés"
+
+(Note that in this case, the field name 'status' is pluralized, but very simply by adding an 's', not an 'es'
+as would be gramatically correct.)
 
 Alternatively, the translations may be supplied in ruby:
 
