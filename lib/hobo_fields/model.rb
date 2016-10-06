@@ -24,6 +24,7 @@ module HoboFields
     inheriting_cattr_reader :constraint_specs => []
 
     # eval avoids the ruby 1.9.2 "super from singleton method ..." error
+
     eval %(
       def self.inherited(klass)
         unless klass.field_specs.any? { |spec| spec.first == inheritance_column }
@@ -130,7 +131,7 @@ module HoboFields
 
       fk_options[:dependent] = options.delete(:far_end_dependent) if options.has_key?(:far_end_dependent)
       bt = belongs_to_without_field_declarations(name, *args, &block)
-      refl = reflections[name.to_s]
+      refl = reflections[name.to_sym] or raise "Couldn't find reflection #{name} in #{reflections.keys}"
       fkey = refl.foreign_key
       declare_field(fkey.to_sym, :integer, column_options)
       if refl.options[:polymorphic]

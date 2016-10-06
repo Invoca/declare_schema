@@ -5,7 +5,7 @@ module Generators
       class HabtmModelShim < Struct.new(:join_table, :foreign_keys, :foreign_key_classes, :connection)
 
         def self.from_reflection(refl)
-          join_table = refl.options[:join_table].to_s
+          join_table = refl.join_table
           foreign_keys_and_classes = [
             [refl.foreign_key.to_s, refl.active_record],
             [refl.association_foreign_key.to_s, refl.class_name.constantize]
@@ -140,7 +140,7 @@ module Generators
           reflections = Hash.new { |h, k| h[k] = Array.new }
           ActiveRecord::Base.send(:descendants).map do |c|
             c.reflect_on_all_associations(:has_and_belongs_to_many).each do |a|
-              reflections[a.options[:join_table].to_s] << a
+              reflections[a.join_table] << a
             end
           end
           reflections
