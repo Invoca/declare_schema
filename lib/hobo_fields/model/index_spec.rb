@@ -4,7 +4,7 @@ module HoboFields
     class IndexSpec
       include Comparable
       
-      attr_accessor :table, :fields, :explicit_name, :name, :unique
+      attr_accessor :table, :fields, :explicit_name, :name, :unique, :where
 
       PRIMARY_KEY_NAME = "PRIMARY_KEY"
 
@@ -20,8 +20,6 @@ module HoboFields
           self.where = "(#{self.where})" unless self.where.start_with?('(')
         end
       end
-
-      # attr_accessor :table, :fields, :name, :unique, :where
 
       # extract IndexSpecs from an existing table
       def self.for_model(model, old_table_name=nil)
@@ -46,7 +44,11 @@ module HoboFields
         name == PRIMARY_KEY_NAME
       end
 
-      def to_add_statement(new_table_name)
+      def default_name?
+        name == @model.connection.index_name(table, :column => fields)
+      end
+
+      def to_add_statement(new_table_name, existing_primary_key)
         if primary_key?
           to_add_primary_key_statement(new_table_name, existing_primary_key)
         else
