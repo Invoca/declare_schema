@@ -1,5 +1,5 @@
 ActiveRecord::Base.class_eval do
-  def _read_attribute_with_hobo(attr_name)
+  def read_attribute_with_hobo(attr_name)
     name = attr_name.to_s
     if self.class.can_wrap_with_hobo_type?(name)
       attr_name = attr_name.to_sym
@@ -11,10 +11,10 @@ ActiveRecord::Base.class_eval do
         val
       end
     else
-      _read_attribute_without_hobo(name)
+      read_attribute_without_hobo(name)
     end
   end
-  alias_method_chain :_read_attribute, :hobo
+  alias_method_chain :read_attribute, :hobo
 
   class << self
 
