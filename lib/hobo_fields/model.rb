@@ -27,7 +27,7 @@ module HoboFields
 
     eval %(
       def self.inherited(klass)
-        unless klass.field_specs.any? { |spec| spec.first == inheritance_column }
+        unless klass.field_specs.has_key?(inheritance_column)
           fields do |f|
             f.field(inheritance_column, :string, :limit => 255, :null => true)
           end
