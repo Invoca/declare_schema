@@ -3,7 +3,7 @@ ActiveRecord::Base.class_eval do
     name = attr_name.to_s
     if self.class.can_wrap_with_hobo_type?(name)
       attr_name = attr_name.to_sym
-      val = _read_attribute_without_hobo(name)
+      val = read_attribute_without_hobo(name)
       wrapper_type = self.class.attr_type(attr_name)
       if HoboFields.can_wrap?(wrapper_type, val)
         wrapper_type.new(val)
@@ -26,7 +26,7 @@ ActiveRecord::Base.class_eval do
         @can_wrap_cache[attr_name] = \
           if connected?
             type_wrapper = try.attr_type(attr_name)
-            type_wrapper.is_a?(Class) && type_wrapper.not_in?(HoboFields::PLAIN_TYPES.values)
+            type_wrapper.is_a?(Class) && type_wrapper.not_in?(HoboFields::PLAIN_TYPES.values) && type_wrapper != Symbol # Invoca patch: Symbol is used for enums
           else
             false
           end
