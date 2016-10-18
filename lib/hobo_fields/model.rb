@@ -67,7 +67,7 @@ module HoboFields
     end
 
     def self.rails_default_primary_key
-      HoboFields::Model::IndexSpec.new(self, [primary_key.to_sym], unique: true, name: HoboFields::Model::IndexSpec::PRIMARY_KEY_NAME)
+      HoboFields::Model::IndexSpec.new(self, [primary_key.to_s], unique: true, name: HoboFields::Model::IndexSpec::PRIMARY_KEY_NAME)
     end
 
     # Declares that a virtual field that has a rich type (e.g. created
