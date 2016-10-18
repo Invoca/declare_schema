@@ -67,7 +67,7 @@ module HoboFields
     end
 
     def self.rails_default_primary_key
-      HoboFields::Model::IndexSpec.new(self, [primary_key.to_s], unique: true, name: HoboFields::Model::IndexSpec::PRIMARY_KEY_NAME)
+      HoboFields::Model::IndexSpec.new(self, [primary_key.to_sym], unique: true, name: HoboFields::Model::IndexSpec::PRIMARY_KEY_NAME)
     end
 
     # Declares that a virtual field that has a rich type (e.g. created
@@ -131,7 +131,7 @@ module HoboFields
 
       fk_options[:dependent] = options.delete(:far_end_dependent) if options.has_key?(:far_end_dependent)
       bt = belongs_to_without_field_declarations(name, *args, &block)
-      refl = reflections[name.to_sym] or raise "Couldn't find reflection #{name} in #{reflections.keys}"
+      refl = reflections[name.to_s] or raise "Couldn't find reflection #{name} in #{reflections.keys}"
       fkey = refl.foreign_key
       declare_field(fkey.to_sym, :integer, column_options)
       if refl.options[:polymorphic]
