@@ -151,7 +151,7 @@ module Generators
         def models_and_tables
           ignore_model_names = Migrator.ignore_models.*.to_s.*.underscore
           all_models = table_model_classes
-          hobo_models = all_models.select { |m| m.try.include_in_migration && m.name.underscore.not_in?(ignore_model_names) }
+          hobo_models = all_models.select { |m| (m.name['HABTM_'] || m.try.include_in_migration) && m.name.underscore.not_in?(ignore_model_names) }
           non_hobo_models = all_models - hobo_models
           db_tables = connection.tables - Migrator.ignore_tables.*.to_s - non_hobo_models.*.table_name
           [hobo_models, db_tables]
