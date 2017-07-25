@@ -24,11 +24,6 @@ module HoboFields
     :string        => String
   }
 
-  ALIAS_TYPES = {
-    Fixnum => "integer",
-    Bignum => "integer"
-  }
-
   # Provide a lookup for these rather than loading them all preemptively
 
   STANDARD_TYPES = {
