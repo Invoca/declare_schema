@@ -8,7 +8,10 @@ module HoboFields
       class UnknownSqlTypeError < RuntimeError; end
 
       def initialize(model, name, type, options={})
-        raise ArgumentError, "you cannot provide a field spec for the primary key" if name == model.primary_key
+        # Inovca change - searching for the primary key was causing an additional database read on every model load.  Assume
+        # "id" which works for invoca.
+        # raise ArgumentError, "you cannot provide a field spec for the primary key" if name == model.primary_key
+        raise ArgumentError, "you cannot provide a field spec for the primary key" if name == "id"
         self.model = model
         self.name = name.to_sym
         self.type = type.is_a?(String) ? type.to_sym : type
