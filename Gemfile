@@ -6,7 +6,7 @@ gem 'yard'
 gem 'protected_attributes'
 gem 'responders', '~> 2.0'
 
-gemspec :path => "../hobo_support"
+gemspec :path => "../hobosupport"
 gemspec
 platform :ruby do
   gem 'sqlite3'
