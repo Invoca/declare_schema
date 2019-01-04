@@ -478,11 +478,13 @@ module Generators
         end
 
         def format_options(options, type, changing=false)
-          options.map do |k, v|
+          default_options = type == :integer ? { limit: 8 } : {}
+          default_options.merge(options).map do |k, v|
             unless changing
               next if k == :limit && (type == :decimal || v == native_types[type][:limit])
               next if k == :null && v == true
             end
+
             "#{k.inspect} => #{v.inspect}"
           end.compact
         end

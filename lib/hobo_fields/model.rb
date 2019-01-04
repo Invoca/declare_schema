@@ -117,6 +117,7 @@ module HoboFields
       end
       column_options = {}
       column_options[:null] = options.delete(:null) || false
+      column_options[:limit] = options.delete(:limit) if options.has_key?(:limit)
       column_options[:comment] = options.delete(:comment) if options.has_key?(:comment)
       column_options[:default] = options.delete(:default) if options.has_key?(:default)
 
