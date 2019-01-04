@@ -303,13 +303,14 @@ module Generators
           disable_auto_increment = model.respond_to?(:disable_auto_increment) && model.disable_auto_increment
           if model.primary_key != "id" || disable_auto_increment
             if model.primary_key.present? && !disable_auto_increment
-              primary_key_option = ", :primary_key => :#{model.primary_key}"
+              primary_key_option = ", primary_key: :#{model.primary_key}"
             else
-              primary_key_option = ", :id => false"
+              primary_key_option = ", id: false"
             end
           end
+          primary_key_option ||= ", id: :bigint"
           (["create_table :#{model.table_name}#{primary_key_option} do |t|"] +
-          [( disable_auto_increment ? '  t.column :id, :primary_key_no_increment' : nil )] +
+          [( disable_auto_increment ? "  t.integer :id, limit: 8, auto_increment: false, primary_key: true" : nil )] +
            model.field_specs.values.sort_by{|f| f.position}.map {|f| create_field(f, longest_field_name)} +
            ["end"] + (Migrator.disable_indexing ? [] : create_indexes(model) +
            create_constraints(model))).compact * "\n"
