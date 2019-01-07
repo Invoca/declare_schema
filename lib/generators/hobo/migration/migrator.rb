@@ -301,14 +301,14 @@ module Generators
         def create_table(model)
           longest_field_name = model.field_specs.values.map { |f| f.sql_type.to_s.length }.max
           disable_auto_increment = model.respond_to?(:disable_auto_increment) && model.disable_auto_increment
-          if model.primary_key != "id" || disable_auto_increment
-            if model.primary_key.present? && !disable_auto_increment
-              primary_key_option = ", primary_key: :#{model.primary_key}"
+          primary_key_option =
+            if model.primary_key.blank? || disable_auto_increment
+              ", id: false"
+            elsif model.primary_key == "id"
+              ", id: :bigint"
             else
-              primary_key_option = ", id: false"
+              ", primary_key: :#{model.primary_key}"
             end
-          end
-          primary_key_option ||= ", id: :bigint"
           (["create_table :#{model.table_name}#{primary_key_option} do |t|"] +
           [( disable_auto_increment ? "  t.integer :id, limit: 8, auto_increment: false, primary_key: true" : nil )] +
            model.field_specs.values.sort_by{|f| f.position}.map {|f| create_field(f, longest_field_name)} +
