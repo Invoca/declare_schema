@@ -325,7 +325,8 @@ module Generators
         end
 
         def create_field(field_spec, field_name_width)
-          args = [field_spec.name.inspect] + format_options(field_spec.options, field_spec.sql_type)
+          options = fk_field_options(field_spec.model, field_spec.name).merge(field_spec.options)
+          args = [field_spec.name.inspect] + format_options(options, field_spec.sql_type)
           "  t.%-*s %s" % [field_name_width, field_spec.sql_type, args.join(', ')]
         end
 
@@ -360,7 +361,8 @@ module Generators
           to_add = to_add.sort_by {|c| model.field_specs[c].position }
           adds = to_add.map do |c|
             spec = model.field_specs[c]
-            args = [":#{spec.sql_type}"] + format_options(spec.sql_options, spec.sql_type)
+            options = fk_field_options(model, c).merge(spec.sql_options)
+            args = [":#{spec.sql_type}"] + format_options(options, spec.sql_type)
             "add_column :#{new_table_name}, :#{c}, #{args * ', '}"
           end
           undo_adds = to_add.map do |c|
@@ -382,7 +384,7 @@ module Generators
             col = db_columns[col_name]
             spec = model.field_specs[c]
             if spec.different_to?(col)
-              change_spec = {}
+              change_spec = fk_field_options(model, c)
               change_spec[:limit]     = spec.limit     unless spec.limit.nil? && col.limit.nil?
               change_spec[:precision] = spec.precision unless spec.precision.nil?
               change_spec[:scale]     = spec.scale     unless spec.scale.nil?
@@ -478,8 +480,7 @@ module Generators
         end
 
         def format_options(options, type, changing=false)
-          default_options = type == :integer ? { limit: 8 } : {}
-          default_options.merge(options).map do |k, v|
+          options.map do |k, v|
             unless changing
               next if k == :limit && (type == :decimal || v == native_types[type][:limit])
               next if k == :null && v == true
@@ -489,6 +490,15 @@ module Generators
           end.compact
         end
 
+        def fk_field_options(model, field_name)
+          options = if (foreign_key = model.constraint_specs.find { |fk| field_name == fk.foreign_key.to_s }) && (parent_table = foreign_key.parent_table_name)
+                      parent_columns = connection.columns(parent_table) rescue []
+                      pk_column = parent_columns.find { |column| column.name == "id" } # right now foreign keys assume id is the target
+                      pk_column ? { limit: pk_column.cast_type.limit } : { limit: 8 }
+                    end
+
+          options || {}
+        end
 
         def revert_table(table)
           res = StringIO.new
