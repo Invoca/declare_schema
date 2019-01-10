@@ -491,13 +491,14 @@ module Generators
         end
 
         def fk_field_options(model, field_name)
-          options = if (foreign_key = model.constraint_specs.find { |fk| field_name == fk.foreign_key.to_s }) && (parent_table = foreign_key.parent_table_name)
-                      parent_columns = connection.columns(parent_table) rescue []
-                      pk_column = parent_columns.find { |column| column.name == "id" } # right now foreign keys assume id is the target
-                      pk_column ? { limit: pk_column.cast_type.limit } : { limit: 8 }
-                    end
-
-          options || {}
+          if (foreign_key = model.constraint_specs.find { |fk| field_name == fk.foreign_key.to_s }) && (parent_table = foreign_key.parent_table_name)
+            parent_columns = connection.columns(parent_table) rescue []
+            pk_column = parent_columns.find { |column| column.name == "id" } # right now foreign keys assume id is the target
+            pk_limit  = pk_column ? pk_column.cast_type.limit : 8
+            { limit: pk_limit }
+          else
+            {}
+          end
         end
 
         def revert_table(table)
@@ -505,7 +506,6 @@ module Generators
           ActiveRecord::SchemaDumper.send(:new, ActiveRecord::Base.connection).send(:table, table, res)
           res.string.strip.gsub("\n  ", "\n")
         end
-
 
         def column_options_from_reverted_table(table, column)
           revert = revert_table(table)
