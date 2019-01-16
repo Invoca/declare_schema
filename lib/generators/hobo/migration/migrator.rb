@@ -301,15 +301,16 @@ module Generators
         def create_table(model)
           longest_field_name = model.field_specs.values.map { |f| f.sql_type.to_s.length }.max
           disable_auto_increment = model.respond_to?(:disable_auto_increment) && model.disable_auto_increment
-          if model.primary_key != "id" || disable_auto_increment
-            if model.primary_key.present? && !disable_auto_increment
-              primary_key_option = ", :primary_key => :#{model.primary_key}"
+          primary_key_option =
+            if model.primary_key.blank? || disable_auto_increment
+              ", id: false"
+            elsif model.primary_key == "id"
+              ", id: :bigint"
             else
-              primary_key_option = ", :id => false"
+              ", primary_key: :#{model.primary_key}"
             end
-          end
           (["create_table :#{model.table_name}#{primary_key_option} do |t|"] +
-          [( disable_auto_increment ? '  t.column :id, :primary_key_no_increment' : nil )] +
+          [( disable_auto_increment ? "  t.integer :id, limit: 8, auto_increment: false, primary_key: true" : nil )] +
            model.field_specs.values.sort_by{|f| f.position}.map {|f| create_field(f, longest_field_name)} +
            ["end"] + (Migrator.disable_indexing ? [] : create_indexes(model) +
            create_constraints(model))).compact * "\n"
@@ -324,7 +325,8 @@ module Generators
         end
 
         def create_field(field_spec, field_name_width)
-          args = [field_spec.name.inspect] + format_options(field_spec.options, field_spec.sql_type)
+          options = fk_field_options(field_spec.model, field_spec.name).merge(field_spec.options)
+          args = [field_spec.name.inspect] + format_options(options, field_spec.sql_type)
           "  t.%-*s %s" % [field_name_width, field_spec.sql_type, args.join(', ')]
         end
 
@@ -359,7 +361,8 @@ module Generators
           to_add = to_add.sort_by {|c| model.field_specs[c].position }
           adds = to_add.map do |c|
             spec = model.field_specs[c]
-            args = [":#{spec.sql_type}"] + format_options(spec.sql_options, spec.sql_type)
+            options = fk_field_options(model, c).merge(spec.sql_options)
+            args = [":#{spec.sql_type}"] + format_options(options, spec.sql_type)
             "add_column :#{new_table_name}, :#{c}, #{args * ', '}"
           end
           undo_adds = to_add.map do |c|
@@ -381,7 +384,7 @@ module Generators
             col = db_columns[col_name]
             spec = model.field_specs[c]
             if spec.different_to?(col)
-              change_spec = {}
+              change_spec = fk_field_options(model, c)
               change_spec[:limit]     = spec.limit     unless spec.limit.nil? && col.limit.nil?
               change_spec[:precision] = spec.precision unless spec.precision.nil?
               change_spec[:scale]     = spec.scale     unless spec.scale.nil?
@@ -482,17 +485,27 @@ module Generators
               next if k == :limit && (type == :decimal || v == native_types[type][:limit])
               next if k == :null && v == true
             end
+
             "#{k.inspect} => #{v.inspect}"
           end.compact
         end
 
+        def fk_field_options(model, field_name)
+          if (foreign_key = model.constraint_specs.find { |fk| field_name == fk.foreign_key.to_s }) && (parent_table = foreign_key.parent_table_name)
+            parent_columns = connection.columns(parent_table) rescue []
+            pk_column = parent_columns.find { |column| column.name == "id" } # right now foreign keys assume id is the target
+            pk_limit  = pk_column ? pk_column.cast_type.limit : 8
+            { limit: pk_limit }
+          else
+            {}
+          end
+        end
 
         def revert_table(table)
           res = StringIO.new
           ActiveRecord::SchemaDumper.send(:new, ActiveRecord::Base.connection).send(:table, table, res)
           res.string.strip.gsub("\n  ", "\n")
         end
-
 
         def column_options_from_reverted_table(table, column)
           revert = revert_table(table)
