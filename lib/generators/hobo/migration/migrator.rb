@@ -463,20 +463,20 @@ module Generators
 
           add_fks.map! do |fk|
             #next if fk.parent.constantize.abstract_class || fk.parent == fk.model.class_name
-            undo_add_fks << drop_foreign_key(old_table_name, fk.options[:constraint_name])
+            undo_add_fks << remove_foreign_key(old_table_name, fk.options[:constraint_name])
             fk.to_add_statement
           end.compact
 
           drop_fks.map! do |fk|
             undo_drop_fks << fk.to_add_statement
-            drop_foreign_key(new_table_name, fk.options[:constraint_name])
+            remove_foreign_key(new_table_name, fk.options[:constraint_name])
           end
 
           [drop_fks + add_fks, undo_add_fks + undo_drop_fks]
         end
 
-        def drop_foreign_key(old_table_name, fk_name)
-          "drop_foreign_key('#{old_table_name}', '#{fk_name}')"
+        def remove_foreign_key(old_table_name, fk_name)
+          "remove_foreign_key('#{old_table_name}', name: '#{fk_name}')"
         end
 
         def format_options(options, type, changing=false)
