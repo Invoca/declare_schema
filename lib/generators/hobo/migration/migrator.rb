@@ -325,7 +325,7 @@ module Generators
         end
 
         def create_field(field_spec, field_name_width)
-          options = fk_field_options(field_spec.model, field_spec.name).merge(field_spec.options)
+          options = fk_field_options(field_spec.model, field_spec.name).merge(field_spec.sql_options)
           args = [field_spec.name.inspect] + format_options(options, field_spec.sql_type)
           "  t.%-*s %s" % [field_name_width, field_spec.sql_type, args.join(', ')]
         end
