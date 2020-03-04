@@ -136,8 +136,9 @@ module HoboFields
       fkey = refl.foreign_key
       declare_field(fkey.to_sym, :integer, column_options)
       if refl.options[:polymorphic]
-        declare_polymorphic_type_field(name, column_options)
-        index(["#{name}_type", fkey], index_options) if index_options[:name]!=false
+        foreign_type = options[:foreign_type] || "#{name}_type"
+        declare_polymorphic_type_field(foreign_type, column_options)
+        index([foreign_type, fkey], index_options) if index_options[:name]!=false
       else
         index(fkey, index_options) if index_options[:name]!=false
         options[:constraint_name] = options
@@ -152,9 +153,8 @@ module HoboFields
 
     # Declares the "foo_type" field that accompanies the "foo_id"
     # field for a polyorphic belongs_to
-    def self.declare_polymorphic_type_field(name, column_options)
-      type_col = "#{name}_type"
-      declare_field(type_col, :string, column_options.merge(:limit => 255))
+    def self.declare_polymorphic_type_field(foreign_type, column_options)
+      declare_field(foreign_type, :string, column_options.merge(:limit => 255))
       # FIXME: Before hobo_fields was extracted, this used to now do:
       # never_show(type_col)
       # That needs doing somewhere
