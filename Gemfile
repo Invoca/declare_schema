@@ -1,16 +1,12 @@
+
 source "http://rubygems.org"
 
-gem 'rubydoctest', :git => 'git://github.com/bryanlarsen/rubydoctest.git'
-gem 'rails'
+gem 'rails',        '~> 5.2', '>= 5.2.4.3'
 gem 'yard'
-gem 'protected_attributes'
-gem 'responders', '~> 2.0'
+gem 'responders',   '~> 2.0'
 
-gemspec :path => "../hobosupport"
 gemspec
+
 platform :ruby do
   gem 'sqlite3'
-end
-platform :jruby do
-  gem 'activerecord-jdbcsqlite3-adapter'
 end

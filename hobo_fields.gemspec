@@ -1,5 +1,5 @@
 name = File.basename( __FILE__, '.gemspec' )
-version = File.read(File.expand_path('../VERSION', __FILE__)).strip
+version = File.read(File.expand_path('VERSION', __dir__)).strip
 require 'date'
 
 Gem::Specification.new do |s|
@@ -11,10 +11,7 @@ Gem::Specification.new do |s|
   s.summary = 'Rich field types and migration generator for Rails'
   s.description = 'Rich field types and migration generator for Rails'
 
-  s.add_runtime_dependency('hobo_support', [">= 2"])
-  # s.add_development_dependency('rubydoctest', [">= 0"])
-  s.add_development_dependency('RedCloth', [">= 0"]) # for testing rich types
-  s.add_development_dependency('kramdown', [">= 0"])  # for testing rich types
+  s.add_dependency 'invoca-utils', '~> 0.4'
 
   s.executables = ["hobofields"]
   s.files = `git ls-files -x #{name}/* -z`.split("\0")
