@@ -10,14 +10,13 @@ ActiveRecord::ActiveRecordError # hack for https://rails.lighthouseapp.com/proje
 RUBY = File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']).sub(/.*\s.*/m, '"\&"')
 RUBYDOCTEST = ENV['RUBYDOCTEST'] || "#{RUBY} -S rubydoctest"
 
-$:.unshift File.expand_path('../../hobo_support/lib', __FILE__)
-$:.unshift File.expand_path('../lib', __FILE__)
-require 'hobo_support'
+$:.unshift File.expand_path('lib', __dir__)
+require 'invoca/utils'
 require 'hobo_fields'
 
-GEM_ROOT = File.expand_path('../', __FILE__)
+GEM_ROOT = __dir__
 TESTAPP_PATH = ENV['TESTAPP_PATH'] || File.join(Dir.tmpdir, 'hobo_fields_testapp')
-BIN = File.expand_path('../bin/hobofields', __FILE__)
+BIN = File.expand_path('bin/hobofields', __dir__)
 require 'hobo_support/common_tasks'
 include HoboSupport::CommonTasks
 
