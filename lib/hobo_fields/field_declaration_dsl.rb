@@ -1,3 +1,4 @@
+require 'hobo_support/blankslate'
 require 'hobo_fields/types/enum_string'
 
 module HoboFields

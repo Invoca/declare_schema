@@ -1,4 +1,6 @@
-require 'hobo_support'
+require 'invoca/utils'
+require 'active_support'
+require 'active_support/all'
 
 ActiveSupport::Dependencies.autoload_paths |= [ File.dirname(__FILE__) ]
 

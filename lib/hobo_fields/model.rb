@@ -1,3 +1,5 @@
+require 'hobo_support/module'
+
 module HoboFields
 
   Model = classy_module do
