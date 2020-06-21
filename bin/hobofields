@@ -2,6 +2,6 @@
 require 'fileutils'
 
 require 'rubygems'
-require 'hobo_support/command'
+require 'hobo_fields/command'
 
-HoboSupport::Command.run(:hobofields)
+HoboFields::Command.run(:hobofields)

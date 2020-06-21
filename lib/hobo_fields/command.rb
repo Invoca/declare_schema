@@ -5,10 +5,9 @@ require 'tmpdir'
 require 'rubygems'
 require 'active_support/inflector'
 
-module HoboSupport
+module HoboFields
   module Command
     class << self
-
       def run(gem, version=nil)
         version ||= File.read(File.expand_path('../../VERSION', __dir__)).strip
         is_hobo = gem == :hobo
