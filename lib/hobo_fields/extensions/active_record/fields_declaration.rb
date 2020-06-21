@@ -1,12 +1,11 @@
 # frozen_string_literal: true
 
-ActiveRecord::Base.class_eval do
+module HoboField
+  module FieldsDsl
+    def fields(&b)
+      # Any model that calls 'fields' gets HoboFields::Model behavior
+      HoboFields::Model.mix_in(self)
 
-    def self.fields(&b)
-      # Any model that calls 'fields' gets a bunch of other
-      # functionality included automatically, but make sure we only
-      # include it once
-      include HoboFields::Model unless HoboFields::Model.in?(included_modules)
       #@include_in_migration = false #||= options.fetch(:include_in_migration, true); options.delete(:include_in_migration)
       @include_in_migration = true
 
@@ -19,6 +18,7 @@ ActiveRecord::Base.class_eval do
         end
       end
     end
-
-
+  end
 end
+
+ActiveRecord::Base.singleton_class.prepend HoboField::FieldsDsl

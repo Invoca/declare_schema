@@ -5,48 +5,46 @@ require 'hobo_fields/extensions/module'
 
 module HoboFields
   module Model
-    extend ActiveSupport::Concern
+    class << self
+      def mix_in(base)
+        base.singleton_class.prepend ClassMethods
 
-    included do
-      class_eval do
-        # ignore the model in the migration until somebody sets
-        # @include_in_migration via the fields declaration
-        inheriting_cattr_reader include_in_migration: false
+        base.class_eval do
+          # ignore the model in the migration until somebody sets
+          # @include_in_migration via the fields declaration
+          inheriting_cattr_reader include_in_migration: false
 
-        # attr_types holds the type class for any attribute reader (i.e. getter
-        # method) that returns rich-types
-        inheriting_cattr_reader attr_types: HashWithIndifferentAccess.new
-        inheriting_cattr_reader attr_order: []
+          # attr_types holds the type class for any attribute reader (i.e. getter
+          # method) that returns rich-types
+          inheriting_cattr_reader attr_types: HashWithIndifferentAccess.new
+          inheriting_cattr_reader attr_order: []
 
-        # field_specs holds FieldSpec objects for every declared
-        # field. Note that attribute readers are created (by ActiveRecord)
-        # for all fields, so there is also an entry for the field in
-        # attr_types. This is redundant but simplifies the implementation
-        # and speeds things up a little.
-        inheriting_cattr_reader field_specs: HashWithIndifferentAccess.new
+          # field_specs holds FieldSpec objects for every declared
+          # field. Note that attribute readers are created (by ActiveRecord)
+          # for all fields, so there is also an entry for the field in
+          # attr_types. This is redundant but simplifies the implementation
+          # and speeds things up a little.
+          inheriting_cattr_reader field_specs: HashWithIndifferentAccess.new
 
-        # index_specs holds IndexSpec objects for all the declared indexes.
-        inheriting_cattr_reader index_specs: []
-        inheriting_cattr_reader ignore_indexes: []
-        inheriting_cattr_reader constraint_specs: []
+          # index_specs holds IndexSpec objects for all the declared indexes.
+          inheriting_cattr_reader index_specs: []
+          inheriting_cattr_reader ignore_indexes: []
+          inheriting_cattr_reader constraint_specs: []
 
-        # eval avoids the ruby 1.9.2 "super from singleton method ..." error
+          # eval avoids the ruby 1.9.2 "super from singleton method ..." error
 
-        eval %(
-          def self.inherited(klass)
-            unless klass.field_specs.has_key?(inheritance_column)
-              fields do |f|
-                f.field(inheritance_column, :string, limit: 255, null: true)
+          eval %(
+            def self.inherited(klass)
+              unless klass.field_specs.has_key?(inheritance_column)
+                fields do |f|
+                  f.field(inheritance_column, :string, limit: 255, null: true)
+                end
+                index(inheritance_column)
               end
-              index(inheritance_column)
+              super
             end
-            super
-          end
-        )
-
-        alias_method_chain :belongs_to, :field_declarations
-        alias_method_chain :acts_as_list,  :field_declaration if defined?(ActiveRecord::Acts::List)
-        alias_method_chain :attr_accessor, :rich_types
+          )
+        end
       end
     end
 
@@ -72,6 +70,25 @@ module HoboFields
       # that can't be automatically generated (for example: an prefix index in MySQL)
       def ignore_index(index_name)
         ignore_indexes << index_name.to_s
+      end
+
+      # Declare named field with a type and an arbitrary set of
+      # arguments. The arguments are forwarded to the #field_added
+      # callback, allowing custom metadata to be added to field
+      # declarations.
+      def declare_field(name, type, *args)
+        options = args.extract_options!
+        if type == :text
+          options[:limit] or raise ArgumentError, ":text field must have :limit: #{self.name}##{name}: #{options.inspect}"
+          options[:char_limit] = options.delete(:limit)
+        end
+        field_added(name, type, args, options) if respond_to?(:field_added)
+        add_formatting_for_field(name, type, args)
+        add_validations_for_field(name, type, args)
+        add_index_for_field(name, args, options)
+        declare_attr_type(name, type, options) unless HoboFields.plain_type?(type)
+        field_specs[name] = HoboFields::Model::FieldSpec.new(self, name, type, options)
+        attr_order << name unless name.in?(attr_order)
       end
 
       private
@@ -109,8 +126,8 @@ module HoboFields
         options = attrs.extract_options!
         type = options.delete(:type)
         attrs << options unless options.empty?
-        public
-        attr_accessor_without_rich_types(*attrs)
+
+        super
 
         if type
           type = HoboFields.to_class(type)
@@ -153,20 +170,20 @@ module HoboFields
         fk_options[:index_name] = index_options[:name]
 
         fk_options[:dependent] = options.delete(:far_end_dependent) if options.has_key?(:far_end_dependent)
-        bt = belongs_to_without_field_declarations(name, *args, &block)
-        refl = reflections[name.to_s] or raise "Couldn't find reflection #{name} in #{reflections.keys}"
-        fkey = refl.foreign_key
-        declare_field(fkey.to_sym, :integer, column_options)
-        if refl.options[:polymorphic]
-          foreign_type = options[:foreign_type] || "#{name}_type"
-          declare_polymorphic_type_field(foreign_type, column_options)
-          index([foreign_type, fkey], index_options) if index_options[:name]!=false
-        else
-          index(fkey, index_options) if index_options[:name]!=false
-          options[:constraint_name] = options
-          constraint(fkey, fk_options) if fk_options[:constraint_name] != false
+        super(name, *args, &block).tap do |bt|
+          refl = reflections[name.to_s] or raise "Couldn't find reflection #{name} in #{reflections.keys}"
+          fkey = refl.foreign_key
+          declare_field(fkey.to_sym, :integer, column_options)
+          if refl.options[:polymorphic]
+            foreign_type = options[:foreign_type] || "#{name}_type"
+            declare_polymorphic_type_field(foreign_type, column_options)
+            index([foreign_type, fkey], index_options) if index_options[:name]!=false
+          else
+            index(fkey, index_options) if index_options[:name]!=false
+            options[:constraint_name] = options
+            constraint(fkey, fk_options) if fk_options[:constraint_name] != false
+          end
         end
-        bt
       end
 
       # Declares the "foo_type" field that accompanies the "foo_id"
@@ -185,25 +202,6 @@ module HoboFields
         klass = HoboFields.to_class(type)
         attr_types[name] = HoboFields.to_class(type)
         klass.declared(self, name, options) if klass.respond_to?(:declared)
-      end
-
-      # Declare named field with a type and an arbitrary set of
-      # arguments. The arguments are forwarded to the #field_added
-      # callback, allowing custom metadata to be added to field
-      # declarations.
-      def declare_field(name, type, *args)
-        options = args.extract_options!
-        if type == :text
-          options[:limit] or raise ArgumentError, ":text field must have :limit: #{self.name}##{name}: #{options.inspect}"
-          options[:char_limit] = options.delete(:limit)
-        end
-        field_added(name, type, args, options) if respond_to?(:field_added)
-        add_formatting_for_field(name, type, args)
-        add_validations_for_field(name, type, args)
-        add_index_for_field(name, args, options)
-        declare_attr_type(name, type, options) unless HoboFields.plain_type?(type)
-        field_specs[name] = HoboFields::Model::FieldSpec.new(self, name, type, options)
-        attr_order << name unless name.in?(attr_order)
       end
 
       # Add field validations according to arguments in the
