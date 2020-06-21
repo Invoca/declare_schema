@@ -1,8 +1,8 @@
-require 'hobo_support/module'
-
 module HoboFields
 
-  Model = classy_module do
+  Model = Module.new
+  Model.singleton_class.send(:define_method, :included) do |base|
+    base.class_eval do
 
     # ignore the model in the migration until somebody sets
     # @include_in_migration via the fields declaration
@@ -273,7 +273,7 @@ module HoboFields
       alias_method_chain :acts_as_list,  :field_declaration if defined?(ActiveRecord::Acts::List)
       alias_method_chain :attr_accessor, :rich_types
     end
-
+    end
   end
 
 end

@@ -8,7 +8,7 @@ module HoboSupport
     class << self
 
       def run(gem, version=nil)
-        version ||= File.read(File.expand_path('../../../VERSION', __FILE__)).strip
+        version ||= File.read(File.expand_path('../../VERSION', __dir__)).strip
         is_hobo = gem == :hobo
         puts "#{gem.to_s.capitalize} Command Line Interface #{version}"
 
@@ -209,9 +209,7 @@ remove_file  'README.rdoc'
           puts "\n  => '#{command}' is an unknown command!\n"
           puts banner
         end
-
       end
-
     end
   end
 end

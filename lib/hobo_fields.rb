@@ -45,7 +45,7 @@ module HoboFields
   attr_reader :field_types
 
   def to_class(type)
-    if type.is_one_of?(Symbol, String)
+    if type.is_a?(Symbol) || type.is_a?(String)
       type = type.to_sym
       field_types[type] || standard_class(type)
     else
