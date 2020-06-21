@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'active_support/concern'
 require 'hobo_fields/extensions/module'
 
 module HoboFields
