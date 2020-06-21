@@ -36,7 +36,7 @@ module HoboFields
           def self.inherited(klass)
             unless klass.field_specs.has_key?(inheritance_column)
               fields do |f|
-                f.field(inheritance_column, :string, :limit => 255, :null => true)
+                f.field(inheritance_column, :string, limit: 255, null: true)
               end
               index(inheritance_column)
             end
@@ -85,13 +85,13 @@ module HoboFields
       end
 
       # Declares that a virtual field that has a rich type (e.g. created
-      # by attr_accessor :foo, :type => :email_address) should be subject
+      # by attr_accessor :foo, type: :email_address) should be subject
       # to validation (note that the rich types know how to validate themselves)
       def validate_virtual_field(*args)
         validates_each(*args) {|record, field, value| msg = value.validate and record.errors.add(field, msg) if value.respond_to?(:validate) }
       end
 
-      # This adds a ":type => t" option to attr_accessor, where t is
+      # This adds a "type: t" option to attr_accessor, where t is
       # either a class or a symbolic name of a rich type. If this option
       # is given, the setter will wrap values that are not of the right
       # type.
@@ -120,12 +120,12 @@ module HoboFields
       # Extend belongs_to so that it creates a FieldSpec for the foreign key
       def belongs_to_with_field_declarations(name, *args, &block)
         if args.size == 0 || (args.size == 1 && args[0].kind_of?(Proc))
-            options = {}
-            args.push(options)
+          options = {}
+          args.push(options)
         elsif args.size == 1
-            options = args[0]
+          options = args[0]
         else
-            options = args[1]
+          options = args[1]
         end
         column_options = {}
         column_options[:null] = options.delete(:null) || false
@@ -162,7 +162,7 @@ module HoboFields
       # Declares the "foo_type" field that accompanies the "foo_id"
       # field for a polyorphic belongs_to
       def declare_polymorphic_type_field(foreign_type, column_options)
-        declare_field(foreign_type, :string, column_options.merge(:limit => 255))
+        declare_field(foreign_type, :string, column_options.merge(limit: 255))
         # FIXME: Before hobo_fields was extracted, this used to now do:
         # never_show(type_col)
         # That needs doing somewhere
@@ -185,7 +185,7 @@ module HoboFields
         options = args.extract_options!
         if type == :text
           options[:limit] or raise ":text field must have :limit: #{self.name}##{name}: #{options.inspect}"
-          options = options.merge(:char_limit => options[:limit])
+          options = options.merge(char_limit: options[:limit])
           options.delete(:limit)
         end
         field_added(name, type, args, options) if respond_to?(:field_added)
@@ -201,7 +201,7 @@ module HoboFields
       # field declaration
       def add_validations_for_field(name, type, args)
         validates_presence_of   name if :required.in?(args)
-        validates_uniqueness_of name, :allow_nil => !:required.in?(args) if :unique.in?(args)
+        validates_uniqueness_of name, allow_nil: !:required.in?(args) if :unique.in?(args)
 
         # Support for custom validations in Hobo Fields
         type_class = HoboFields.to_class(type)
@@ -227,7 +227,7 @@ module HoboFields
         return unless to_name
         index_opts = {}
         index_opts[:unique] = :unique.in?(args) || options.delete(:unique)
-        # support :index => true declaration
+        # support index: true declaration
         index_opts[:name] = to_name unless to_name == true
         index(name, index_opts)
       end
