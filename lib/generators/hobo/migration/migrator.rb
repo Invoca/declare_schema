@@ -191,8 +191,7 @@ module Generators
         def extract_column_renames!(to_add, to_remove, table_name)
           if renames
             to_rename = {}
-            column_renames = renames._?[table_name.to_sym]
-            if column_renames
+            if (column_renames = renames&.[](table_name.to_sym))
               # A hash of table renames has been provided
 
               column_renames.each_pair do |old_name, new_name|

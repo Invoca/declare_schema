@@ -53,7 +53,9 @@ module HoboFields
     module ClassMethods
       def index(fields, options = {})
         # don't double-index fields
-        index_specs << HoboFields::Model::IndexSpec.new(self, fields, options) unless index_specs.*.fields.include?(Array.wrap(fields).*.to_s)
+        unless index_specs.*.fields.include?(Array.wrap(fields).*.to_s)
+          index_specs << HoboFields::Model::IndexSpec.new(self, fields, options)
+        end
       end
 
       def primary_key_index(*fields)
@@ -61,7 +63,9 @@ module HoboFields
       end
 
       def constraint(fkey, options={})
-        constraint_specs << HoboFields::Model::ForeignKeySpec.new(self, fkey, options ) unless constraint_specs.*.foreign_key.include?(fkey.to_s)
+        unless constraint_specs.*.foreign_key.include?(fkey.to_s)
+          constraint_specs << HoboFields::Model::ForeignKeySpec.new(self, fkey, options )
+        end
       end
 
       # tell the migration generator to ignore the named index. Useful for existing indexes, or for indexes
@@ -73,7 +77,7 @@ module HoboFields
       private
 
       def index_specs_with_primary_key
-        if index_specs.any? &:primary_key?
+        if index_specs.any?(&:primary_key?)
           index_specs
         else
           index_specs + [rails_default_primary_key]
@@ -88,7 +92,13 @@ module HoboFields
       # by attr_accessor :foo, type: :email_address) should be subject
       # to validation (note that the rich types know how to validate themselves)
       def validate_virtual_field(*args)
-        validates_each(*args) {|record, field, value| msg = value.validate and record.errors.add(field, msg) if value.respond_to?(:validate) }
+        validates_each(*args) do |record, field, value|
+          if value.respond_to?(:validate)
+            if (msg = value.validate)
+              record.errors.add(field, msg)
+            end
+          end
+        end
       end
 
       # This adds a "type: t" option to attr_accessor, where t is
@@ -184,9 +194,8 @@ module HoboFields
       def declare_field(name, type, *args)
         options = args.extract_options!
         if type == :text
-          options[:limit] or raise ":text field must have :limit: #{self.name}##{name}: #{options.inspect}"
-          options = options.merge(char_limit: options[:limit])
-          options.delete(:limit)
+          options[:limit] or raise ArgumentError, ":text field must have :limit: #{self.name}##{name}: #{options.inspect}"
+          options[:char_limit] = options.delete(:limit)
         end
         field_added(name, type, args, options) if respond_to?(:field_added)
         add_formatting_for_field(name, type, args)
@@ -204,32 +213,36 @@ module HoboFields
         validates_uniqueness_of name, allow_nil: !:required.in?(args) if :unique.in?(args)
 
         # Support for custom validations in Hobo Fields
-        type_class = HoboFields.to_class(type)
-        if type_class && type_class.public_method_defined?("validate")
-          self.validate do |record|
-            v = record.send(name)._?.validate
-            record.errors.add(name, v) if v.is_a?(String)
+        if (type_class = HoboFields.to_class(type))
+          if type_class.public_method_defined?("validate")
+            validate do |record|
+              v = record.send(name)&.validate
+              record.errors.add(name, v) if v.is_a?(String)
+            end
           end
         end
       end
 
-      def add_formatting_for_field(name, type, args)
-        type_class = HoboFields.to_class(type)
-        if type_class && "format".in?(type_class.instance_methods)
-          self.before_validation do |record|
-            record.send("#{name}=", record.send(name)._?.format)
+      def add_formatting_for_field(name, type, _args)
+        if (type_class = HoboFields.to_class(type))
+          if "format".in?(type_class.instance_methods)
+            self.before_validation do |record|
+              record.send("#{name}=", record.send(name)&.format)
+            end
           end
         end
       end
 
       def add_index_for_field(name, args, options)
-        to_name = options.delete(:index)
-        return unless to_name
-        index_opts = {}
-        index_opts[:unique] = :unique.in?(args) || options.delete(:unique)
-        # support index: true declaration
-        index_opts[:name] = to_name unless to_name == true
-        index(name, index_opts)
+        if (to_name = options.delete(:index))
+          index_opts =
+            {
+              unique: args.include(:unique) || options.delete(:unique)
+            }
+          # support index: true declaration
+          index_opts[:name] = to_name unless to_name == true
+          index(name, index_opts)
+        end
       end
 
       # Extended version of the acts_as_list declaration that
@@ -263,9 +276,11 @@ module HoboFields
 
       # Return the entry from #columns for the named column
       def column(name)
-        return unless (@table_exists ||= table_exists?)
-        name = name.to_s
-        columns.find {|c| c.name == name }
+        defined?(@table_exists) or @table_exists = table_exists?
+        if @table_exists
+          name = name.to_s
+          columns.find { |c| c.name == name }
+        end
       end
     end
   end
