@@ -25,8 +25,8 @@ ActiveRecord::Base.class_eval do
       else
         @can_wrap_cache[attr_name] = \
           if connected?
-            type_wrapper = try.attr_type(attr_name)
-            type_wrapper.is_a?(Class) && type_wrapper.not_in?(HoboFields::PLAIN_TYPES.values) && type_wrapper != Symbol # Invoca patch: Symbol is used for enums
+            type_wrapper = (attr_type(attr_name) if respond_to?(:attr_type))
+            type_wrapper.is_a?(Class) && !type_wrapper.in?(HoboFields::PLAIN_TYPES.values) && type_wrapper != Symbol # Invoca patch: Symbol is used for enums
           else
             false
           end

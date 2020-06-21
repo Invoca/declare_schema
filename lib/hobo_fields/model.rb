@@ -97,7 +97,7 @@ module HoboFields
           declare_attr_type attr, type, options
           type_wrapper = attr_type(attr)
           define_method "#{attr}=" do |val|
-            if type_wrapper.not_in?(HoboFields::PLAIN_TYPES.values) && !val.is_a?(type) && HoboFields.can_wrap?(type, val)
+            if !type_wrapper.in?(HoboFields::PLAIN_TYPES.values) && !val.is_a?(type) && HoboFields.can_wrap?(type, val)
               val = type.new(val.to_s)
             end
             instance_variable_set("@#{attr}", val)
@@ -169,7 +169,7 @@ module HoboFields
     def self.declare_attr_type(name, type, options={})
       klass = HoboFields.to_class(type)
       attr_types[name] = HoboFields.to_class(type)
-      klass.try.declared(self, name, options)
+      klass.declared(self, name, options) if klass.respond_to?(:declared)
     end
 
 
@@ -184,7 +184,7 @@ module HoboFields
         options = options.merge(:char_limit => options[:limit])
         options.delete(:limit)
       end
-      try.field_added(name, type, args, options)
+      field_added(name, type, args, options) if respond_to?(:field_added)
       add_formatting_for_field(name, type, args)
       add_validations_for_field(name, type, args)
       add_index_for_field(name, args, options)

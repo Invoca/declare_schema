@@ -17,12 +17,20 @@ class Module
   # Creates a class attribute reader that will delegate to the superclass
   # if not defined on self. Default values can be a Proc object that takes the class as a parameter.
   def inheriting_cattr_reader(*names)
+    receiver =
+      if self.class == Module
+        self
+      else
+        singleton_class
+      end
+
     names_with_defaults = (names.pop if names.last.is_a?(Hash)) || {}
 
     (names + names_with_defaults.keys).each do |name|
       ivar_name = "@#{name}"
       block = names_with_defaults[name]
-      self.send(self.class == Module ? :define_method : :meta_def, name) do
+
+      receiver.send(:define_method, name) do
         if instance_variable_defined? ivar_name
           instance_variable_get(ivar_name)
         else
@@ -70,13 +78,6 @@ class Module
       set_field_type(n => TrueClass) if respond_to?(:set_field_type)
     end
   end
-
-  def alias_class_method_chain(method, feature)
-    meta_eval do
-      alias_method_chain method, feature
-    end
-  end
-
 end
 
 
