@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 ActiveRecord::Base.class_eval do
 
     def self.fields(&b)

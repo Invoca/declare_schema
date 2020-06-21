@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'invoca/utils'
 require 'active_support'
 require 'active_support/all'

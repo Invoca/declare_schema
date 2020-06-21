@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module HoboFields
   module Types
     class PasswordString < String

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'rails/generators/migration'
 require 'rails/generators/active_record'
 require 'generators/hobo_support/thor_shell'

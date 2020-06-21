@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'active_support/proxy_object'
 require 'hobo_fields/types/enum_string'
 
