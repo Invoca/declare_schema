@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'hobo_support/module'
+
 module HoboFields
 
   Model = Module.new
