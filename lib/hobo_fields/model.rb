@@ -130,13 +130,13 @@ module HoboFields
         super
 
         if type
-          type = HoboFields.to_class(type)
+          hobo_type = HoboFields.to_class(type)
           attrs.each do |attr|
-            declare_attr_type attr, type, options
+            declare_attr_type attr, hobo_type, options
             type_wrapper = attr_type(attr)
             define_method "#{attr}=" do |val|
-              if !type_wrapper.in?(HoboFields::PLAIN_TYPES.values) && !val.is_a?(type) && HoboFields.can_wrap?(type, val)
-                val = type.new(val.to_s)
+              if !type_wrapper.in?(HoboFields::PLAIN_TYPES.values) && !val.is_a?(hobo_type) && HoboFields.can_wrap?(hobo_type, val)
+                val = hobo_type.new(val.to_s)
               end
               instance_variable_set("@#{attr}", val)
             end
