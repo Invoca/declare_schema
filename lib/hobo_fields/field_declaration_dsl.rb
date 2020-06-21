@@ -1,11 +1,11 @@
-require 'hobo_support/blankslate'
+require 'active_support/proxy_object'
 require 'hobo_fields/types/enum_string'
 
 module HoboFields
 
-  class FieldDeclarationDsl < BlankSlate
+  class FieldDeclarationDsl < ActiveSupport::ProxyObject
 
-    include HoboFields::Types::EnumString::DeclarationHelper
+    include Types::EnumString::DeclarationHelper
 
     def initialize(model, options = {})
       @model = model
