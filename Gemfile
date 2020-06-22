@@ -9,4 +9,5 @@ gemspec
 gem 'rails',        '~> 5.2', '>= 5.2.4.3'
 gem 'responders',   '~> 2.0'
 gem 'sqlite3'
+gem 'test_overrides'
 gem 'yard'

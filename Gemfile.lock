@@ -113,6 +113,7 @@ GEM
       activesupport (>= 4.0)
       sprockets (>= 3.0.0)
     sqlite3 (1.4.2)
+    test_overrides (0.13.0)
     thor (1.0.1)
     thread_safe (0.3.6)
     tzinfo (1.2.7)
@@ -130,6 +131,7 @@ DEPENDENCIES
   rails (~> 5.2, >= 5.2.4.3)
   responders (~> 2.0)
   sqlite3
+  test_overrides
   yard
 
 BUNDLED WITH

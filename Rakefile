@@ -1,5 +1,9 @@
 # frozen_string_literal: true
 
+require "bundler/gem_tasks"
+require "rake/testtask"
+require 'rake_test_warning_false'
+
 require 'rubygems'
 require 'active_record'
 require 'action_view'
@@ -7,7 +11,7 @@ require 'tmpdir'
 
 include Rake::DSL
 
-ActiveRecord::ActiveRecordError # hack for https://rails.lighthouseapp.com/projects/8994/tickets/2577-when-using-activerecordassociations-outside-of-rails-a-nameerror-is-thrown
+_ = ActiveRecord::ActiveRecordError # hack for https://rails.lighthouseapp.com/projects/8994/tickets/2577-when-using-activerecordassociations-outside-of-rails-a-nameerror-is-thrown
 
 RUBY = 'ruby'
 RUBYDOCTEST = ENV['RUBYDOCTEST'] || "#{RUBY} -S rubydoctest"
