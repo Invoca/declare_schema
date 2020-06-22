@@ -1,13 +1,12 @@
 # frozen_string_literal: true
 
-source "http://rubygems.org"
-
-gem 'rails',        '~> 5.2', '>= 5.2.4.3'
-gem 'yard'
-gem 'responders',   '~> 2.0'
+# https://ringrevenue.atlassian.net/wiki/display/DEV/Gem+Best+Practices
+source 'https://rubygems.org'
+source 'https://gem.fury.io/invoca'
 
 gemspec
 
-platform :ruby do
-  gem 'sqlite3'
-end
+gem 'rails',        '~> 5.2', '>= 5.2.4.3'
+gem 'responders',   '~> 2.0'
+gem 'sqlite3'
+gem 'yard'
