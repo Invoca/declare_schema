@@ -47,7 +47,8 @@ module HoboFields
   attr_reader :field_types
 
   def to_class(type)
-    if type.is_a?(Symbol) || type.is_a?(String)
+    case type
+    when Symbol, String
       type = type.to_sym
       field_types[type] || standard_class(type)
     else
@@ -64,7 +65,7 @@ module HoboFields
     return false if val.blank? && (col_type == :integer || col_type == :float || col_type == :decimal)
     klass = Object.instance_method(:class).bind(val).call # Make sure we get the *real* class
     init_method = type.instance_method(:initialize)
-    [-1,1].include?(init_method.arity) &&
+    [-1, 1].include?(init_method.arity) &&
       init_method.owner != Object.instance_method(:initialize).owner &&
       !@never_wrap_types.any? { |c| klass <= c }
   end
