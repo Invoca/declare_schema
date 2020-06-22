@@ -24,17 +24,21 @@ GEM_ROOT = __dir__
 TESTAPP_PATH = ENV['TESTAPP_PATH'] || File.join(Dir.tmpdir, 'hobo_fields_testapp')
 BIN = File.expand_path('bin/hobofields', __dir__)
 
+task default: 'test:all'
+
 namespace "test" do
+  task all: [:doctest, :unit]
+
   desc "Run the doctests"
   task :doctest do |t|
     files = Dir['test/*.rdoctest'].sort.map { |f| File.expand_path(f) }.join(' ')
-    exit(1) if !system("#{RUBYDOCTEST} #{files}")
+    system("#{RUBYDOCTEST} #{files}") or exit(1)
   end
 
   desc "Run the unit tests"
   task :unit do |t|
     Dir["test/test_*.rb"].each do |f|
-      exit(1) if !system("#{RUBY} #{f}")
+      system("#{RUBY} #{f}") or exit(1)
     end
   end
 
@@ -50,7 +54,7 @@ namespace "test" do
           puts %(Copying .rvmrc file)
           copy_file rvmrc_path, './.rvmrc'
           sh %(rvm reload) do |ok|
-            puts 'rvm command skipped' unless ok
+            ok or puts 'rvm command skipped'
           end
         end
       end
