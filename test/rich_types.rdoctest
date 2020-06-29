@@ -110,7 +110,7 @@ Provides validation of correct email address format.
 ### `HoboFields::Types::MarkdownString`
 `HoboFields::Types::MarkdownString` provides a `to_html` that renders markdown syntax into html. It looks for RDiscount, Kramdown, Maruku or BlueCloth in that order.
 
-        >> markdown = HoboFields::Types::MarkdownString.new %(
+        >> require 'kramdown'; markdown = HoboFields::Types::MarkdownString.new %(
           This is a heading
           =================
 
@@ -199,7 +199,6 @@ restrict the column type.
        fields do
          content :serialized
        end
-       attr_accessible :content
      end
 
     >> migrate
@@ -212,7 +211,6 @@ restrict the column type.
        fields do
          content :serialized, :class => Hash
        end
-       attr_accessible :content
      end
 
     >> migrate
