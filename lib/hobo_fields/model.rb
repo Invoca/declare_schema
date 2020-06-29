@@ -144,7 +144,7 @@ module HoboFields
       end
 
       # Extend belongs_to so that it creates a FieldSpec for the foreign key
-      def belongs_to_with_field_declarations(name, *args, &block)
+      def belongs_to(name, *args, &block)
         if args.size == 0 || (args.size == 1 && args[0].kind_of?(Proc))
           options = {}
           args.push(options)
