@@ -17,10 +17,16 @@ module HoboFields
           Maruku
         when defined?(Markdown)
           Markdown
+        else
+          raise ArgumentError, "must require RDiscount, Kramdown, Maruku, or Markdown"
         end
 
       def to_html(xmldoctype = true)
-        blank? ? "" : HoboFields::SanitizeHtml.sanitize(@@markdown_class.new(self).to_html)
+        if blank?
+          ""
+        else
+          HoboFields::SanitizeHtml.sanitize(@@markdown_class.new(self).to_html)
+        end
       end
 
     end

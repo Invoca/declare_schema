@@ -96,14 +96,11 @@ module HoboFields
         !same_type?(col_spec) ||
           # we should be able to use col_spec.comment, but col_spec has
           # a nil table_name for some strange reason.
-          begin
-            if model.table_exists?
-              col_comment = ActiveRecord::Base.try.column_comment(col_spec.name, model.table_name)
-              col_comment != nil && col_comment != comment
-            else
-              false
-            end
-          end ||
+          (model.table_exists? &&
+            ActiveRecord::Base.respond_to?(:column_comment) &&
+            !(col_comment = ActiveRecord::Base.column_comment(col_spec.name, model.table_name)).nil? &&
+            col_comment != comment
+          ) ||
           begin
             native_type = native_types[type]
             check_attributes = [:null, :default]
@@ -112,10 +109,11 @@ module HoboFields
             check_attributes << :limit if sql_type.in?([:string, :text, :binary, :varbinary, :integer, :enum])
             check_attributes.any? do |k|
               if k == :default
-                col_spec.type_cast_from_database(col_spec.default) != col_spec.type_cast_from_database(default)
+                cast_type = ActiveRecord::Base.connection.lookup_cast_type_from_column(col_spec) or raise "cast_type not found for #{col_spec.inspec}"
+                cast_type.deserialize(col_spec.default) != cast_type.deserialize(default)
               else
                 col_value = col_spec.send(k)
-                if col_value.nil?
+                if col_value.nil? && native_type
                   col_value = native_type[k]
                 end
                 col_value != self.send(k)
