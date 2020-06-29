@@ -6,6 +6,14 @@ source 'https://gem.fury.io/invoca'
 
 gemspec
 
+group :testapp do
+  gem 'bootsnap',     '>= 1.1.0', require: false
+  gem 'listen'
+  gem 'kramdown'
+  gem 'RedCloth'
+end
+
+gem 'pry'
 gem 'rails',        '~> 5.2', '>= 5.2.4.3'
 gem 'rubydoctest'
 gem 'responders',   '~> 2.0'
