@@ -90,8 +90,6 @@ module HoboFields
         attr_order << name unless name.in?(attr_order)
       end
 
-      private
-
       def index_specs_with_primary_key
         if index_specs.any?(&:primary_key?)
           index_specs
@@ -99,6 +97,8 @@ module HoboFields
           index_specs + [rails_default_primary_key]
         end
       end
+
+      private
 
       def rails_default_primary_key
         HoboFields::Model::IndexSpec.new(self, [primary_key.to_sym], unique: true, name: HoboFields::Model::IndexSpec::PRIMARY_KEY_NAME)
@@ -253,6 +253,7 @@ module HoboFields
       # Returns the type (a class) for a given field or association. If
       # the association is a collection (has_many or habtm) return the
       # AssociationReflection instead
+      public \
       def attr_type(name)
         if attr_types.nil? && self != self.name.constantize
           raise "attr_types called on a stale class object (#{self.name}). Avoid storing persistent references to classes"
