@@ -1,7 +1,10 @@
 #!/usr/bin/env ruby
+
 require 'fileutils'
-
 require 'rubygems'
-require 'hobo_fields/command'
+require_relative '../lib/hobo_fields/command'
+require_relative '../lib/hobo_fields/version'
 
-HoboFields::Command.run(:hobofields)
+ARGV.freeze
+
+HoboFields::Command.run(:hobofields, ARGV.dup, HoboFields::VERSION)
