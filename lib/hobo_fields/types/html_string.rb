@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'raw_html_string'
+
 module HoboFields
   module Types
     class HtmlString < RawHtmlString

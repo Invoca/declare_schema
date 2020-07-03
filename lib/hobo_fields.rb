@@ -5,7 +5,7 @@ require 'active_support'
 require 'active_support/all'
 require_relative 'hobo_fields/version'
 
-ActiveSupport::Dependencies.autoload_paths |= [ __dir__ ]
+ActiveSupport::Dependencies.autoload_paths |= [__dir__]
 
 module Hobo
   # Empty class to represent the boolean type

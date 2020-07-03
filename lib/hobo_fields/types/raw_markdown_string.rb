@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'text'
+
 module HoboFields
   module Types
     class RawMarkdownString < HoboFields::Types::Text

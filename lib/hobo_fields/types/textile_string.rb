@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'text'
+
 module HoboFields
   module Types
     class TextileString < HoboFields::Types::Text
@@ -12,7 +14,7 @@ module HoboFields
         if blank?
           ""
         else
-          textilized = RedCloth.new(self, [ :hard_breaks ])
+          textilized = RedCloth.new(self, [:hard_breaks])
           textilized.hard_breaks = true if textilized.respond_to?("hard_breaks=")
           HoboFields::SanitizeHtml.sanitize(textilized.to_html)
         end
