@@ -50,16 +50,6 @@ namespace "test" do
       remove_entry_secure( TESTAPP_PATH, true )
       sh %(#{BIN} new #{TESTAPP_PATH} --skip-wizard --skip-bundle)
       chdir TESTAPP_PATH
-      if ENV['HOBODEV']
-        rvmrc_path = File.join(ENV['HOBODEV'], '.rvmrc')
-        if File.exist?(rvmrc_path)
-          puts %(Copying .rvmrc file)
-          copy_file rvmrc_path, './.rvmrc'
-          sh %(rvm reload) do |ok|
-            ok or puts 'rvm command skipped'
-          end
-        end
-      end
       sh %(bundle install)
       sh %(echo "" >> Gemfile)
       sh %(echo "gem 'irt', :group => :development" >> Gemfile) # to make the bundler happy
