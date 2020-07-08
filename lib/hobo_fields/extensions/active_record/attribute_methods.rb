@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'active_record'
+
 ActiveRecord::Base.class_eval do
   def read_attribute_with_hobo(attr_name)
     name = attr_name.to_s

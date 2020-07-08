@@ -1,5 +1,9 @@
 # frozen_string_literal: true
 
+require 'active_record'
+require 'hobo_fields/model'
+require 'hobo_fields/field_declaration_dsl'
+
 module HoboField
   module FieldsDsl
     def fields(&b)
@@ -10,7 +14,7 @@ module HoboField
       @include_in_migration = true
 
       if b
-        dsl = HoboFields::FieldDeclarationDsl.new(self, {:null => false})
+        dsl = HoboFields::FieldDeclarationDsl.new(self, null: false)
         if b.arity == 1
           yield dsl
         else
