@@ -21,10 +21,9 @@ This will generate the test, fixture and a model file like this:
     class Advert < ActiveRecord::Base
       fields do
         title :string
-        body :text
+        body :text, limit: 0xffff, null: true
         contact_address :email_address
       end
-      attr_accessible :title, :body, :contact_address
     end
 
 (Note: `:email_address` is an example of a "Rich Type" provided by HoboFields -- more on those later)
@@ -47,7 +46,7 @@ The main feature of HoboFields, aside from the migration generator, is the abili
 
 Field values are returned as the type you specify.
 
-        >> a = Advert.new :body => "This is the body"
+        >> a = Advert.new :body => "This is the body", id: 1, title: "title", contact_address: "address"
         >> a.body.class
         => HoboFields::Types::Text
 

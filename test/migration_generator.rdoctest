@@ -226,6 +226,7 @@ HoboFields extends the `belongs_to` macro so that it also declares the
 foreign-key field.  It also generates an index on the field.
 
         >>
+         class Category < ActiveRecord::Base; end
          class Advert
            belongs_to :category
          end
@@ -251,8 +252,9 @@ Cleanup:
 If you specify a custom foreign key, the migration generator observes that:
 
         >>
+         class Category < ActiveRecord::Base; end
          class Advert
-           belongs_to :category, :foreign_key => "c_id"
+           belongs_to :category, :foreign_key => "c_id", :class_name => 'Category'
          end
         >> up, down = Generators::Hobo::Migration::Migrator.run
         >> up
@@ -271,12 +273,13 @@ Cleanup:
 You can avoid generating the index by specifying `:index => false`
 
         >>
+         class Category < ActiveRecord::Base; end
          class Advert
            belongs_to :category, :index => false
          end
         >> up, down = Generators::Hobo::Migration::Migrator.run
         >> up
-        => "add_column :adverts, :category_id, :integer"
+        => "add_column :adverts, :category_id, :integer, :limit => 8, :null => false"
 
 Cleanup:
 {.hidden}
@@ -288,6 +291,7 @@ Cleanup:
 You can specify the index name with :index
 
         >>
+         class Category < ActiveRecord::Base; end
          class Advert
            belongs_to :category, :index => 'my_index'
          end
@@ -345,7 +349,7 @@ You can add an index to a field definition
          end
         >> up, down = Generators::Hobo::Migration::Migrator.run
         >> up.split("\n")[2]
-        => 'add_index :adverts, [:title]'
+        => "add_index :adverts, [:title], :name => 'on_title'"
 
 Cleanup:
 {.hidden}
@@ -358,12 +362,12 @@ You can ask for a unique index
         >>
          class Advert
            fields do
-             title :string, :index => true, :unique => true, null: true
+             title :string, :index => true, :unique => true, null: true, limit: 255
            end
          end
         >> up, down = Generators::Hobo::Migration::Migrator.run
         >> up.split("\n")[2]
-        => 'add_index :adverts, [:title], :unique => true'
+        => "add_index :adverts, [:title], :unique => true, :name => 'on_title'"
 
 Cleanup:
 {.hidden}
@@ -397,7 +401,7 @@ You can ask for an index outside of the fields block
          end
         >> up, down = Generators::Hobo::Migration::Migrator.run
         >> up.split("\n")[2]
-        => "add_index :adverts, [:title]"
+        => "add_index :adverts, [:title], :name => 'on_title'"
 
 Cleanup:
 {.hidden}
@@ -429,7 +433,7 @@ You can create an index on more than one field
          end
         >> up, down = Generators::Hobo::Migration::Migrator.run
         >> up.split("\n")[2]
-        => "add_index :adverts, [:title, :category_id]"
+        => "add_index :adverts, [:title, :category_id], :name => 'on_title_and_category_id'"
 
 Cleanup:
 {.hidden}
@@ -448,13 +452,13 @@ The migration generator respects the `set_table_name` declaration, although as b
        self.table_name="ads"
        fields do
          title :string, :default => "Untitled", limit: 255, null: true
-         body: text, limit: 0xffff
+         body :text, limit: 0xffff, null: true
        end
      end
     >> up, down = Generators::Hobo::Migration::Migrator.run(:adverts => :ads)
-    >> up
+    >> up.split("\n")[0]
     => "rename_table :adverts, :ads"
-    >> down
+    >> down.split("\n")[0]
     => "rename_table :ads, :adverts"
 
 Set the table name back to what it should be and confirm we're in sync:
@@ -482,13 +486,13 @@ As with renaming columns, we have to tell the migration generator about the rena
      class Advertisement < ActiveRecord::Base
        fields do
          title :string, :default => "Untitled", limit: 255, null: true
-         body: text, limit: 0xffff
+         body :text, limit: 0xffff, null: true
        end
      end
     >> up, down = Generators::Hobo::Migration::Migrator.run(:adverts => :advertisements)
-    >> up
+    >> up.split("\n")[0]
     => "rename_table :adverts, :advertisements"
-    >> down
+    >> down.split("\n")[0]
     => "rename_table :advertisements, :adverts"
 
 ### Drop a table
@@ -519,7 +523,7 @@ Adding a subclass or two should introduce the 'type' column and no other changes
         >>
          class Advert < ActiveRecord::Base
            fields do
-             body: text, limit: 0xffff
+             body :text, limit: 0xffff, null: true
              title :string, :default => "Untitled", limit: 255, null: true
            end
          end
@@ -572,7 +576,7 @@ First let's confirm we're in a known state. One model, 'Advert', with a string '
      class Advert
        fields do
          name :string, :default => "No Name", limit: 255, null: true
-         body: text, limit: 0xffff
+         body :text, limit: 0xffff, null: true
        end
      end
     >> up, down = Generators::Hobo::Migration::Migrator.run(:adverts => {:title => :name})
@@ -595,7 +599,7 @@ First let's confirm we're in a known state. One model, 'Advert', with a string '
      class Ad < ActiveRecord::Base
        fields do
          title      :string, :default => "Untitled", limit: 255
-         body       .text, limit: 0xffff
+         body       :text, limit: 0xffff, null: true
          created_at :datetime
        end
      end
@@ -609,7 +613,7 @@ First let's confirm we're in a known state. One model, 'Advert', with a string '
     >>
      class Advert < ActiveRecord::Base
        fields do
-         body: text, limit: 0xffff
+         body :text, limit: 0xffff, null: true
          title :string, :default => "Untitled", limit: 255, null: true
        end
      end
@@ -624,7 +628,7 @@ HoboFields has some support for legacy keys.
      class Advert
        fields do
          name :string, :default => "No Name", limit: 255, null: true
-         body: text, limit: 0xffff
+         body :text, limit: 0xffff, null: true
        end
        self.primary_key="advert_id"
      end
