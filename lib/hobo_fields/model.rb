@@ -234,7 +234,7 @@ module HoboFields
         if (to_name = options.delete(:index))
           index_opts =
             {
-              unique: args.include(:unique) || options.delete(:unique)
+              unique: args.include?(:unique) || options.delete(:unique)
             }
           # support index: true declaration
           index_opts[:name] = to_name unless to_name == true
