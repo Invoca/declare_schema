@@ -14,6 +14,7 @@ group :testapp do
 end
 
 gem 'pry'
+gem 'pry-byebug'
 gem 'rails',        '~> 5.2', '>= 5.2.4.3'
 gem 'rubydoctest'
 gem 'responders',   '~> 2.0'
