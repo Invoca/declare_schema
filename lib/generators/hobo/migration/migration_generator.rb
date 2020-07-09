@@ -2,7 +2,7 @@
 
 require 'rails/generators/migration'
 require 'rails/generators/active_record'
-require 'generators/hobo_support/thor_shell'
+require 'generators/hobo/support/thor_shell'
 
 module Hobo
   class MigrationGenerator < Rails::Generators::Base
@@ -11,7 +11,7 @@ module Hobo
     argument :name, :type => :string, :optional => true
 
     include Rails::Generators::Migration
-    include Generators::HoboSupport::ThorShell
+    include Hobo::Support::ThorShell
 
     # the Rails::Generators::Migration.next_migration_number gives a NotImplementedError
     # in Rails 3.0.0.beta4, so we need to implement the logic of ActiveRecord.
