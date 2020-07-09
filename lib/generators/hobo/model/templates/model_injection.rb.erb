@@ -1,7 +1,16 @@
 
   fields do
 <% for attribute in field_attributes -%>
-    <%= "%-#{max_attribute_length}s" % attribute.name %> :<%= attribute.type %>
+    <%= "%-#{max_attribute_length}s" % attribute.name %> :<%= attribute.type %><%=
+      case attribute.type.to_s
+      when 'string'
+        ', limit: 255'
+      when 'text'
+        ', limit: 0xffff'
+      else
+        ''
+      end
+    %>
 <% end -%>
 <% if options[:timestamps] -%>
     timestamps
