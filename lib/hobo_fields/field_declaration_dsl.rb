@@ -1,13 +1,10 @@
 # frozen_string_literal: true
 
 require 'active_support/proxy_object'
-require 'hobo_fields/types/enum_string'
 
 module HoboFields
 
   class FieldDeclarationDsl < ActiveSupport::ProxyObject
-
-    include Types::EnumString::DeclarationHelper
 
     def initialize(model, options = {})
       @model = model
