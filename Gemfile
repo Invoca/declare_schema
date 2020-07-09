@@ -13,6 +13,7 @@ group :testapp do
   gem 'RedCloth'
 end
 
+gem 'appraisal'
 gem 'pry'
 gem 'pry-byebug'
 gem 'rails',        '~> 5.2', '>= 5.2.4.3'
