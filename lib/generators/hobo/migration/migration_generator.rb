@@ -129,7 +129,7 @@ module Hobo
               say "\nDROP, RENAME or KEEP?: #{kind_str} #{name_prefix}#{t}"
               say "Rename choices: #{to_create * ', '}"
               resp = ask "Enter either 'drop #{t}' or one of the rename choices or press enter to keep:"
-              resp.strip!
+              resp = resp.strip
 
               if resp == "drop " + t
                 # Leave things as they are
