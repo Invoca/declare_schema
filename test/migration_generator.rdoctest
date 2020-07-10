@@ -648,14 +648,23 @@ HoboFields has some support for legacy keys.
 
 HoboFields can accept a validates hash in the field options.
 
+    >> $company_validates_options = :none
+    >>
+       class Ad < ActiveRecord::Base; end;
+       def Ad.validates(field_name, options)
+         $company_validates_options = "got field_name: #{field_name}, options: #{options.inspect}"
+       end
     >>
       class Ad < ActiveRecord::Base
         fields do
-          name :string, limit: 255, index: true, unique: true, validates: { presence: true, :uniqueness => { case_sensitive: false } }
+          company :string, limit: 255, index: true, unique: true, validates: { presence: true, :uniqueness => { case_sensitive: false } }
         end
         self.primary_key="advert_id"
       end
+    >> # expect(Ad).to receive(:validates).with(:company, presence: true, uniqueness: { case_sensitive: false })
     >> up, down = Generators::Hobo::Migration::Migrator.run
     >> ActiveRecord::Migration.class_eval up
-    >> Ad.field_specs['name'].options[:validates].inspect
+    >> $company_validates_options
+    => "got field_name: company, options: {:presence=>true, :uniqueness=>{:case_sensitive=>false}}"
+    >> Ad.field_specs['company'].options[:validates].inspect
     => "{:presence=>true, :uniqueness=>{:case_sensitive=>false}}"
