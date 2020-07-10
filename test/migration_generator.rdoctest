@@ -642,3 +642,20 @@ HoboFields has some support for legacy keys.
     >> nuke_model_class(Ad)
     >> ActiveRecord::Base.connection.execute "drop table `adverts`;"
 {.hidden}
+
+
+## validates
+
+HoboFields can accept a validates hash in the field options.
+
+    >>
+      class Ad < ActiveRecord::Base
+        fields do
+          name :string, limit: 255, index: true, unique: true, validates: { presence: true, :uniqueness => { case_sensitive: false } }
+        end
+        self.primary_key="advert_id"
+      end
+    >> up, down = Generators::Hobo::Migration::Migrator.run
+    >> ActiveRecord::Migration.class_eval up
+    >> Ad.field_specs['name'].options[:validates].inspect
+    => "{:presence=>true, :uniqueness=>{:case_sensitive=>false}}"
