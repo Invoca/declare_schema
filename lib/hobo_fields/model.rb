@@ -282,8 +282,7 @@ module HoboFields
       def column(name)
         defined?(@table_exists) or @table_exists = table_exists?
         if @table_exists
-          name = name.to_s
-          columns.find { |c| c.name == name }
+          columns_hash[name.to_s]
         end
       end
     end
