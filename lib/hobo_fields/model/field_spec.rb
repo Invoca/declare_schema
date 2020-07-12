@@ -54,7 +54,7 @@ module HoboFields
       end
 
       def sql_options
-        @options.except(:ruby_default)
+        @options.except(:ruby_default, :validates)
       end
 
       def limit
