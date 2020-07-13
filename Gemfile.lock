@@ -3,6 +3,7 @@ PATH
   specs:
     hobo_fields (3.0.0)
       invoca-utils (~> 0.4)
+      rails (>= 4.2, < 7)
 
 GEM
   remote: https://rubygems.org/
@@ -163,7 +164,7 @@ DEPENDENCIES
   pry
   pry-byebug
   rails (~> 5.2, >= 5.2.4.3)
-  responders (~> 2.0)
+  responders
   rubydoctest
   sqlite3
   test_overrides
