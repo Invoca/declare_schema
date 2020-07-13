@@ -3,8 +3,12 @@
 require 'active_support/proxy_object'
 
 module HoboFields
-
-  class FieldDeclarationDsl < ActiveSupport::ProxyObject
+  class FieldDeclarationDsl
+    instance_methods.each do |m|
+      unless m.to_s.starts_with?('__') || m.in?([:object_id, :instance_eval])
+        undef_method(m)
+      end
+    end
 
     def initialize(model, options = {})
       @model = model

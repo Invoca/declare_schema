@@ -643,6 +643,21 @@ HoboFields has some support for legacy keys.
     >> ActiveRecord::Base.connection.execute "drop table `adverts`;"
 {.hidden}
 
+## DSL
+
+The DSL allows lambdas and constants
+
+    >>
+        class User < ActiveRecord::Base
+          fields do
+            company :string, limit: 255, ruby_default: lambda { Hash.name }
+          end
+        end
+    >> User.field_specs.keys
+    => ['company']
+    >> User.field_specs['company'].options[:ruby_default]&.call
+    => "Hash"
+
 
 ## validates
 
