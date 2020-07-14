@@ -98,9 +98,15 @@ module HoboFields
         end
       end
 
+      def primary_key
+        super || 'id'
+      end
+
       private
 
       def rails_default_primary_key
+        require 'pry'
+        binding.pry if primary_key.nil?
         HoboFields::Model::IndexSpec.new(self, [primary_key.to_sym], unique: true, name: HoboFields::Model::IndexSpec::PRIMARY_KEY_NAME)
       end
 

@@ -84,7 +84,14 @@ module Hobo
         @migration_class_name = final_migration_name.camelize
 
         migration_template 'migration.rb.erb', "db/migrate/#{final_migration_name.underscore}.rb"
-        rails_command('db:migrate') if action == 'm'
+        if action == 'm'
+          case Rails::VERSION::MAJOR
+          when 4
+            rake('db:migrate')
+          else
+            rails_command('db:migrate')
+          end
+        end
       end
     rescue HoboFields::Model::FieldSpec::UnknownSqlTypeError => e
       say "Invalid field type: #{e}"
@@ -93,7 +100,20 @@ module Hobo
   private
 
     def migrations_pending?
-      pending_migrations = ActiveRecord::Migrator.new(:up, ActiveRecord::MigrationContext.new(ActiveRecord::Migrator.migrations_paths).migrations).pending_migrations
+      migrations = case Rails::VERSION::MAJOR
+                   when 4
+                     ActiveRecord::Migrator.migrations('db/migrate')
+                   when 5
+                    ActiveRecord::MigrationContext.new(ActiveRecord::Migrator.migrations_paths).migrations
+                   else
+                     ActiveRecord::MigrationContext.new(ActiveRecord::Migrator.migrations_paths, ActiveRecord::SchemaMigration).migrations
+                   end
+      pending_migrations = case Rails::VERSION::MAJOR
+                           when 4,5
+                             ActiveRecord::Migrator.new(:up, migrations).pending_migrations
+                           else
+                             ActiveRecord::Migrator.new(:up, migrations, ActiveRecord::SchemaMigration).pending_migrations
+                           end
 
       if pending_migrations.any?
         say "You have #{pending_migrations.size} pending migration#{'s' if pending_migrations.size > 1}:"

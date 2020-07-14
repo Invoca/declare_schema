@@ -475,7 +475,8 @@ As with renaming columns, we have to tell the migration generator about the rena
     >>
      def nuke_model_class(klass)
        ActiveSupport::DescendantsTracker.instance_eval do
-         class_variable_get('@@direct_descendants')[ActiveRecord::Base].delete(klass)
+         direct_descendants = class_variable_get('@@direct_descendants')
+         direct_descendants[ActiveRecord::Base] = direct_descendants[ActiveRecord::Base].to_a.reject { |descendant| descendant == klass }
        end
       Object.instance_eval { remove_const klass.name.to_sym }
      end

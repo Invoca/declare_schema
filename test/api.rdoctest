@@ -31,6 +31,7 @@ The migration generator uses this information to create a migration. The followi
 
 We're now ready to start demonstrating the API
 
+    >> require_relative "#{Rails.root}/app/models/advert.rb" if Rails::VERSION::MAJOR > 5
     >> Rails::Generators.invoke 'hobo:migration', %w(-n -m)
     >> Rails::Generators.invoke 'hobo:migration', %w(-n -m)
 {.hidden}

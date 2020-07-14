@@ -515,7 +515,13 @@ module Generators
 
         def revert_table(table)
           res = StringIO.new
-          ActiveRecord::ConnectionAdapters::SchemaDumper.send(:new, ActiveRecord::Base.connection).send(:table, table, res)
+          schema_dumper_klass = case Rails::VERSION::MAJOR
+                                when 4
+                                  ActiveRecord::SchemaDumper
+                                else
+                                  ActiveRecord::ConnectionAdapters::SchemaDumper
+                                end
+          schema_dumper_klass.send(:new, ActiveRecord::Base.connection).send(:table, table, res)
           res.string.strip.gsub("\n  ", "\n")
         end
 
