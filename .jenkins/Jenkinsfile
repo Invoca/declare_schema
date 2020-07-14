@@ -12,6 +12,7 @@ pipeline {
 
   environment {
     GITHUB_TOKEN         = credentials('github_token')
+    BUNDLE_GEM__FURY__IO = credentials('gemfury_deploy_token')
   }
 
   stages {
