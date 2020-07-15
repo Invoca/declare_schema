@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    hobo_fields (3.1.0)
+    hobo_fields (2.99.0)
       invoca-utils (~> 0.4)
       rails (>= 4.2, < 7)
 
@@ -9,7 +9,6 @@ GEM
   remote: https://rubygems.org/
   remote: https://gem.fury.io/invoca/
   specs:
-    RedCloth (4.3.2)
     actioncable (5.2.4.3)
       actionpack (= 5.2.4.3)
       nio4r (~> 2.0)
@@ -70,8 +69,6 @@ GEM
     i18n (1.8.3)
       concurrent-ruby (~> 1.0)
     invoca-utils (0.4.1)
-    kramdown (2.3.0)
-      rexml
     listen (3.2.1)
       rb-fsevent (~> 0.10, >= 0.10.3)
       rb-inotify (~> 0.9, >= 0.9.10)
@@ -131,7 +128,6 @@ GEM
     responders (2.4.1)
       actionpack (>= 4.2.0, < 6.0)
       railties (>= 4.2.0, < 6.0)
-    rexml (3.2.4)
     rubydoctest (1.1.5)
     sprockets (3.7.2)
       concurrent-ruby (~> 1.0)
@@ -155,11 +151,9 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  RedCloth
   appraisal
   bootsnap (>= 1.1.0)
   hobo_fields!
-  kramdown
   listen
   pry
   pry-byebug

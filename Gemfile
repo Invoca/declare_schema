@@ -9,8 +9,6 @@ gemspec
 group :testapp do
   gem 'bootsnap',     '>= 1.1.0', require: false
   gem 'listen'
-  gem 'kramdown'
-  gem 'RedCloth'
 end
 
 gem 'appraisal'
