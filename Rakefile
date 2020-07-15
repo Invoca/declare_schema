@@ -6,7 +6,6 @@ require 'rake_test_warning_false'
 
 require 'rubygems'
 require 'tmpdir'
-require 'kramdown'
 require 'pry'
 
 include Rake::DSL

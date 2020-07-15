@@ -23,7 +23,6 @@ module HoboField
 
         field_specs.each do |field_name, field_spec|
           if (validates_options = field_spec.options[:validates])
-            puts "validates #{field_name}, #{validates_options}"
             validates field_name, validates_options
           end
         end
