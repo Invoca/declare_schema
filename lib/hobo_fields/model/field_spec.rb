@@ -113,7 +113,7 @@ module HoboFields
                 when 4
                   col_spec.type_cast_from_database(col_spec.default) != col_spec.type_cast_from_database(default)
                 else
-                  cast_type = ActiveRecord::Base.connection.lookup_cast_type_from_column(col_spec) or raise "cast_type not found for #{col_spec.inspec}"
+                  cast_type = ActiveRecord::Base.connection.lookup_cast_type_from_column(col_spec) or raise "cast_type not found for #{col_spec.inspect}"
                   cast_type.deserialize(col_spec.default) != cast_type.deserialize(default)
                 end
               else
