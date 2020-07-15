@@ -366,13 +366,14 @@ module Generators
 
           to_add = to_add.sort_by {|c| model.field_specs[c]&.position }
           adds = to_add.map do |c|
-            if (spec = model.field_specs[c])
-              options = fk_field_options(model, c).merge(spec.sql_options)
-              args = [":#{spec.sql_type}"] + format_options(options, spec.sql_type)
-              "add_column :#{new_table_name}, :#{c}, #{args * ', '}"
-            elsif c == model.primary_key
-              "add_column :#{new_table_name}, :#{c}, :integer"
-            end
+            args =
+              if (spec = model.field_specs[c])
+                options = fk_field_options(model, c).merge(spec.sql_options)
+                [":#{spec.sql_type}", *format_options(options, spec.sql_type)]
+              else
+                [":integer"]
+              end
+            "add_column :#{new_table_name}, :#{c}, #{args.join(', ')}"
           end
           undo_adds = to_add.map do |c|
             "remove_column :#{new_table_name}, :#{c}"

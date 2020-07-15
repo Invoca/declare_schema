@@ -109,7 +109,7 @@ module Hobo
                      ActiveRecord::MigrationContext.new(ActiveRecord::Migrator.migrations_paths, ActiveRecord::SchemaMigration).migrations
                    end
       pending_migrations = case Rails::VERSION::MAJOR
-                           when 4,5
+                           when 4, 5
                              ActiveRecord::Migrator.new(:up, migrations).pending_migrations
                            else
                              ActiveRecord::Migrator.new(:up, migrations, ActiveRecord::SchemaMigration).pending_migrations
@@ -151,7 +151,7 @@ module Hobo
               resp = ask "Enter either 'drop #{t}' or one of the rename choices or press enter to keep:"
               resp = resp.strip
 
-              if resp == "drop " + t
+              if resp == "drop #{t}"
                 # Leave things as they are
                 break
               else
@@ -181,4 +181,3 @@ module Hobo
 
   end
 end
-
