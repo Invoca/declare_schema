@@ -364,7 +364,7 @@ module Generators
             "rename_column :#{new_table_name}, :#{new_name}, :#{old_name}"
           end
 
-          to_add = to_add.sort_by {|c| model.field_specs[c]&.position }
+          to_add = to_add.sort_by {|c| model.field_specs[c]&.position || 0 }
           adds = to_add.map do |c|
             args =
               if (spec = model.field_specs[c])
