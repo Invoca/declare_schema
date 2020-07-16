@@ -20,12 +20,6 @@ module HoboField
         else
           dsl.instance_eval(&b)
         end
-
-        field_specs.each do |field_name, field_spec|
-          if (validates_options = field_spec.options[:validates])
-            validates field_name, validates_options
-          end
-        end
       end
     end
   end

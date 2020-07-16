@@ -215,6 +215,10 @@ module HoboFields
         validates_presence_of   name if :required.in?(args)
         validates_uniqueness_of name, allow_nil: !:required.in?(args) if :unique.in?(args)
 
+        if (validates_options = args[:validates])
+          validates field_name, validates_options
+        end
+
         # Support for custom validations in Hobo Fields
         if (type_class = HoboFields.to_class(type))
           if type_class.public_method_defined?("validate")
