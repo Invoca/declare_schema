@@ -83,7 +83,7 @@ module HoboFields
         end
         field_added(name, type, args, options) if respond_to?(:field_added)
         add_formatting_for_field(name, type, args)
-        add_validations_for_field(name, type, args)
+        add_validations_for_field(name, type, args, options)
         add_index_for_field(name, args, options)
         declare_attr_type(name, type, options) unless HoboFields.plain_type?(type)
         field_specs[name] = HoboFields::Model::FieldSpec.new(self, name, type, options)
@@ -211,12 +211,12 @@ module HoboFields
 
       # Add field validations according to arguments in the
       # field declaration
-      def add_validations_for_field(name, type, args)
+      def add_validations_for_field(name, type, args, options)
         validates_presence_of   name if :required.in?(args)
         validates_uniqueness_of name, allow_nil: !:required.in?(args) if :unique.in?(args)
 
-        if (validates_options = args[:validates])
-          validates field_name, validates_options
+        if (validates_options = options[:validates])
+          validates name, validates_options
         end
 
         # Support for custom validations in Hobo Fields
