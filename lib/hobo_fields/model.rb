@@ -182,9 +182,9 @@ module HoboFields
           if refl.options[:polymorphic]
             foreign_type = options[:foreign_type] || "#{name}_type"
             declare_polymorphic_type_field(foreign_type, column_options)
-            index([foreign_type, fkey], index_options) if index_options[:name]!=false
+            index([foreign_type, fkey], index_options) if index_options[:name] != false
           else
-            index(fkey, index_options) if index_options[:name]!=false
+            index(fkey, index_options) if index_options[:name] != false
             options[:constraint_name] = options
             constraint(fkey, fk_options) if fk_options[:constraint_name] != false
           end
