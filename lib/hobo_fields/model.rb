@@ -50,7 +50,8 @@ module HoboFields
     module ClassMethods
       def index(fields, options = {})
         # don't double-index fields
-        unless index_specs.*.fields.include?(Array.wrap(fields).*.to_s)
+        index_fields_s = Array.wrap(fields).*.to_s
+        unless index_specs.any? { |index_spec| index_spec.fields == index_fields_s }
           index_specs << HoboFields::Model::IndexSpec.new(self, fields, options)
         end
       end
@@ -60,8 +61,9 @@ module HoboFields
       end
 
       def constraint(fkey, options={})
-        unless constraint_specs.*.foreign_key.include?(fkey.to_s)
-          constraint_specs << HoboFields::Model::ForeignKeySpec.new(self, fkey, options )
+        fkey_s = fkey.to_s
+        unless constraint_specs.any? { |constraint_spec| constraint_spec.foreign_key == fkey_s }
+          constraint_specs << HoboFields::Model::ForeignKeySpec.new(self, fkey, options)
         end
       end
 
