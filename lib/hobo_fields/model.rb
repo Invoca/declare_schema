@@ -6,7 +6,7 @@ module HoboFields
   module Model
     class << self
       def mix_in(base)
-        base.singleton_class.prepend ClassMethods
+        base.singleton_class.prepend ClassMethods unless base.singleton_class < ClassMethods # don't mix in if a base class already did it
 
         base.class_eval do
           # ignore the model in the migration until somebody sets
