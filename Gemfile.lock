@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    hobo_fields (2.99.0)
+    hobo_fields (2.99)
       invoca-utils (~> 0.4)
       rails (>= 4.2, < 7)
 

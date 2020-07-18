@@ -27,28 +27,28 @@ pipeline {
     stage("Current Unit Tests") {
       steps {
         sh 'bundle exec rake test:prepare_testapp[force]'
-        sh 'cat test_responses.txt | bundle exec rake test:all'
+        sh 'bundle exec rake test:all < test_responses.txt'
       }
     }
 
     stage("Rails 4 Appraisal") {
       steps {
         sh 'bundle exec appraisal rails-4 rake test:prepare_testapp[force]'
-        sh 'cat test_responses.txt | bundle exec appraisal rails-4 rake test:all'
+        sh 'bundle exec appraisal rails-4 rake test:all < test_responses.txt'
       }
     }
 
     stage("Rails 5 Appraisal") {
       steps {
         sh 'bundle exec appraisal rails-5 rake test:prepare_testapp[force]'
-        sh 'cat test_responses.txt | bundle exec appraisal rails-5 rake test:all'
+        sh 'bundle exec appraisal rails-5 rake test:all < test_responses.txt'
       }
     }
 
     stage("Rails 6 Appraisal") {
       steps {
         sh 'bundle exec appraisal rails-6 rake test:prepare_testapp[force]'
-        sh 'cat test_responses.txt | bundle exec appraisal rails-6 rake test:all'
+        sh 'bundle exec appraisal rails-6 rake test:all < test_responses.txt'
       }
     }
   }
