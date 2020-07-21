@@ -6,7 +6,7 @@ module HoboFields
   module Model
     class << self
       def mix_in(base)
-        base.singleton_class.prepend ClassMethods
+        base.singleton_class.prepend ClassMethods unless base.singleton_class < ClassMethods # don't mix in if a base class already did it
 
         base.class_eval do
           # ignore the model in the migration until somebody sets
@@ -50,7 +50,8 @@ module HoboFields
     module ClassMethods
       def index(fields, options = {})
         # don't double-index fields
-        unless index_specs.*.fields.include?(Array.wrap(fields).*.to_s)
+        index_fields_s = Array.wrap(fields).*.to_s
+        unless index_specs.any? { |index_spec| index_spec.fields == index_fields_s }
           index_specs << HoboFields::Model::IndexSpec.new(self, fields, options)
         end
       end
@@ -60,8 +61,9 @@ module HoboFields
       end
 
       def constraint(fkey, options={})
-        unless constraint_specs.*.foreign_key.include?(fkey.to_s)
-          constraint_specs << HoboFields::Model::ForeignKeySpec.new(self, fkey, options )
+        fkey_s = fkey.to_s
+        unless constraint_specs.any? { |constraint_spec| constraint_spec.foreign_key == fkey_s }
+          constraint_specs << HoboFields::Model::ForeignKeySpec.new(self, fkey, options)
         end
       end
 
@@ -83,7 +85,7 @@ module HoboFields
         end
         field_added(name, type, args, options) if respond_to?(:field_added)
         add_formatting_for_field(name, type, args)
-        add_validations_for_field(name, type, args)
+        add_validations_for_field(name, type, args, options)
         add_index_for_field(name, args, options)
         declare_attr_type(name, type, options) unless HoboFields.plain_type?(type)
         field_specs[name] = HoboFields::Model::FieldSpec.new(self, name, type, options)
@@ -96,6 +98,10 @@ module HoboFields
         else
           index_specs + [rails_default_primary_key]
         end
+      end
+
+      def primary_key
+        super || 'id'
       end
 
       private
@@ -176,9 +182,9 @@ module HoboFields
           if refl.options[:polymorphic]
             foreign_type = options[:foreign_type] || "#{name}_type"
             declare_polymorphic_type_field(foreign_type, column_options)
-            index([foreign_type, fkey], index_options) if index_options[:name]!=false
+            index([foreign_type, fkey], index_options) if index_options[:name] != false
           else
-            index(fkey, index_options) if index_options[:name]!=false
+            index(fkey, index_options) if index_options[:name] != false
             options[:constraint_name] = options
             constraint(fkey, fk_options) if fk_options[:constraint_name] != false
           end
@@ -205,9 +211,13 @@ module HoboFields
 
       # Add field validations according to arguments in the
       # field declaration
-      def add_validations_for_field(name, type, args)
+      def add_validations_for_field(name, type, args, options)
         validates_presence_of   name if :required.in?(args)
         validates_uniqueness_of name, allow_nil: !:required.in?(args) if :unique.in?(args)
+
+        if (validates_options = options[:validates])
+          validates name, validates_options
+        end
 
         # Support for custom validations in Hobo Fields
         if (type_class = HoboFields.to_class(type))
@@ -234,7 +244,7 @@ module HoboFields
         if (to_name = options.delete(:index))
           index_opts =
             {
-              unique: args.include(:unique) || options.delete(:unique)
+              unique: args.include?(:unique) || options.delete(:unique)
             }
           # support index: true declaration
           index_opts[:name] = to_name unless to_name == true
@@ -276,8 +286,7 @@ module HoboFields
       def column(name)
         defined?(@table_exists) or @table_exists = table_exists?
         if @table_exists
-          name = name.to_s
-          columns.find { |c| c.name == name }
+          columns_hash[name.to_s]
         end
       end
     end

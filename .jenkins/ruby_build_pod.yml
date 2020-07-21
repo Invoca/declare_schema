@@ -1,0 +1,19 @@
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    jenkins/hobo_fields: 'true'
+  namespace: jenkins
+  name: hobo_fields
+spec:
+  containers:
+  - name: ruby
+    image: ruby:2.6.5
+    tty: true
+    resources:
+      requests:
+        memory: "100Mi"
+    command:
+      - cat

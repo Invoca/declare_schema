@@ -364,12 +364,16 @@ module Generators
             "rename_column :#{new_table_name}, :#{new_name}, :#{old_name}"
           end
 
-          to_add = to_add.sort_by {|c| model.field_specs[c].position }
+          to_add = to_add.sort_by {|c| model.field_specs[c]&.position || 0 }
           adds = to_add.map do |c|
-            spec = model.field_specs[c]
-            options = fk_field_options(model, c).merge(spec.sql_options)
-            args = [":#{spec.sql_type}"] + format_options(options, spec.sql_type)
-            "add_column :#{new_table_name}, :#{c}, #{args * ', '}"
+            args =
+              if (spec = model.field_specs[c])
+                options = fk_field_options(model, c).merge(spec.sql_options)
+                [":#{spec.sql_type}", *format_options(options, spec.sql_type)]
+              else
+                [":integer"]
+              end
+            "add_column :#{new_table_name}, :#{c}, #{args.join(', ')}"
           end
           undo_adds = to_add.map do |c|
             "remove_column :#{new_table_name}, :#{c}"
@@ -512,7 +516,13 @@ module Generators
 
         def revert_table(table)
           res = StringIO.new
-          ActiveRecord::ConnectionAdapters::SchemaDumper.send(:new, ActiveRecord::Base.connection).send(:table, table, res)
+          schema_dumper_klass = case Rails::VERSION::MAJOR
+                                when 4
+                                  ActiveRecord::SchemaDumper
+                                else
+                                  ActiveRecord::ConnectionAdapters::SchemaDumper
+                                end
+          schema_dumper_klass.send(:new, ActiveRecord::Base.connection).send(:table, table, res)
           res.string.strip.gsub("\n  ", "\n")
         end
 

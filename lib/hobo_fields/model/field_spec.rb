@@ -54,7 +54,7 @@ module HoboFields
       end
 
       def sql_options
-        @options.except(:ruby_default)
+        @options.except(:ruby_default, :validates)
       end
 
       def limit
@@ -109,8 +109,13 @@ module HoboFields
             check_attributes << :limit if sql_type.in?([:string, :text, :binary, :varbinary, :integer, :enum])
             check_attributes.any? do |k|
               if k == :default
-                cast_type = ActiveRecord::Base.connection.lookup_cast_type_from_column(col_spec) or raise "cast_type not found for #{col_spec.inspec}"
-                cast_type.deserialize(col_spec.default) != cast_type.deserialize(default)
+                case Rails::VERSION::MAJOR
+                when 4
+                  col_spec.type_cast_from_database(col_spec.default) != col_spec.type_cast_from_database(default)
+                else
+                  cast_type = ActiveRecord::Base.connection.lookup_cast_type_from_column(col_spec) or raise "cast_type not found for #{col_spec.inspect}"
+                  cast_type.deserialize(col_spec.default) != cast_type.deserialize(default)
+                end
               else
                 col_value = col_spec.send(k)
                 if col_value.nil? && native_type

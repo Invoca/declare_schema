@@ -1,0 +1,72 @@
+#!/usr/bin/groovy
+@Library('jenkins-pipeline@v0.5.1')
+import com.invoca.ci.*;
+
+pipeline {
+  agent {
+    kubernetes {
+      defaultContainer 'ruby'
+      yamlFile '.jenkins/ruby_build_pod.yml'
+    }
+  }
+
+  environment {
+    GITHUB_TOKEN         = credentials('github_token')
+    BUNDLE_GEM__FURY__IO = credentials('gemfury_deploy_token')
+  }
+
+  stages {
+    stage('Setup') {
+      steps {
+        updateGitHubStatus('clean-build', 'pending', "Running unit tests")
+        sh 'bundle install'
+        sh 'bundle exec appraisal install'
+      }
+    }
+
+    stage("Current Unit Tests") {
+      steps {
+        sh 'bundle exec rake test:prepare_testapp[force]'
+        sh 'bundle exec rake test:all < test_responses.txt'
+      }
+    }
+
+    stage("Rails 4 Appraisal") {
+      steps {
+        sh 'bundle exec appraisal rails-4 rake test:prepare_testapp[force]'
+        sh 'bundle exec appraisal rails-4 rake test:all < test_responses.txt'
+      }
+    }
+
+    stage("Rails 5 Appraisal") {
+      steps {
+        sh 'bundle exec appraisal rails-5 rake test:prepare_testapp[force]'
+        sh 'bundle exec appraisal rails-5 rake test:all < test_responses.txt'
+      }
+    }
+
+    stage("Rails 6 Appraisal") {
+      steps {
+        sh 'bundle exec appraisal rails-6 rake test:prepare_testapp[force]'
+        sh 'bundle exec appraisal rails-6 rake test:all < test_responses.txt'
+      }
+    }
+  }
+
+  post {
+    success { updateGitHubStatus('clean-build', 'success', "Unit tests passed") }
+    failure { updateGitHubStatus('clean-build', 'failure', "Unit tests failed") }
+  }
+}
+
+void updateGitHubStatus(String context, String status, String description) {
+  gitHubStatus([
+    repoSlug:    'Invoca/hobo_fields',
+    sha:         env.GIT_COMMIT,
+    description: description,
+    context:     context,
+    targetURL:   env.RUN_DISPLAY_URL,
+    token:       env.GITHUB_TOKEN,
+    status:      status
+  ])
+}

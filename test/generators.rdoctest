@@ -11,7 +11,7 @@ doctest: model file exists
 
 doctest: model content matches
 >> File.read 'app/models/alpha/beta.rb'
-=> "class Alpha::Beta < ActiveRecord::Base\n\n  fields do\n    one :string\n    two :integer\n  end\n  attr_accessible :one, :two\n\nend\n"
+=> "class Alpha::Beta < #{Rails::VERSION::MAJOR > 4 ? 'ApplicationRecord' : 'ActiveRecord::Base'}\n\n  fields do\n    one :string, limit: 255\n    two :integer\n  end\n\nend\n"
 
 doctest: module file exists
 >> File.exist? 'app/models/alpha.rb'
@@ -43,6 +43,8 @@ doctest: fixture file exists
 
 
 doctest: generate hobo:migration
+>> require_relative "#{Rails.root}/app/models/alpha.rb" if Rails::VERSION::MAJOR > 5
+>> require_relative "#{Rails.root}/app/models/alpha/beta.rb" if Rails::VERSION::MAJOR > 5
 >> Rails::Generators.invoke 'hobo:migration', %w(-n -m)
 
 doctest: schema.rb file exists
