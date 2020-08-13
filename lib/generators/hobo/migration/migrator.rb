@@ -1,3 +1,7 @@
+# frozen_string_literal: true
+
+require 'active_record'
+
 module Generators
   module Hobo
     module Migration
@@ -151,7 +155,10 @@ module Generators
         def models_and_tables
           ignore_model_names = Migrator.ignore_models.*.to_s.*.underscore
           all_models = table_model_classes
-          hobo_models = all_models.select { |m| (m.name['HABTM_'] || m.try.include_in_migration) && m.name.underscore.not_in?(ignore_model_names) }
+          hobo_models = all_models.select do |m|
+            (m.name['HABTM_'] ||
+              (m.include_in_migration if m.respond_to?(:include_in_migration))) && !m.name.underscore.in?(ignore_model_names)
+          end
           non_hobo_models = all_models - hobo_models
           db_tables = connection.tables - Migrator.ignore_tables.*.to_s - non_hobo_models.*.table_name
           [hobo_models, db_tables]
@@ -189,8 +196,7 @@ module Generators
         def extract_column_renames!(to_add, to_remove, table_name)
           if renames
             to_rename = {}
-            column_renames = renames._?[table_name.to_sym]
-            if column_renames
+            if (column_renames = renames&.[](table_name.to_sym))
               # A hash of table renames has been provided
 
               column_renames.each_pair do |old_name, new_name|
@@ -358,12 +364,16 @@ module Generators
             "rename_column :#{new_table_name}, :#{new_name}, :#{old_name}"
           end
 
-          to_add = to_add.sort_by {|c| model.field_specs[c].position }
+          to_add = to_add.sort_by {|c| model.field_specs[c]&.position || 0 }
           adds = to_add.map do |c|
-            spec = model.field_specs[c]
-            options = fk_field_options(model, c).merge(spec.sql_options)
-            args = [":#{spec.sql_type}"] + format_options(options, spec.sql_type)
-            "add_column :#{new_table_name}, :#{c}, #{args * ', '}"
+            args =
+              if (spec = model.field_specs[c])
+                options = fk_field_options(model, c).merge(spec.sql_options)
+                [":#{spec.sql_type}", *format_options(options, spec.sql_type)]
+              else
+                [":integer"]
+              end
+            "add_column :#{new_table_name}, :#{c}, #{args.join(', ')}"
           end
           undo_adds = to_add.map do |c|
             "remove_column :#{new_table_name}, :#{c}"
@@ -383,26 +393,28 @@ module Generators
             col_name = old_names[c] || c
             col = db_columns[col_name]
             spec = model.field_specs[c]
-            if spec.different_to?(col)
+            if spec.different_to?(col) # TODO: DRY this up to a diff function that returns the differences. It's different if it has differences. -Colin
               change_spec = fk_field_options(model, c)
               change_spec[:limit]     = spec.limit     unless spec.limit.nil? && col.limit.nil?
               change_spec[:precision] = spec.precision unless spec.precision.nil?
               change_spec[:scale]     = spec.scale     unless spec.scale.nil?
               change_spec[:null]      = spec.null      unless spec.null && col.null
               change_spec[:default]   = spec.default   unless spec.default.nil? && col.default.nil?
-              change_spec[:comment]   = spec.comment   unless spec.comment.nil? && col.try.comment.nil?
+              change_spec[:comment]   = spec.comment   unless spec.comment.nil? && (col.comment if col.respond_to?(:comment)).nil?
 
               changes << "change_column :#{new_table_name}, :#{c}, " +
                 ([":#{spec.sql_type}"] + format_options(change_spec, spec.sql_type, true)).join(", ")
               back = change_column_back(current_table_name, col_name)
               undo_changes << back unless back.blank?
-            else
-              nil
             end
           end.compact
 
           index_changes, undo_index_changes = change_indexes(model, current_table_name)
-          fk_changes, undo_fk_changes = change_foreign_key_constraints(model, current_table_name)
+          fk_changes, undo_fk_changes = if ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
+                                          [[], []]
+                                        else
+                                          change_foreign_key_constraints(model, current_table_name)
+                                        end
 
           [(renames + adds + removes + changes) * "\n",
            (undo_renames + undo_adds + undo_removes + undo_changes) * "\n",
@@ -452,6 +464,7 @@ module Generators
         end
 
         def change_foreign_key_constraints(model, old_table_name)
+          ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/) and raise 'SQLite does not support foreign keys'
           return [[],[]] if Migrator.disable_indexing
           new_table_name = model.table_name
           existing_fks = HoboFields::Model::ForeignKeySpec.for_model(model, old_table_name)
@@ -503,7 +516,13 @@ module Generators
 
         def revert_table(table)
           res = StringIO.new
-          ActiveRecord::SchemaDumper.send(:new, ActiveRecord::Base.connection).send(:table, table, res)
+          schema_dumper_klass = case Rails::VERSION::MAJOR
+                                when 4
+                                  ActiveRecord::SchemaDumper
+                                else
+                                  ActiveRecord::ConnectionAdapters::SchemaDumper
+                                end
+          schema_dumper_klass.send(:new, ActiveRecord::Base.connection).send(:table, table, res)
           res.string.strip.gsub("\n  ", "\n")
         end
 

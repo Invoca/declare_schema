@@ -1,19 +1,10 @@
 #!/usr/bin/env ruby
+
 require 'fileutils'
+require 'rubygems'
+require_relative '../lib/hobo_fields/command'
+require_relative '../lib/hobo_fields/version'
 
-if ENV["HOBODEV"]
-  dev_root = File.expand_path ENV["HOBODEV"], FileUtils.pwd
-  $:.unshift "#{dev_root}/hobo_support/lib"
-else
-  require 'rubygems'
-end
+ARGV.freeze
 
-begin
-  require 'hobo_support/command'
-rescue LoadError
-  puts "The 'hobo_support' gem is not installed.
-You probably need to set the HOBODEV environment variable to the local repository path."
-  exit
-end
-
-HoboSupport::Command.run(:hobofields)
+HoboFields::Command.run(:hobofields, ARGV.dup, HoboFields::VERSION)

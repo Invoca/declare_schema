@@ -1,10 +1,16 @@
-require 'hobo_fields/types/enum_string'
+# frozen_string_literal: true
+
+require 'active_support/proxy_object'
 
 module HoboFields
+  class FieldDeclarationDsl < BasicObject # avoid Object because that gets extended by lots of gems
+    include ::Kernel                      # but we need the basic class methods
 
-  class FieldDeclarationDsl < BlankSlate
-
-    include HoboFields::Types::EnumString::DeclarationHelper
+    instance_methods.each do |m|
+      unless m.to_s.starts_with?('__') || m.in?([:object_id, :instance_eval])
+        undef_method(m)
+      end
+    end
 
     def initialize(model, options = {})
       @model = model
@@ -30,7 +36,7 @@ module HoboFields
 
 
     def method_missing(name, *args)
-      field(name, args.first, *args.rest)
+      field(name, args.first, *args[1..-1])
     end
 
   end

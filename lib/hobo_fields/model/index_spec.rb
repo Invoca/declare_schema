@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module HoboFields
   module Model
     class IndexSpec
@@ -56,7 +58,7 @@ module HoboFields
       end
 
       def to_add_statement(new_table_name, existing_primary_key = nil)
-        if primary_key?
+        if primary_key? && !ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
           to_add_primary_key_statement(new_table_name, existing_primary_key)
         else
           r = "add_index :#{new_table_name}, #{fields.*.to_sym.inspect}"

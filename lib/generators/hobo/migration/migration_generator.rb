@@ -1,6 +1,8 @@
+# frozen_string_literal: true
+
 require 'rails/generators/migration'
 require 'rails/generators/active_record'
-require 'generators/hobo_support/thor_shell'
+require 'generators/hobo/support/thor_shell'
 
 module Hobo
   class MigrationGenerator < Rails::Generators::Base
@@ -9,7 +11,7 @@ module Hobo
     argument :name, :type => :string, :optional => true
 
     include Rails::Generators::Migration
-    include Generators::HoboSupport::ThorShell
+    include Hobo::Support::ThorShell
 
     # the Rails::Generators::Migration.next_migration_number gives a NotImplementedError
     # in Rails 3.0.0.beta4, so we need to implement the logic of ActiveRecord.
@@ -82,7 +84,14 @@ module Hobo
         @migration_class_name = final_migration_name.camelize
 
         migration_template 'migration.rb.erb', "db/migrate/#{final_migration_name.underscore}.rb"
-        rake('db:migrate') if action == 'm'
+        if action == 'm'
+          case Rails::VERSION::MAJOR
+          when 4
+            rake('db:migrate')
+          else
+            rails_command('db:migrate')
+          end
+        end
       end
     rescue HoboFields::Model::FieldSpec::UnknownSqlTypeError => e
       say "Invalid field type: #{e}"
@@ -91,7 +100,20 @@ module Hobo
   private
 
     def migrations_pending?
-      pending_migrations = ActiveRecord::Migrator.new(:up, ActiveRecord::Migrator.migrations('db/migrate')).pending_migrations
+      migrations = case Rails::VERSION::MAJOR
+                   when 4
+                     ActiveRecord::Migrator.migrations('db/migrate')
+                   when 5
+                    ActiveRecord::MigrationContext.new(ActiveRecord::Migrator.migrations_paths).migrations
+                   else
+                     ActiveRecord::MigrationContext.new(ActiveRecord::Migrator.migrations_paths, ActiveRecord::SchemaMigration).migrations
+                   end
+      pending_migrations = case Rails::VERSION::MAJOR
+                           when 4, 5
+                             ActiveRecord::Migrator.new(:up, migrations).pending_migrations
+                           else
+                             ActiveRecord::Migrator.new(:up, migrations, ActiveRecord::SchemaMigration).pending_migrations
+                           end
 
       if pending_migrations.any?
         say "You have #{pending_migrations.size} pending migration#{'s' if pending_migrations.size > 1}:"
@@ -127,9 +149,9 @@ module Hobo
               say "\nDROP, RENAME or KEEP?: #{kind_str} #{name_prefix}#{t}"
               say "Rename choices: #{to_create * ', '}"
               resp = ask "Enter either 'drop #{t}' or one of the rename choices or press enter to keep:"
-              resp.strip!
+              resp = resp.strip
 
-              if resp == "drop " + t
+              if resp == "drop #{t}"
                 # Leave things as they are
                 break
               else
@@ -159,4 +181,3 @@ module Hobo
 
   end
 end
-

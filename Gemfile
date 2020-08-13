@@ -1,16 +1,22 @@
-source "http://rubygems.org"
+# frozen_string_literal: true
 
-gem 'rubydoctest', :git => 'git://github.com/bryanlarsen/rubydoctest.git'
-gem 'rails'
-gem 'yard'
-gem 'protected_attributes'
-gem 'responders', '~> 2.0'
+# https://ringrevenue.atlassian.net/wiki/display/DEV/Gem+Best+Practices
+source 'https://rubygems.org'
+source 'https://gem.fury.io/invoca'
 
-gemspec :path => "../hobosupport"
 gemspec
-platform :ruby do
-  gem 'sqlite3'
+
+group :testapp do
+  gem 'bootsnap',     '>= 1.1.0', require: false
+  gem 'listen'
 end
-platform :jruby do
-  gem 'activerecord-jdbcsqlite3-adapter'
-end
+
+gem 'appraisal'
+gem 'pry'
+gem 'pry-byebug'
+gem 'rails',        '~> 5.2', '>= 5.2.4.3'
+gem 'rubydoctest'
+gem 'responders'
+gem 'sqlite3'
+gem 'test_overrides'
+gem 'yard'

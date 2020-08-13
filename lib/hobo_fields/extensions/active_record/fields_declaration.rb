@@ -1,15 +1,20 @@
-ActiveRecord::Base.class_eval do
+# frozen_string_literal: true
 
-    def self.fields(&b)
-      # Any model that calls 'fields' gets a bunch of other
-      # functionality included automatically, but make sure we only
-      # include it once
-      include HoboFields::Model unless HoboFields::Model.in?(included_modules)
+require 'active_record'
+require 'hobo_fields/model'
+require 'hobo_fields/field_declaration_dsl'
+
+module HoboField
+  module FieldsDsl
+    def fields(&b)
+      # Any model that calls 'fields' gets HoboFields::Model behavior
+      HoboFields::Model.mix_in(self)
+
       #@include_in_migration = false #||= options.fetch(:include_in_migration, true); options.delete(:include_in_migration)
       @include_in_migration = true
 
       if b
-        dsl = HoboFields::FieldDeclarationDsl.new(self, {:null => false})
+        dsl = HoboFields::FieldDeclarationDsl.new(self, null: false)
         if b.arity == 1
           yield dsl
         else
@@ -17,6 +22,7 @@ ActiveRecord::Base.class_eval do
         end
       end
     end
-
-
+  end
 end
+
+ActiveRecord::Base.singleton_class.prepend HoboField::FieldsDsl

@@ -1,31 +1,28 @@
-name = File.basename( __FILE__, '.gemspec' )
-version = File.read(File.expand_path('../VERSION', __FILE__)).strip
-require 'date'
+# frozen_string_literal: true
+
+require_relative 'lib/hobo_fields/version'
 
 Gem::Specification.new do |s|
+  s.authors = ['Invoca Development after Tom Locke']
+  s.email = 'development@invoca.com'
+  s.homepage = 'https://github.com/Invoca/hobo_fields'
+  s.summary = 'Database migration generator for Rails'
+  s.description = 'Database migration generator for Rails'
+  s.name = "hobo_fields"
+  s.version = HoboFields::VERSION
+  s.date = "2020-07-02"
 
-  s.authors = ['Tom Locke']
-  s.email = 'tom@tomlocke.com'
-  s.homepage = 'http://hobocentral.net'
-  s.rubyforge_project = 'hobo'
-  s.summary = 'Rich field types and migration generator for Rails'
-  s.description = 'Rich field types and migration generator for Rails'
-
-  s.add_runtime_dependency('hobo_support', [">= 2"])
-  # s.add_development_dependency('rubydoctest', [">= 0"])
-  s.add_development_dependency('RedCloth', [">= 0"]) # for testing rich types
-  s.add_development_dependency('kramdown', [">= 0"])  # for testing rich types
+  s.metadata = {
+    "allowed_push_host" => "https://gem.fury.io/invoca"
+  }
 
   s.executables = ["hobofields"]
-  s.files = `git ls-files -x #{name}/* -z`.split("\0")
-
-  s.name = name
-  s.version = version
-  s.date = Date.today.to_s
+  s.files = `git ls-files -x hobo_fields/* -z`.split("\0")
 
   s.required_rubygems_version = ">= 1.3.6"
-  s.rdoc_options = ["--charset=UTF-8"]
   s.require_paths = ["lib"]
 
+  s.add_dependency 'invoca-utils', '~> 0.4'
+  s.add_dependency 'rails', '>= 4.2', '< 7'
 end
 
