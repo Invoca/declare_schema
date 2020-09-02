@@ -87,14 +87,14 @@ If we add a new field to the model, the migration generator will add it to the d
      class Advert
        fields do
          name :string, limit: 255, null: true
-         body :text, limit: 0xffff, null: true
+         body :text, null: true
          published_at :datetime, null: true
        end
      end
     >> up, down = migrate
     >> up
     =>
-     "add_column :adverts, :body, :text, limit: 0xffff
+     "add_column :adverts, :body, :text
      add_column :adverts, :published_at, :datetime"
     >> down
     =>
@@ -110,7 +110,7 @@ If we remove a field from the model, the migration generator removes the databas
      class Advert < ActiveRecord::Base
        fields do
          name :string, limit: 255, null: true
-         body :text, limit: 0xffff, null: true
+         body :text, null: true
        end
      end
     >> up, down = migrate
@@ -127,7 +127,7 @@ Here we rename the `name` field to `title`. By default the generator sees this a
      class Advert < ActiveRecord::Base
        fields do
          title :string, limit: 255, null: true
-         body :text, limit: 0xffff, null: true
+         body :text, null: true
        end
      end
     >> # Just generate - don't run the migration:
@@ -160,13 +160,13 @@ Let's apply that change to the database
     >>
      class Advert
        fields do
-         title :text, limit: 0xffff, null: true
-         body :text, limit: 0xffff, null: true
+         title :text, null: true
+         body :text, null: true
        end
      end
     >> up, down = Generators::Hobo::Migration::Migrator.run
     >> up
-    => "change_column :adverts, :title, :text, :limit => 196605"
+    => "change_column :adverts, :title, :text"
     >> down
     => "change_column :adverts, :title, :string, limit: 255"
 
@@ -177,14 +177,14 @@ Let's apply that change to the database
      class Advert
        fields do
          title :string, :default => "Untitled", limit: 255, null: true
-         body :text, limit: 0xffff, null: true
+         body :text, null: true
        end
      end
     >> up, down = migrate
     >> up.split(',').slice(0,3).join(',')
     => 'change_column :adverts, :title, :string'
     >> up.split(',').slice(3,2).sort.join(',')
-    => " :default => \"Untitled\", :limit => 255"
+    => " :default => \"Untitled\""
     >> down
     => "change_column :adverts, :title, :string, limit: 255"
 
@@ -213,10 +213,31 @@ Note that limit on a decimal column is ignored (use :scale and :precision)
     >> up
     => "add_column :adverts, :price, :decimal, :null => false"
 
+Limits are generally not needed for `text` fields, because by default, `text` fields will use the maximum size
+allowed for that database type (0xffffffff for LONGTEXT in MySQL unlimited in Postgres, 1 billion in Sqlite).
+If a `limit` is given, it will only be used in MySQL, to choose the smallest TEXT field that will accommodate
+that limit (0xff for TINYTEXT, 0xffff for TEXT, 0xffffff for MEDIUMTEXT, 0xffffffff for LONGTEXT).
+
+    >>
+     class Advert
+       fields do
+         notes :text
+         description :text, limit: 30000
+       end
+     end
+    >> up, down = Generators::Hobo::Migration::Migrator.run
+    >> up
+    => "add_column :adverts, :price, :decimal, :null => false
+        add_column :adverts, :notes, :text, :null => false
+        add_column :adverts, :description, :text, :null => false"
+
+(No limit on `add_column ... :description` above since these tests are run against SQLite.)
+
 Cleanup
 {.hidden}
 
     >> Advert.field_specs.delete :price
+    >> Advert.field_specs.delete :notes
 {.hidden}
 
 
@@ -267,7 +288,8 @@ Cleanup:
 {.hidden}
 
         >> Advert.field_specs.delete(:c_id)
-        >> Advert.index_specs.delete_if {|spec| spec.fields==["c_id"]}
+        >> Advert.field_specs.delete(:description)
+        >> Advert.index_specs.delete_if { |spec| spec.fields==["c_id"] }
 {.hidden}
 
 You can avoid generating the index by specifying `:index => false`
@@ -455,7 +477,7 @@ The migration generator respects the `set_table_name` declaration, although as b
        self.table_name="ads"
        fields do
          title :string, :default => "Untitled", limit: 255, null: true
-         body :text, limit: 0xffff, null: true
+         body :text, null: true
        end
      end
     >> up, down = Generators::Hobo::Migration::Migrator.run(:adverts => :ads)
@@ -490,7 +512,7 @@ As with renaming columns, we have to tell the migration generator about the rena
      class Advertisement < ActiveRecord::Base
        fields do
          title :string, :default => "Untitled", limit: 255, null: true
-         body :text, limit: 0xffff, null: true
+         body :text, null: true
        end
      end
     >> up, down = Generators::Hobo::Migration::Migrator.run(:adverts => :advertisements)
@@ -527,7 +549,7 @@ Adding a subclass or two should introduce the 'type' column and no other changes
         >>
          class Advert < ActiveRecord::Base
            fields do
-             body :text, limit: 0xffff, null: true
+             body :text, null: true
              title :string, :default => "Untitled", limit: 255, null: true
            end
          end
@@ -580,7 +602,7 @@ First let's confirm we're in a known state. One model, 'Advert', with a string '
      class Advert
        fields do
          name :string, :default => "No Name", limit: 255, null: true
-         body :text, limit: 0xffff, null: true
+         body :text, null: true
        end
      end
     >> up, down = Generators::Hobo::Migration::Migrator.run(:adverts => {:title => :name})
@@ -603,7 +625,7 @@ First let's confirm we're in a known state. One model, 'Advert', with a string '
      class Ad < ActiveRecord::Base
        fields do
          title      :string, :default => "Untitled", limit: 255
-         body       :text, limit: 0xffff, null: true
+         body       :text, null: true
          created_at :datetime
        end
      end
@@ -617,7 +639,7 @@ First let's confirm we're in a known state. One model, 'Advert', with a string '
     >>
      class Advert < ActiveRecord::Base
        fields do
-         body :text, limit: 0xffff, null: true
+         body :text, null: true
          title :string, :default => "Untitled", limit: 255, null: true
        end
      end
@@ -632,7 +654,7 @@ HoboFields has some support for legacy keys.
      class Advert
        fields do
          name :string, :default => "No Name", limit: 255, null: true
-         body :text, limit: 0xffff, null: true
+         body :text, null: true
        end
        self.primary_key="advert_id"
      end
