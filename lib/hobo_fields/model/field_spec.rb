@@ -2,15 +2,24 @@
 
 module HoboFields
   module Model
-
     class FieldSpec
-
-      UTF8_BYTES_PER_CHAR = 3
-
       class UnknownSqlTypeError < RuntimeError; end
 
-      def initialize(model, name, type, options={})
-        # Inovca change - searching for the primary key was causing an additional database read on every model load.  Assume
+      class << self
+        # method for easy stubbing in tests
+        def mysql_text_limits?
+          if defined?(@apply_mysql_rounding_for_text_limits)
+            puts "@apply_mysql_rounding_for_text_limits #{@apply_mysql_rounding_for_text_limits}"
+            @apply_mysql_rounding_for_text_limits
+          else
+            puts "@apply_mysql_rounding_for_text_limits = #{ActiveRecord::Base.connection.class.name =~ /mysql/i}"
+            @apply_mysql_rounding_for_text_limits = ActiveRecord::Base.connection.class.name =~ /mysql/i
+          end
+        end
+      end
+
+      def initialize(model, name, type, options = {})
+        # Invoca change - searching for the primary key was causing an additional database read on every model load.  Assume
         # "id" which works for invoca.
         # raise ArgumentError, "you cannot provide a field spec for the primary key" if name == model.primary_key
         raise ArgumentError, "you cannot provide a field spec for the primary key" if name == "id"
@@ -19,12 +28,9 @@ module HoboFields
         self.type = type.is_a?(String) ? type.to_sym : type
         position = options.delete(:position)
         self.options = options
-        if options[:char_limit]
-          self.options = self.options.merge(:limit => options[:char_limit] * UTF8_BYTES_PER_CHAR)
-        end
+
         case type
         when :text
-          self.options[:limit] or raise "limit must be given for :text field #{model}##{name}: #{self.options.inspect}"
           self.options[:default] and raise "default may not be given for :text field #{model}##{name}"
         when :string
           self.options[:limit] or raise "limit must be given for :string field #{model}##{name}: #{self.options.inspect}; do you want 255?"
@@ -34,13 +40,14 @@ module HoboFields
 
       attr_accessor :model, :name, :type, :position, :options
 
-      TYPE_SYNONYMS = [[:timestamp, :datetime]]
+      TYPE_SYNONYMS = [[:timestamp, :datetime]].freeze
 
-      begin
-        SQLITE_COLUMN_CLASS = ActiveRecord::ConnectionAdapters::SQLiteColumn
-      rescue NameError
-        SQLITE_COLUMN_CLASS = NilClass
-      end
+      SQLITE_COLUMN_CLASS =
+        begin
+          ActiveRecord::ConnectionAdapters::SQLiteColumn
+        rescue NameError
+          NilClass
+        end
 
       def sql_type
         options[:sql_type] or begin
@@ -70,7 +77,7 @@ module HoboFields
       end
 
       def null
-        :null.in?(options) ? options[:null] : true
+        !:null.in?(options) || options[:null]
       end
 
       def default
@@ -91,7 +98,6 @@ module HoboFields
         t == col_spec.type
       end
 
-
       def different_to?(col_spec)
         !same_type?(col_spec) ||
           # we should be able to use col_spec.comment, but col_spec has
@@ -106,7 +112,8 @@ module HoboFields
             check_attributes = [:null, :default]
             check_attributes += [:precision, :scale] if sql_type == :decimal && !col_spec.is_a?(SQLITE_COLUMN_CLASS)  # remove when rails fixes https://rails.lighthouseapp.com/projects/8994-ruby-on-rails/tickets/2872
             check_attributes -= [:default] if sql_type == :text && col_spec.class.name =~ /mysql/i
-            check_attributes << :limit if sql_type.in?([:string, :text, :binary, :varbinary, :integer, :enum])
+            check_attributes << :limit if sql_type.in?([:string, :binary, :varbinary, :integer, :enum]) ||
+                                          (sql_type == :text && self.class.mysql_text_limits?)
             check_attributes.any? do |k|
               if k == :default
                 case Rails::VERSION::MAJOR
@@ -127,7 +134,6 @@ module HoboFields
           end
       end
 
-
       private
 
       def native_type?(type)
@@ -137,8 +143,6 @@ module HoboFields
       def native_types
         Generators::Hobo::Migration::Migrator.native_types
       end
-
     end
-
   end
 end

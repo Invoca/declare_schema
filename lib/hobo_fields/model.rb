@@ -79,10 +79,6 @@ module HoboFields
       # declarations.
       def declare_field(name, type, *args)
         options = args.extract_options!
-        if type == :text
-          options[:limit] or raise ArgumentError, ":text field must have :limit: #{self.name}##{name}: #{options.inspect}"
-          options[:char_limit] = options.delete(:limit)
-        end
         field_added(name, type, args, options) if respond_to?(:field_added)
         add_formatting_for_field(name, type, args)
         add_validations_for_field(name, type, args, options)

@@ -104,7 +104,6 @@ module Generators
 
         attr_accessor :renames
 
-
         def load_rails_models
           Rails.application.eager_load!
         end
@@ -297,7 +296,7 @@ module Generators
             down = [undo_changes, undo_renames, undo_drops, undo_creates, undo_index_changes, undo_fk_changes].flatten.reject(&:blank?) * "\n\n"
 
             [up, down]
-          rescue Exception=>ex
+          rescue Exception => ex
             puts "Caught exception: #{ex}"
             puts ex.backtrace.join("\n")
             raise
@@ -339,12 +338,12 @@ module Generators
         def change_table(model, current_table_name)
           new_table_name = model.table_name
 
-          db_columns = model.connection.columns(current_table_name).index_by{|c|c.name}
+          db_columns = model.connection.columns(current_table_name).index_by(&:name)
           key_missing = db_columns[model.primary_key].nil? && model.primary_key.present?
           db_columns -= [model.primary_key.presence]
 
-          model_column_names = model.field_specs.keys.*.to_s
-          db_column_names = db_columns.keys.*.to_s
+          model_column_names = model.field_specs.keys.map(&:to_s)
+          db_column_names = db_columns.keys.map(&:to_s)
 
           to_add = model_column_names - db_column_names
           to_add += [model.primary_key] if key_missing && model.primary_key.present?
@@ -364,7 +363,7 @@ module Generators
             "rename_column :#{new_table_name}, :#{new_name}, :#{old_name}"
           end
 
-          to_add = to_add.sort_by {|c| model.field_specs[c]&.position || 0 }
+          to_add = to_add.sort_by { |c| model.field_specs[c]&.position || 0 }
           adds = to_add.map do |c|
             args =
               if (spec = model.field_specs[c])
@@ -395,7 +394,8 @@ module Generators
             spec = model.field_specs[c]
             if spec.different_to?(col) # TODO: DRY this up to a diff function that returns the differences. It's different if it has differences. -Colin
               change_spec = fk_field_options(model, c)
-              change_spec[:limit]     = spec.limit     unless spec.limit.nil? && col.limit.nil?
+              change_spec[:limit]     = spec.limit     if ::HoboFields::Model::FieldSpec::mysql_text_limits? &&
+                                                         (!spec.limit.nil? || !!col.limit.nil?)
               change_spec[:precision] = spec.precision unless spec.precision.nil?
               change_spec[:scale]     = spec.scale     unless spec.scale.nil?
               change_spec[:null]      = spec.null      unless spec.null && col.null
@@ -403,7 +403,7 @@ module Generators
               change_spec[:comment]   = spec.comment   unless spec.comment.nil? && (col.comment if col.respond_to?(:comment)).nil?
 
               changes << "change_column :#{new_table_name}, :#{c}, " +
-                ([":#{spec.sql_type}"] + format_options(change_spec, spec.sql_type, true)).join(", ")
+                ([":#{spec.sql_type}"] + format_options(change_spec, spec.sql_type, changing: true)).join(", ")
               back = change_column_back(current_table_name, col_name)
               undo_changes << back unless back.blank?
             end
@@ -492,10 +492,11 @@ module Generators
           "remove_foreign_key('#{old_table_name}', name: '#{fk_name}')"
         end
 
-        def format_options(options, type, changing=false)
+        def format_options(options, type, changing: false)
           options.map do |k, v|
             unless changing
               next if k == :limit && (type == :decimal || v == native_types[type][:limit])
+              next if k == :limit && type == :text && !HoboFields::Model::FieldSpec::mysql_text_limits?
               next if k == :null && v == true
             end
 
