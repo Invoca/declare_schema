@@ -94,7 +94,7 @@ If we add a new field to the model, the migration generator will add it to the d
     >> up, down = migrate
     >> up
     =>
-     "add_column :adverts, :body, :text, limit: 0xffff * 3
+     "add_column :adverts, :body, :text, limit: 0xffff
      add_column :adverts, :published_at, :datetime"
     >> down
     =>
@@ -309,14 +309,16 @@ Cleanup:
         >> Advert.index_specs.delete_if {|spec| spec.fields==["category_id"]}
 {.hidden}
 
-### Timestamps
+### Timestamps and Optimimistic Locking
 
-`updated_at` and `created_at` can be declared with the shorthand `timestamps`
+`updated_at` and `created_at` can be declared with the shorthand `timestamps`.
+Similarly, `lock_version` can be declared with the "shorthand" `optimimistic_lock`.
 
         >>
          class Advert
            fields do
              timestamps
+             optimistic_lock
            end
          end
         >> up, down = Generators::Hobo::Migration::Migrator.run
@@ -335,6 +337,7 @@ Cleanup:
 
         >> Advert.field_specs.delete(:updated_at)
         >> Advert.field_specs.delete(:created_at)
+        >> Advert.field_specs.delete(:lock_version)
 {.hidden}
 
 ### Indices
