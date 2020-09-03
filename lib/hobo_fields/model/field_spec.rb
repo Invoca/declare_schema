@@ -8,13 +8,19 @@ module HoboFields
       class << self
         # method for easy stubbing in tests
         def mysql_text_limits?
-          if defined?(@apply_mysql_rounding_for_text_limits)
-            puts "@apply_mysql_rounding_for_text_limits #{@apply_mysql_rounding_for_text_limits}"
-            @apply_mysql_rounding_for_text_limits
+          if defined?(@mysql_text_limits)
+            @mysql_text_limits
           else
-            puts "@apply_mysql_rounding_for_text_limits = #{ActiveRecord::Base.connection.class.name =~ /mysql/i}"
-            @apply_mysql_rounding_for_text_limits = ActiveRecord::Base.connection.class.name =~ /mysql/i
+            @mysql_text_limits = ActiveRecord::Base.connection.class.name.match?(/mysql/i)
           end
+        end
+
+        def round_up_mysql_text_limit(limit)
+          [0xff, 0xff_ff, 0xff_ff_ff].find do |mysql_supported_text_limit|
+            mysql_supported_text_limit if limit <= mysql_supported_text_limit
+          end
+
+          # 0xff_ff_ff_ff is implied when nil
         end
       end
 
@@ -31,9 +37,14 @@ module HoboFields
 
         case type
         when :text
-          self.options[:default] and raise "default may not be given for :text field #{model}##{name}"
+          options[:default] and raise "default may not be given for :text field #{model}##{name}"
+          if options[:limit]
+            options[:limit] = if self.class.mysql_text_limits?
+                                self.class.round_up_mysql_text_limit(options[:limit])
+                              end
+          end
         when :string
-          self.options[:limit] or raise "limit must be given for :string field #{model}##{name}: #{self.options.inspect}; do you want 255?"
+          options[:limit] or raise "limit must be given for :string field #{model}##{name}: #{self.options.inspect}; do you want 255?"
         end
         self.position = position || model.field_specs.length
       end
