@@ -218,6 +218,8 @@ allowed for that database type (0xffffffff for LONGTEXT in MySQL unlimited in Po
 If a `limit` is given, it will only be used in MySQL, to choose the smallest TEXT field that will accommodate
 that limit (0xff for TINYTEXT, 0xffff for TEXT, 0xffffff for MEDIUMTEXT, 0xffffffff for LONGTEXT).
 
+    >> ::HoboFields::Model::FieldSpec.mysql_text_limits?
+    => false
     >>
      class Advert
        fields do
@@ -231,7 +233,33 @@ that limit (0xff for TINYTEXT, 0xffff for TEXT, 0xffffff for MEDIUMTEXT, 0xfffff
         add_column :adverts, :notes, :text, :null => false
         add_column :adverts, :description, :text, :null => false"
 
-(No limit on `add_column ... :description` above since these tests are run against SQLite.)
+(There is no limit on `add_column ... :description` above since these tests are run against SQLite.)
+
+Cleanup
+{.hidden}
+    >> Advert.field_specs.delete :price
+    >> Advert.field_specs.delete :notes
+    >> Advert.field_specs.delete :description
+{.hidden}
+
+In MySQL, limits are applied, rounded up:
+
+    >> ::HoboFields::Model::FieldSpec::instance_variable_set(:@mysql_text_limits, true)
+    >> ::HoboFields::Model::FieldSpec.mysql_text_limits?
+    => true
+    >>
+     class Advert
+       fields do
+         notes :text
+         description :text, limit: 30000
+       end
+     end
+    >> up, down = Generators::Hobo::Migration::Migrator.run
+    >> up
+    => "add_column :adverts, :notes, :text, :null => false
+        add_column :adverts, :description, :text, :null => false, :limit => 65535"
+    >> ::HoboFields::Model::FieldSpec::instance_variable_set(:@mysql_text_limits, false)
+
 
 Cleanup
 {.hidden}
