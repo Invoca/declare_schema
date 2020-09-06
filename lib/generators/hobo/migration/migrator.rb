@@ -394,8 +394,8 @@ module Generators
             spec = model.field_specs[c]
             if spec.different_to?(col) # TODO: DRY this up to a diff function that returns the differences. It's different if it has differences. -Colin
               change_spec = fk_field_options(model, c)
-              change_spec[:limit]     = spec.limit     if ::HoboFields::Model::FieldSpec::mysql_text_limits? &&
-                                                         (!spec.limit.nil? || !!col.limit.nil?)
+              change_spec[:limit]     = spec.limit     if HoboFields::Model::FieldSpec::mysql_text_limits? &&
+                                                         (spec.limit || col.limit)
               change_spec[:precision] = spec.precision unless spec.precision.nil?
               change_spec[:scale]     = spec.scale     unless spec.scale.nil?
               change_spec[:null]      = spec.null      unless spec.null && col.null
@@ -496,9 +496,11 @@ module Generators
           options.map do |k, v|
             unless changing
               next if k == :limit && (type == :decimal || v == native_types[type][:limit])
-              next if k == :limit && type == :text && !HoboFields::Model::FieldSpec::mysql_text_limits?
               next if k == :null && v == true
             end
+
+            next if k == :limit && type == :text &&
+              (!HoboFields::Model::FieldSpec::mysql_text_limits? || v == HoboFields::Model::FieldSpec::MYSQL_LONGTEXT_LIMIT)
 
             "#{k.inspect} => #{v.inspect}"
           end.compact
@@ -527,12 +529,12 @@ module Generators
           res.string.strip.gsub("\n  ", "\n")
         end
 
-        def column_options_from_reverted_table(table, column)
+        def column_options_from_reverted_table(table, col_name)
           revert = revert_table(table)
-          if (md = revert.match(/\s*t\.column\s+"#{column}",\s+(:[a-zA-Z0-9_]+)(?:,\s+(.*?)$)?/m))
+          if (md = revert.match(/\s*t\.column\s+"#{col_name}",\s+(:[a-zA-Z0-9_]+)(?:,\s+(.*?)$)?/m))
             # Ugly migration
             _, type, options = *md
-          elsif (md = revert.match(/\s*t\.([a-z_]+)\s+"#{column}"(?:,\s+(.*?)$)?/m))
+          elsif (md = revert.match(/\s*t\.([a-z_]+)\s+"#{col_name}"(?:,\s+(.*?)$)?/m))
             # Sexy migration
             _, type, options = *md
             type = ":#{type}"
@@ -540,20 +542,16 @@ module Generators
           [type, options]
         end
 
-
-        def change_column_back(table, column)
-          type, options = column_options_from_reverted_table(table, column)
-          "change_column :#{table}, :#{column}, #{type}#{', ' + options.strip if options}"
+        def change_column_back(table, col_name)
+          type, options = column_options_from_reverted_table(table, col_name)
+          "change_column :#{table}, :#{col_name}, #{type}#{', ' + options.strip if options}"
         end
-
 
         def revert_column(table, column)
           type, options = column_options_from_reverted_table(table, column)
           "add_column :#{table}, :#{column}, #{type}#{', ' + options.strip if options}"
         end
-
       end
-
     end
   end
 end

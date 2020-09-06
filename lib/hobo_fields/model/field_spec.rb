@@ -5,6 +5,11 @@ module HoboFields
     class FieldSpec
       class UnknownSqlTypeError < RuntimeError; end
 
+      MYSQL_TINYTEXT_LIMIT    = 0xff
+      MYSQL_TEXT_LIMIT        = 0xff_ff
+      MYSQL_MEDIUMTEXT_LIMIT  = 0xff_ff_ff
+      MYSQL_LONGTEXT_LIMIT    = 0xff_ff_ff_ff
+
       class << self
         # method for easy stubbing in tests
         def mysql_text_limits?
@@ -16,11 +21,11 @@ module HoboFields
         end
 
         def round_up_mysql_text_limit(limit)
-          [0xff, 0xff_ff, 0xff_ff_ff].find do |mysql_supported_text_limit|
-            mysql_supported_text_limit if limit <= mysql_supported_text_limit
-          end
-
-          # 0xff_ff_ff_ff is implied when nil
+          [MYSQL_TINYTEXT_LIMIT, MYSQL_TEXT_LIMIT, MYSQL_MEDIUMTEXT_LIMIT].find do |mysql_supported_text_limit|
+            if limit <= mysql_supported_text_limit
+              mysql_supported_text_limit
+            end
+          end || MYSQL_LONGTEXT_LIMIT
         end
       end
 
@@ -38,10 +43,8 @@ module HoboFields
         case type
         when :text
           options[:default] and raise "default may not be given for :text field #{model}##{name}"
-          if options[:limit]
-            options[:limit] = if self.class.mysql_text_limits?
-                                self.class.round_up_mysql_text_limit(options[:limit])
-                              end
+          if self.class.mysql_text_limits?
+            options[:limit] = self.class.round_up_mysql_text_limit(options[:limit] || MYSQL_LONGTEXT_LIMIT)
           end
         when :string
           options[:limit] or raise "limit must be given for :string field #{model}##{name}: #{self.options.inspect}; do you want 255?"
