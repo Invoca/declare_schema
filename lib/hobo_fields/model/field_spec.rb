@@ -5,10 +5,10 @@ module HoboFields
     class FieldSpec
       class UnknownSqlTypeError < RuntimeError; end
 
-      MYSQL_TINYTEXT_LIMIT    = 0xff
-      MYSQL_TEXT_LIMIT        = 0xff_ff
-      MYSQL_MEDIUMTEXT_LIMIT  = 0xff_ff_ff
-      MYSQL_LONGTEXT_LIMIT    = 0xff_ff_ff_ff
+      MYSQL_TINYTEXT_LIMIT    =        0xff
+      MYSQL_TEXT_LIMIT        =      0xffff
+      MYSQL_MEDIUMTEXT_LIMIT  =   0xff_ffff
+      MYSQL_LONGTEXT_LIMIT    = 0xffff_ffff
 
       class << self
         # method for easy stubbing in tests
