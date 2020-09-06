@@ -63,7 +63,7 @@ Here we see a simple `create_table` migration along with the `drop_table` down m
 Normally we would run the generated migration with `rake db:create`. We can achieve the same effect directly in Ruby like this:
 
     >> ActiveRecord::Migration.class_eval up
-    >> Advert.columns.*.name
+    >> Advert.columns.map(&:name)
     => ["id", "name"]
 
 We'll define a method to make that easier next time

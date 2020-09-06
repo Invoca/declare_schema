@@ -50,7 +50,7 @@ module HoboFields
     module ClassMethods
       def index(fields, options = {})
         # don't double-index fields
-        index_fields_s = Array.wrap(fields).*.to_s
+        index_fields_s = Array.wrap(fields).map(&:to_s)
         unless index_specs.any? { |index_spec| index_spec.fields == index_fields_s }
           index_specs << HoboFields::Model::IndexSpec.new(self, fields, options)
         end

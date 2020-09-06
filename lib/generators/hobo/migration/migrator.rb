@@ -152,14 +152,14 @@ module Generators
         # Returns an array of model classes and an array of table names
         # that generation needs to take into account
         def models_and_tables
-          ignore_model_names = Migrator.ignore_models.*.to_s.*.underscore
+          ignore_model_names = Migrator.ignore_models.map { | model| model.to_s.underscore }
           all_models = table_model_classes
           hobo_models = all_models.select do |m|
             (m.name['HABTM_'] ||
               (m.include_in_migration if m.respond_to?(:include_in_migration))) && !m.name.underscore.in?(ignore_model_names)
           end
           non_hobo_models = all_models - hobo_models
-          db_tables = connection.tables - Migrator.ignore_tables.*.to_s - non_hobo_models.*.table_name
+          db_tables = connection.tables - Migrator.ignore_tables.map(&:to_s) - non_hobo_models.map(&:table_name)
           [hobo_models, db_tables]
         end
 

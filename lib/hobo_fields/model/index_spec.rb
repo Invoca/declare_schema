@@ -15,7 +15,7 @@ module HoboFields
       def initialize(model, fields, options={})
         @model = model
         self.table = options.delete(:table_name) || model.table_name
-        self.fields = Array.wrap(fields).*.to_s
+        self.fields = Array.wrap(fields).map(&:to_s)
         self.explicit_name = options[:name] unless options.delete(:allow_equivalent)
         self.name = options.delete(:name) || model.connection.index_name(self.table, :column => self.fields).gsub(/index.*_on_/, 'on_')
         self.unique = options.delete(:unique) || name == PRIMARY_KEY_NAME || false
@@ -61,13 +61,13 @@ module HoboFields
         if primary_key? && !ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
           to_add_primary_key_statement(new_table_name, existing_primary_key)
         else
-          r = "add_index :#{new_table_name}, #{fields.*.to_sym.inspect}"
+          r = "add_index :#{new_table_name}, #{fields.map(&:to_sym).inspect}"
           r += ", :unique => true" if unique
           r += ", :where => '#{self.where}'" if self.where.present?
           if default_name?
             check_name = @model.connection.index_name(self.table, :column => self.fields)
           else
-            r = "add_index :#{new_table_name}, #{fields.*.to_sym.inspect}"
+            r = "add_index :#{new_table_name}, #{fields.map(&:to_sym).inspect}"
             r += ", :unique => true" if unique
             r += ", :name => '#{name}'"
             r
