@@ -133,14 +133,11 @@ Here we rename the `name` field to `title`. By default the generator sees this a
     >> # Just generate - don't run the migration:
     >> up, down = Generators::Hobo::Migration::Migrator.run
     >> up
-    =>
-     "add_column :adverts, :title, :string
-     remove_column :adverts, :name"
+    => "add_column :adverts, :title, :string, :limit => 255
+        remove_column :adverts, :name"
     >> down
-    =>""
-    remove_column :adverts, :title
-    add_column :adverts, :name, :string
-    >>
+    => "remove_column :adverts, :title
+        add_column :adverts, :name, :string, limit: 255"
 
 When run as a generator, the migration-generator won't make this assumption. Instead it will prompt for user input to resolve the ambiguity. When using the Ruby API, we can ask for a rename instead of an add + drop by passing in a hash:
 
@@ -184,7 +181,7 @@ Let's apply that change to the database
     >> up.split(',').slice(0,3).join(',')
     => 'change_column :adverts, :title, :string'
     >> up.split(',').slice(3,2).sort.join(',')
-    => " :default => \"Untitled\""
+    => " :default => \"Untitled\", :limit => 255"
     >> down
     => "change_column :adverts, :title, :string, limit: 255"
 
@@ -201,8 +198,24 @@ Let's apply that change to the database
     >> up
     => "add_column :adverts, :price, :integer, :null => false, :limit => 2"
 
+Now run the migration, then change the limit:
+
+    >> ActiveRecord::Migration.class_eval up
+    >>
+     class Advert
+       fields do
+         price :integer, :limit => 3
+       end
+     end
+    >> up, down = Generators::Hobo::Migration::Migrator.run
+    >> up
+    => "change_column :adverts, :price, :integer, :limit => 3, :null => false"
+    >> down
+    => "change_column :adverts, :price, :integer, limit: 2, null: false"
+
 Note that limit on a decimal column is ignored (use :scale and :precision)
 
+    >> ActiveRecord::Migration.class_eval "remove_column :adverts, :price"
     >>
      class Advert
        fields do
@@ -297,7 +310,7 @@ TODO TECH-4814: The above test should have this output:
 TODO => "change_column :adverts, :description, :text, :limit => 255"
 
 
-And migrate to an stated text limit that is the same as the unstated one:
+And migrate to a stated text limit that is the same as the unstated one:
 
     >>
      class Advert
@@ -717,7 +730,7 @@ First let's confirm we're in a known state. One model, 'Advert', with a string '
     >> up, down = Generators::Hobo::Migration::Migrator.run(:adverts => {:title => :name})
     >> up
     => "rename_column :adverts, :title, :name
-        change_column :adverts, :name, :string, :default => \"No Name\""
+        change_column :adverts, :name, :string, :limit => 255, :default => \"No Name\""
     >> down
     => "rename_column :adverts, :name, :title
         change_column :adverts, :title, :string, limit: 255, default: \"Untitled\""
@@ -740,7 +753,7 @@ First let's confirm we're in a known state. One model, 'Advert', with a string '
     >> up.gsub(/\n+/, "\n")
     => "rename_table :adverts, :ads
         add_column :ads, :created_at, :datetime, :null => false
-        change_column :ads, :title, :string, :null => false, :default => \"Untitled\"
+        change_column :ads, :title, :string, :limit => 255, :null => false, :default => \"Untitled\"
         add_index :ads, [:id], :unique => true, :name => 'PRIMARY_KEY'"
 
     >>

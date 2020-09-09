@@ -163,7 +163,6 @@ module Generators
           [hobo_models, db_tables]
         end
 
-
         # return a hash of table renames and modifies the passed arrays so
         # that renamed tables are no longer listed as to_create or to_drop
         def extract_table_renames!(to_create, to_drop)
@@ -394,7 +393,8 @@ module Generators
             spec = model.field_specs[c]
             if spec.different_to?(col) # TODO: DRY this up to a diff function that returns the differences. It's different if it has differences. -Colin
               change_spec = fk_field_options(model, c)
-              change_spec[:limit]     = spec.limit     if HoboFields::Model::FieldSpec::mysql_text_limits? &&
+              change_spec[:limit]     = spec.limit     if (spec.sql_type != :text ||
+                                                         HoboFields::Model::FieldSpec::mysql_text_limits?) &&
                                                          (spec.limit || col.limit)
               change_spec[:precision] = spec.precision unless spec.precision.nil?
               change_spec[:scale]     = spec.scale     unless spec.scale.nil?
