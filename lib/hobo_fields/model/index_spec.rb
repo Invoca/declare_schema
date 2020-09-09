@@ -24,9 +24,8 @@ module HoboFields
           raise IndexNameTooLongError, "Index '#{self.name}' exceeds MySQL limit of #{MYSQL_INDEX_NAME_MAX_LENGTH} characters. Give it a shorter name."
         end
 
-        if options[:where]
-          self.where = "#{options.delete(:where)}"
-          self.where = "(#{self.where})" unless self.where.start_with?('(')
+        if (where = options[:where])
+          self.where = where.start_with?('(') ? where : "(#{where})"
         end
       end
 
