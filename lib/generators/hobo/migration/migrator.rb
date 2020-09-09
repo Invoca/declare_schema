@@ -35,7 +35,7 @@ module Generators
           i = 0
           foreign_keys.inject({}) do |h, v|
             # some trickery to avoid an infinite loop when FieldSpec#initialize tries to call model.field_specs
-            h[v] = HoboFields::Model::FieldSpec.new(self, v, :integer, :position => i, :null => false)
+            h[v] = HoboFields::Model::FieldSpec.new(self, v, :integer, position: i, null: false)
             i += 1
             h
           end
@@ -460,7 +460,7 @@ module Generators
         def drop_index(table, name)
           # see https://hobo.lighthouseapp.com/projects/8324/tickets/566
           # for why the rescue exists
-          "remove_index :#{table}, :name => :#{name} rescue ActiveRecord::StatementInvalid"
+          "remove_index :#{table}, name: :#{name} rescue ActiveRecord::StatementInvalid"
         end
 
         def change_foreign_key_constraints(model, old_table_name)
@@ -502,7 +502,11 @@ module Generators
             next if k == :limit && type == :text &&
               (!HoboFields::Model::FieldSpec::mysql_text_limits? || v == HoboFields::Model::FieldSpec::MYSQL_LONGTEXT_LIMIT)
 
-            "#{k.inspect} => #{v.inspect}"
+            if k.is_a?(Symbol)
+              "#{k}: #{v.inspect}"
+            else
+              "#{k.inspect} => #{v.inspect}"
+            end
           end.compact
         end
 

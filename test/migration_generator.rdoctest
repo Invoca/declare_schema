@@ -133,7 +133,7 @@ Here we rename the `name` field to `title`. By default the generator sees this a
     >> # Just generate - don't run the migration:
     >> up, down = Generators::Hobo::Migration::Migrator.run
     >> up
-    => "add_column :adverts, :title, :string, :limit => 255
+    => "add_column :adverts, :title, :string, limit: 255
         remove_column :adverts, :name"
     >> down
     => "remove_column :adverts, :title
@@ -181,7 +181,7 @@ Let's apply that change to the database
     >> up.split(',').slice(0,3).join(',')
     => 'change_column :adverts, :title, :string'
     >> up.split(',').slice(3,2).sort.join(',')
-    => " :default => \"Untitled\", :limit => 255"
+    => " default: \"Untitled\", limit: 255"
     >> down
     => "change_column :adverts, :title, :string, limit: 255"
 
@@ -196,7 +196,7 @@ Let's apply that change to the database
      end
     >> up, down = Generators::Hobo::Migration::Migrator.run
     >> up
-    => "add_column :adverts, :price, :integer, :limit => 2"
+    => "add_column :adverts, :price, :integer, limit: 2"
 
 Now run the migration, then change the limit:
 
@@ -209,7 +209,7 @@ Now run the migration, then change the limit:
      end
     >> up, down = Generators::Hobo::Migration::Migrator.run
     >> up
-    => "change_column :adverts, :price, :integer, :limit => 3"
+    => "change_column :adverts, :price, :integer, limit: 3"
     >> down
     => "change_column :adverts, :price, :integer, limit: 2"
 
@@ -243,8 +243,8 @@ that limit (0xff for TINYTEXT, 0xffff for TEXT, 0xffffff for MEDIUMTEXT, 0xfffff
     >> up, down = Generators::Hobo::Migration::Migrator.run
     >> up
     => "add_column :adverts, :price, :decimal
-        add_column :adverts, :notes, :text, :null => false
-        add_column :adverts, :description, :text, :null => false"
+        add_column :adverts, :notes, :text, null: false
+        add_column :adverts, :description, :text, null: false"
 
 (There is no limit on `add_column ... :description` above since these tests are run against SQLite.)
 
@@ -269,8 +269,8 @@ In MySQL, limits are applied, rounded up:
      end
     >> up, down = Generators::Hobo::Migration::Migrator.run
     >> up
-    => "add_column :adverts, :notes, :text, :null => false
-        add_column :adverts, :description, :text, :null => false, :limit => 255"
+    => "add_column :adverts, :notes, :text, null: false
+        add_column :adverts, :description, :text, null: false, limit: 255"
 
 Cleanup
 {.hidden}
@@ -326,12 +326,12 @@ Now migrate to an unstated text limit:
      end
     >> up, down = Generators::Hobo::Migration::Migrator.run
     >> up
-    => "change_column :adverts, :description, :text, :null => false"
+    => "change_column :adverts, :description, :text, null: false"
     >> down
     => "change_column :adverts, :description, :text"
 
 TODO TECH-4814: The above test should have this output:
-TODO => "change_column :adverts, :description, :text, :limit => 255"
+TODO => "change_column :adverts, :description, :text, limit: 255"
 
 
 And migrate to a stated text limit that is the same as the unstated one:
@@ -344,7 +344,7 @@ And migrate to a stated text limit that is the same as the unstated one:
      end
     >> up, down = Generators::Hobo::Migration::Migrator.run
     >> up
-    => "change_column :adverts, :description, :text, :null => false"
+    => "change_column :adverts, :description, :text, null: false"
     >> down
     => "change_column :adverts, :description, :text"
     >> ::HoboFields::Model::FieldSpec::instance_variable_set(:@mysql_text_limits, false)
@@ -379,11 +379,11 @@ foreign-key field.  It also generates an index on the field.
          end
         >> up, down = Generators::Hobo::Migration::Migrator.run
         >> up.gsub(/\n+/, "\n")
-        => "add_column :adverts, :category_id, :integer, :limit => 8, :null => false
-            add_index :adverts, [:category_id], :name => 'on_category_id'"
+        => "add_column :adverts, :category_id, :integer, limit: 8, null: false
+            add_index :adverts, [:category_id], name: 'on_category_id'"
         >> down.sub(/\n+/, "\n")
         => "remove_column :adverts, :category_id
-            remove_index :adverts, :name => :on_category_id rescue ActiveRecord::StatementInvalid"
+            remove_index :adverts, name: :on_category_id rescue ActiveRecord::StatementInvalid"
 
 Cleanup:
 {.hidden}
@@ -401,8 +401,8 @@ If you specify a custom foreign key, the migration generator observes that:
          end
         >> up, down = Generators::Hobo::Migration::Migrator.run
         >> up.gsub(/\n+/, "\n")
-        => "add_column :adverts, :c_id, :integer, :limit => 8, :null => false
-            add_index :adverts, [:c_id], :name => 'on_c_id'"
+        => "add_column :adverts, :c_id, :integer, limit: 8, null: false
+            add_index :adverts, [:c_id], name: 'on_c_id'"
 
 Cleanup:
 {.hidden}
@@ -420,7 +420,7 @@ You can avoid generating the index by specifying `index: false`
          end
         >> up, down = Generators::Hobo::Migration::Migrator.run
         >> up.gsub(/\n+/, "\n")
-        => "add_column :adverts, :category_id, :integer, :limit => 8, :null => false"
+        => "add_column :adverts, :category_id, :integer, limit: 8, null: false"
 
 Cleanup:
 {.hidden}
@@ -438,8 +438,8 @@ You can specify the index name with :index
          end
         >> up, down = Generators::Hobo::Migration::Migrator.run
         >> up.gsub(/\n+/, "\n")
-        => "add_column :adverts, :category_id, :integer, :limit => 8, :null => false
-            add_index :adverts, [:category_id], :name => 'my_index'"
+        => "add_column :adverts, :category_id, :integer, limit: 8, null: false
+            add_index :adverts, [:category_id], name: 'my_index'"
 
 Cleanup:
 {.hidden}
@@ -464,7 +464,7 @@ Similarly, `lock_version` can be declared with the "shorthand" `optimimistic_loc
         >> up.gsub(/\n+/, "\n")
         => "add_column :adverts, :created_at, :datetime
             add_column :adverts, :updated_at, :datetime
-            add_column :adverts, :lock_version, :integer, :null => false, :default => 1"
+            add_column :adverts, :lock_version, :integer, null: false, default: 1"
         >> down.gsub(/\n+/, "\n")
         => "remove_column :adverts, :created_at
             remove_column :adverts, :updated_at
@@ -491,8 +491,8 @@ You can add an index to a field definition
          end
         >> up, down = Generators::Hobo::Migration::Migrator.run
         >> up.gsub(/\n+/, "\n")
-        => "add_column :adverts, :title, :string, :limit => 255
-            add_index :adverts, [:title], :name => 'on_title'"
+        => "add_column :adverts, :title, :string, limit: 255
+            add_index :adverts, [:title], name: 'on_title'"
 
 Cleanup:
 {.hidden}
@@ -510,8 +510,8 @@ You can ask for a unique index
          end
         >> up, down = Generators::Hobo::Migration::Migrator.run
         >> up.gsub(/\n+/, "\n")
-        => "add_column :adverts, :title, :string, :limit => 255
-            add_index :adverts, [:title], :unique => true, :name => 'on_title'"
+        => "add_column :adverts, :title, :string, limit: 255
+            add_index :adverts, [:title], unique: true, name: 'on_title'"
 
 Cleanup:
 {.hidden}
@@ -529,8 +529,8 @@ You can specify the name for the index
          end
         >> up, down = Generators::Hobo::Migration::Migrator.run
         >> up.gsub(/\n+/, "\n")
-        => "add_column :adverts, :title, :string, :limit => 255
-            add_index :adverts, [:title], :name => 'my_index'"
+        => "add_column :adverts, :title, :string, limit: 255
+            add_index :adverts, [:title], name: 'my_index'"
 
 Cleanup:
 {.hidden}
@@ -546,8 +546,8 @@ You can ask for an index outside of the fields block
          end
         >> up, down = Generators::Hobo::Migration::Migrator.run
         >> up.gsub(/\n+/, "\n")
-        => "add_column :adverts, :title, :string, :limit => 255
-            add_index :adverts, [:title], :name => 'on_title'"
+        => "add_column :adverts, :title, :string, limit: 255
+            add_index :adverts, [:title], name: 'on_title'"
 
 Cleanup:
 {.hidden}
@@ -563,8 +563,8 @@ The available options for the index function are `:unique` and `:name`
          end
         >> up, down = Generators::Hobo::Migration::Migrator.run
         >> up.gsub(/\n+/, "\n")
-        => "add_column :adverts, :title, :string, :limit => 255
-            add_index :adverts, [:title], :unique => true, :name => 'my_index'"
+        => "add_column :adverts, :title, :string, limit: 255
+            add_index :adverts, [:title], unique: true, name: 'my_index'"
 
 Cleanup:
 {.hidden}
@@ -580,8 +580,8 @@ You can create an index on more than one field
          end
         >> up, down = Generators::Hobo::Migration::Migrator.run
         >> up.gsub(/\n+/, "\n")
-        => "add_column :adverts, :title, :string, :limit => 255
-            add_index :adverts, [:title, :category_id], :name => 'on_title_and_category_id'"
+        => "add_column :adverts, :title, :string, limit: 255
+            add_index :adverts, [:title, :category_id], name: 'on_title_and_category_id'"
 
 Cleanup:
 {.hidden}
@@ -610,14 +610,14 @@ The migration generator respects the `set_table_name` declaration, although as b
     >> up, down = Generators::Hobo::Migration::Migrator.run("adverts" => "ads")
     >> up.gsub(/\n+/, "\n")
     => "rename_table :adverts, :ads
-        add_column :ads, :title, :string, :limit => 255
+        add_column :ads, :title, :string, limit: 255
         add_column :ads, :body, :text
-        add_index :ads, [:id], :unique => true, :name => 'PRIMARY_KEY'"
+        add_index :ads, [:id], unique: true, name: 'PRIMARY_KEY'"
     >> down.gsub(/\n+/, "\n")
     => "remove_column :ads, :title
         remove_column :ads, :body
         rename_table :ads, :adverts
-        add_index :adverts, [:id], :unique => true, :name => 'PRIMARY_KEY'"
+        add_index :adverts, [:id], unique: true, name: 'PRIMARY_KEY'"
 
 Set the table name back to what it should be and confirm we're in sync:
 
@@ -653,16 +653,16 @@ As with renaming columns, we have to tell the migration generator about the rena
     >> up, down = Generators::Hobo::Migration::Migrator.run("adverts" => "advertisements")
     >> up.gsub(/\n+/, "\n")
     => "rename_table :adverts, :advertisements
-        add_column :advertisements, :title, :string, :limit => 255
+        add_column :advertisements, :title, :string, limit: 255
         add_column :advertisements, :body, :text
         remove_column :advertisements, :name
-        add_index :advertisements, [:id], :unique => true, :name => 'PRIMARY_KEY'"
+        add_index :advertisements, [:id], unique: true, name: 'PRIMARY_KEY'"
     >> down.gsub(/\n+/, "\n")
     => "remove_column :advertisements, :title
         remove_column :advertisements, :body
         add_column :adverts, :name, :string, limit: 255
         rename_table :advertisements, :adverts
-        add_index :adverts, [:id], :unique => true, :name => 'PRIMARY_KEY'"
+        add_index :adverts, [:id], unique: true, name: 'PRIMARY_KEY'"
 
 ### Drop a table
 
@@ -701,11 +701,11 @@ Adding a subclass or two should introduce the 'type' column and no other changes
          end
         >> up, down = Generators::Hobo::Migration::Migrator.run
         >> up.gsub(/\n+/, "\n")
-        => "add_column :adverts, :type, :string, :limit => 255
-            add_index :adverts, [:type], :name => 'on_type'"
+        => "add_column :adverts, :type, :string, limit: 255
+            add_index :adverts, [:type], name: 'on_type'"
         >> down.gsub(/\n+/, "\n")
         => "remove_column :adverts, :type
-            remove_index :adverts, :name => :on_type rescue ActiveRecord::StatementInvalid"
+            remove_index :adverts, name: :on_type rescue ActiveRecord::StatementInvalid"
 
 Cleanup
 {.hidden}
@@ -748,7 +748,7 @@ First let's confirm we're in a known state. One model, 'Advert', with a string '
     >> up, down = Generators::Hobo::Migration::Migrator.run(adverts: { title: :name })
     >> up
     => "rename_column :adverts, :title, :name
-        change_column :adverts, :name, :string, :limit => 255, :default => \"No Name\""
+        change_column :adverts, :name, :string, limit: 255, default: \"No Name\""
     >> down
     => "rename_column :adverts, :name, :title
         change_column :adverts, :title, :string, limit: 255, default: \"Untitled\""
@@ -770,9 +770,9 @@ First let's confirm we're in a known state. One model, 'Advert', with a string '
     >> up, down = Generators::Hobo::Migration::Migrator.run(adverts: :ads)
     >> up.gsub(/\n+/, "\n")
     => "rename_table :adverts, :ads
-        add_column :ads, :created_at, :datetime, :null => false
-        change_column :ads, :title, :string, :limit => 255, :null => false, :default => \"Untitled\"
-        add_index :ads, [:id], :unique => true, :name => 'PRIMARY_KEY'"
+        add_column :ads, :created_at, :datetime, null: false
+        change_column :ads, :title, :string, limit: 255, null: false, default: \"Untitled\"
+        add_index :ads, [:id], unique: true, name: 'PRIMARY_KEY'"
 
     >>
      class Advert < ActiveRecord::Base
@@ -798,7 +798,7 @@ HoboFields has some support for legacy keys.
     >> up, down = Generators::Hobo::Migration::Migrator.run(adverts: { id: :advert_id })
     >> up.gsub(/\n+/, "\n")
     => "rename_column :adverts, :id, :advert_id
-        add_index :adverts, [:advert_id], :unique => true, :name => 'PRIMARY_KEY'"
+        add_index :adverts, [:advert_id], unique: true, name: 'PRIMARY_KEY'"
 
     >> nuke_model_class(Advert)
     >> ActiveRecord::Base.connection.execute "drop table `adverts`;"

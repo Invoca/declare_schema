@@ -17,7 +17,7 @@ module HoboFields
         self.table = options.delete(:table_name) || model.table_name
         self.fields = Array.wrap(fields).map(&:to_s)
         self.explicit_name = options[:name] unless options.delete(:allow_equivalent)
-        self.name = options.delete(:name) || model.connection.index_name(self.table, :column => self.fields).gsub(/index.*_on_/, 'on_')
+        self.name = options.delete(:name) || model.connection.index_name(self.table, column: self.fields).gsub(/index.*_on_/, 'on_')
         self.unique = options.delete(:unique) || name == PRIMARY_KEY_NAME || false
 
         if self.name.length > MYSQL_INDEX_NAME_MAX_LENGTH
@@ -45,7 +45,7 @@ module HoboFields
           end
         end
         connection.indexes(t).map do |i|
-          self.new(model, i.columns, :name => i.name, :unique => i.unique, :where => i.where, :table_name => old_table_name) unless model.ignore_indexes.include?(i.name)
+          self.new(model, i.columns, name: i.name, unique: i.unique, where: i.where, table_name: old_table_name) unless model.ignore_indexes.include?(i.name)
         end.compact
       end
 
@@ -54,22 +54,22 @@ module HoboFields
       end
 
       def default_name?
-        name == @model.connection.index_name(table, :column => fields)
+        name == @model.connection.index_name(table, column: fields)
       end
 
       def to_add_statement(new_table_name, existing_primary_key = nil)
         if primary_key? && !ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
           to_add_primary_key_statement(new_table_name, existing_primary_key)
         else
-          r = "add_index :#{new_table_name}, #{fields.map(&:to_sym).inspect}"
-          r += ", :unique => true" if unique
-          r += ", :where => '#{self.where}'" if self.where.present?
+          r = +"add_index :#{new_table_name}, #{fields.map(&:to_sym).inspect}"
+          r << ", unique: true" if unique
+          r << ", where: '#{self.where}'" if self.where.present?
           if default_name?
-            check_name = @model.connection.index_name(self.table, :column => self.fields)
+            check_name = @model.connection.index_name(self.table, column: self.fields)
           else
-            r = "add_index :#{new_table_name}, #{fields.map(&:to_sym).inspect}"
-            r += ", :unique => true" if unique
-            r += ", :name => '#{name}'"
+            r = +"add_index :#{new_table_name}, #{fields.map(&:to_sym).inspect}"
+            r << ", unique: true" if unique
+            r << ", name: '#{name}'"
             r
           end
         end
@@ -122,7 +122,7 @@ module HoboFields
         @child_table = model.table_name #unless a table rename, which would happen when a class is renamed??
         @parent_table_name = options[:parent_table]
         @foreign_key_name = options[:foreign_key] || self.foreign_key
-        @index_name = options[:index_name] || model.connection.index_name(model.table_name, :column => foreign_key)
+        @index_name = options[:index_name] || model.connection.index_name(model.table_name, column: foreign_key)
         @constraint_name = options[:constraint_name] || @index_name || ''
         @on_delete_cascade = options[:dependent] == :delete
 
