@@ -141,7 +141,7 @@ Here we rename the `name` field to `title`. By default the generator sees this a
 
 When run as a generator, the migration-generator won't make this assumption. Instead it will prompt for user input to resolve the ambiguity. When using the Ruby API, we can ask for a rename instead of an add + drop by passing in a hash:
 
-    >> up, down = Generators::Hobo::Migration::Migrator.run(:adverts => { :name => :title })
+    >> up, down = Generators::Hobo::Migration::Migrator.run(adverts: { name: :title })
     >> up
     => "rename_column :adverts, :name, :title"
     >> down
@@ -173,7 +173,7 @@ Let's apply that change to the database
     >>
      class Advert
        fields do
-         title :string, :default => "Untitled", limit: 255, null: true
+         title :string, default: "Untitled", limit: 255, null: true
          body :text, null: true
        end
      end
@@ -191,7 +191,7 @@ Let's apply that change to the database
     >>
      class Advert
        fields do
-         price :integer, :null => true, :limit => 2
+         price :integer, null: true, limit: 2
        end
      end
     >> up, down = Generators::Hobo::Migration::Migrator.run
@@ -204,7 +204,7 @@ Now run the migration, then change the limit:
     >>
      class Advert
        fields do
-         price :integer, :null => true, :limit => 3
+         price :integer, null: true, limit: 3
        end
      end
     >> up, down = Generators::Hobo::Migration::Migrator.run
@@ -219,7 +219,7 @@ Note that limit on a decimal column is ignored (use :scale and :precision)
     >>
      class Advert
        fields do
-         price :decimal, :null => true, :limit => 4
+         price :decimal, null: true, limit: 4
        end
      end
     >> up, down = Generators::Hobo::Migration::Migrator.run
@@ -373,7 +373,7 @@ If you specify a custom foreign key, the migration generator observes that:
         >>
          class Category < ActiveRecord::Base; end
          class Advert
-           belongs_to :category, :foreign_key => "c_id", :class_name => 'Category'
+           belongs_to :category, foreign_key: "c_id", class_name: 'Category'
          end
         >> up, down = Generators::Hobo::Migration::Migrator.run
         >> up.gsub(/\n+/, "\n")
@@ -387,12 +387,12 @@ Cleanup:
         >> Advert.index_specs.delete_if { |spec| spec.fields==["c_id"] }
 {.hidden}
 
-You can avoid generating the index by specifying `:index => false`
+You can avoid generating the index by specifying `index: false`
 
         >>
          class Category < ActiveRecord::Base; end
          class Advert
-           belongs_to :category, :index => false
+           belongs_to :category, index: false
          end
         >> up, down = Generators::Hobo::Migration::Migrator.run
         >> up.gsub(/\n+/, "\n")
@@ -410,7 +410,7 @@ You can specify the index name with :index
         >>
          class Category < ActiveRecord::Base; end
          class Advert
-           belongs_to :category, :index => 'my_index'
+           belongs_to :category, index: 'my_index'
          end
         >> up, down = Generators::Hobo::Migration::Migrator.run
         >> up
@@ -464,7 +464,7 @@ You can add an index to a field definition
         >>
          class Advert
            fields do
-             title :string, :index => true, limit: 255, null: true
+             title :string, index: true, limit: 255, null: true
            end
          end
         >> up, down = Generators::Hobo::Migration::Migrator.run
@@ -483,7 +483,7 @@ You can ask for a unique index
         >>
          class Advert
            fields do
-             title :string, :index => true, :unique => true, null: true, limit: 255
+             title :string, index: true, unique: true, null: true, limit: 255
            end
          end
         >> up, down = Generators::Hobo::Migration::Migrator.run
@@ -502,7 +502,7 @@ You can specify the name for the index
         >>
          class Advert
            fields do
-             title :string, :index => 'my_index', limit: 255, null: true
+             title :string, index: 'my_index', limit: 255, null: true
            end
          end
         >> up, down = Generators::Hobo::Migration::Migrator.run
@@ -537,7 +537,7 @@ The available options for the index function are `:unique` and `:name`
 
         >>
          class Advert
-           index :title, :unique => true, :name => 'my_index'
+           index :title, unique: true, name: 'my_index'
          end
         >> up, down = Generators::Hobo::Migration::Migrator.run
         >> up.gsub(/\n+/, "\n")
@@ -585,7 +585,7 @@ The migration generator respects the `set_table_name` declaration, although as b
     >> Advert.connection.schema_cache.clear!
     >> Advert.reset_column_information
 
-    >> up, down = Generators::Hobo::Migration::Migrator.run(:adverts => :ads)
+    >> up, down = Generators::Hobo::Migration::Migrator.run("adverts" => "ads")
     >> up.gsub(/\n+/, "\n")
     => "rename_table :adverts, :ads
         add_column :ads, :title, :string, :limit => 255
@@ -628,7 +628,7 @@ As with renaming columns, we have to tell the migration generator about the rena
          body :text, null: true
        end
      end
-    >> up, down = Generators::Hobo::Migration::Migrator.run(:adverts => :advertisements)
+    >> up, down = Generators::Hobo::Migration::Migrator.run("adverts" => "advertisements")
     >> up.gsub(/\n+/, "\n")
     => "rename_table :adverts, :advertisements
         add_column :advertisements, :title, :string, :limit => 255
@@ -671,7 +671,7 @@ Adding a subclass or two should introduce the 'type' column and no other changes
          class Advert < ActiveRecord::Base
            fields do
              body :text, null: true
-             title :string, :default => "Untitled", limit: 255, null: true
+             title :string, default: "Untitled", limit: 255, null: true
            end
          end
         >> up, down = Generators::Hobo::Migration::Migrator.run
@@ -723,11 +723,11 @@ First let's confirm we're in a known state. One model, 'Advert', with a string '
     >>
      class Advert
        fields do
-         name :string, :default => "No Name", limit: 255, null: true
+         name :string, default: "No Name", limit: 255, null: true
          body :text, null: true
        end
      end
-    >> up, down = Generators::Hobo::Migration::Migrator.run(:adverts => {:title => :name})
+    >> up, down = Generators::Hobo::Migration::Migrator.run(adverts: { title: :name })
     >> up
     => "rename_column :adverts, :title, :name
         change_column :adverts, :name, :string, :limit => 255, :default => \"No Name\""
@@ -744,12 +744,12 @@ First let's confirm we're in a known state. One model, 'Advert', with a string '
     >>
      class Ad < ActiveRecord::Base
        fields do
-         title      :string, :default => "Untitled", limit: 255
+         title      :string, default: "Untitled", limit: 255
          body       :text, null: true
          created_at :datetime
        end
      end
-    >> up, down = Generators::Hobo::Migration::Migrator.run(:adverts => :ads)
+    >> up, down = Generators::Hobo::Migration::Migrator.run(adverts: :ads)
     >> up.gsub(/\n+/, "\n")
     => "rename_table :adverts, :ads
         add_column :ads, :created_at, :datetime, :null => false
@@ -760,7 +760,7 @@ First let's confirm we're in a known state. One model, 'Advert', with a string '
      class Advert < ActiveRecord::Base
        fields do
          body :text, null: true
-         title :string, :default => "Untitled", limit: 255, null: true
+         title :string, default: "Untitled", limit: 255, null: true
        end
      end
 {.hidden}
@@ -777,7 +777,7 @@ HoboFields has some support for legacy keys.
        end
        self.primary_key="advert_id"
      end
-    >> up, down = Generators::Hobo::Migration::Migrator.run(:adverts => {:id => :advert_id})
+    >> up, down = Generators::Hobo::Migration::Migrator.run(adverts: { id: :advert_id })
     >> up.gsub(/\n+/, "\n")
     => "rename_column :adverts, :id, :advert_id
         add_index :adverts, [:advert_id], :unique => true, :name => 'PRIMARY_KEY'"
@@ -815,7 +815,7 @@ HoboFields can accept a validates hash in the field options.
     >>
       class Ad < ActiveRecord::Base
         fields do
-          company :string, limit: 255, index: true, unique: true, validates: { presence: true, :uniqueness => { case_sensitive: false } }
+          company :string, limit: 255, index: true, unique: true, validates: { presence: true, uniqueness: { case_sensitive: false } }
         end
         self.primary_key="advert_id"
       end
