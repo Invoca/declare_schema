@@ -191,12 +191,12 @@ Let's apply that change to the database
     >>
      class Advert
        fields do
-         price :integer, :limit => 2
+         price :integer, :null => true, :limit => 2
        end
      end
     >> up, down = Generators::Hobo::Migration::Migrator.run
     >> up
-    => "add_column :adverts, :price, :integer, :null => false, :limit => 2"
+    => "add_column :adverts, :price, :integer, :limit => 2"
 
 Now run the migration, then change the limit:
 
@@ -204,14 +204,14 @@ Now run the migration, then change the limit:
     >>
      class Advert
        fields do
-         price :integer, :limit => 3
+         price :integer, :null => true, :limit => 3
        end
      end
     >> up, down = Generators::Hobo::Migration::Migrator.run
     >> up
-    => "change_column :adverts, :price, :integer, :limit => 3, :null => false"
+    => "change_column :adverts, :price, :integer, :limit => 3"
     >> down
-    => "change_column :adverts, :price, :integer, limit: 2, null: false"
+    => "change_column :adverts, :price, :integer, limit: 2"
 
 Note that limit on a decimal column is ignored (use :scale and :precision)
 
@@ -219,12 +219,12 @@ Note that limit on a decimal column is ignored (use :scale and :precision)
     >>
      class Advert
        fields do
-         price :decimal, :limit => 4
+         price :decimal, :null => true, :limit => 4
        end
      end
     >> up, down = Generators::Hobo::Migration::Migrator.run
     >> up
-    => "add_column :adverts, :price, :decimal, :null => false"
+    => "add_column :adverts, :price, :decimal"
 
 Limits are generally not needed for `text` fields, because by default, `text` fields will use the maximum size
 allowed for that database type (0xffffffff for LONGTEXT in MySQL unlimited in Postgres, 1 billion in Sqlite).
@@ -242,7 +242,7 @@ that limit (0xff for TINYTEXT, 0xffff for TEXT, 0xffffff for MEDIUMTEXT, 0xfffff
      end
     >> up, down = Generators::Hobo::Migration::Migrator.run
     >> up
-    => "add_column :adverts, :price, :decimal, :null => false
+    => "add_column :adverts, :price, :decimal
         add_column :adverts, :notes, :text, :null => false
         add_column :adverts, :description, :text, :null => false"
 
