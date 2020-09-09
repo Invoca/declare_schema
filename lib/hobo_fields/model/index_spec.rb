@@ -33,6 +33,7 @@ module HoboFields
       def self.for_model(model, old_table_name=nil)
         t = old_table_name || model.table_name
         connection = model.connection.dup
+        # TODO: Change below to use prepend
         class << connection              # defeat Rails code that skips the primary keys by changing their name to PRIMARY_KEY_NAME
           def each_hash(result)
             super do |hash|
