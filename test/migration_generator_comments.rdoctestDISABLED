@@ -27,7 +27,7 @@ Comments can be added to tables and fields with HoboFields.
     >>
      class Product < ActiveRecord::Base
        fields do
-         name :string, :comment => "short name"
+         name :string, comment: "short name"
          description :string
        end
      end
@@ -54,8 +54,8 @@ Because it will be quite common for people not to have both [column_comments](ht
     >>
      class Product < ActiveRecord::Base
        fields do
-         name :string, :comment => "Short namex"
-         description :string, :comment => "Long name"
+         name :string, comment: "Short namex"
+         description :string, comment: "Long name"
        end
      end
     >> up, down = Generators::Hobo::Migration::Migrator.run

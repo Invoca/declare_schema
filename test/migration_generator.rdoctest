@@ -413,11 +413,9 @@ You can specify the index name with :index
            belongs_to :category, index: 'my_index'
          end
         >> up, down = Generators::Hobo::Migration::Migrator.run
-        >> up
-        =>
-         "add_column :adverts, :category_id, :integer
-
-         add_index :adverts, [:category_id], :name => 'my_index'"
+        >> up.gsub(/\n+/, "\n")
+        => "add_column :adverts, :category_id, :integer, :limit => 8, :null => false
+            add_index :adverts, [:category_id], :name => 'my_index'"
 
 Cleanup:
 {.hidden}
@@ -439,14 +437,14 @@ Similarly, `lock_version` can be declared with the "shorthand" `optimimistic_loc
            end
          end
         >> up, down = Generators::Hobo::Migration::Migrator.run
-        >> up
-        =>
-         "add_column :adverts, :created_at, :datetime
-         add_column :adverts, :updated_at, :datetime"
-        >> down
-        =>
-         "remove_column :adverts, :created_at
-         remove_column :adverts, :updated_at"
+        >> up.gsub(/\n+/, "\n")
+        => "add_column :adverts, :created_at, :datetime
+            add_column :adverts, :updated_at, :datetime
+            add_column :adverts, :lock_version, :integer, :null => false, :default => 1"
+        >> down.gsub(/\n+/, "\n")
+        => "remove_column :adverts, :created_at
+            remove_column :adverts, :updated_at
+            remove_column :adverts, :lock_version"
         >>
 
 Cleanup:
@@ -654,12 +652,11 @@ Dropping tables is where the automatic down-migration really comes in handy:
     >> up, down = Generators::Hobo::Migration::Migrator.run
     >> up
     => "drop_table :adverts"
-    >> down
-    =>
-     "create_table "adverts", :force => true do |t|
-       t.text   "body"
-       t.string "title", :default => "Untitled"
-     end"
+    >> down.gsub(/^  /, '__')
+    => "create_table \"adverts\", id: :integer, force: :cascade do |t|
+        __t.string \"name\", limit: 255
+        __t.index [\"id\"], name: \"PRIMARY_KEY\", unique: true
+        end"
 
 ## STI
 
