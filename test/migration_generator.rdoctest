@@ -652,11 +652,8 @@ Dropping tables is where the automatic down-migration really comes in handy:
     >> up, down = Generators::Hobo::Migration::Migrator.run
     >> up
     => "drop_table :adverts"
-    >> down.gsub(/^  /, '__')
-    => "create_table \"adverts\", id: :integer, force: :cascade do |t|
-        __t.string \"name\", limit: 255
-        __t.index [\"id\"], name: \"PRIMARY_KEY\", unique: true
-        end"
+    >> down.gsub(/,.*/m, '')
+    => "create_table \"adverts\""
 
 ## STI
 
