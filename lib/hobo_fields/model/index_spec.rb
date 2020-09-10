@@ -53,25 +53,15 @@ module HoboFields
         name == PRIMARY_KEY_NAME
       end
 
-      def default_name?
-        name == @model.connection.index_name(table, column: fields)
-      end
-
       def to_add_statement(new_table_name, existing_primary_key = nil)
         if primary_key? && !ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
           to_add_primary_key_statement(new_table_name, existing_primary_key)
         else
-          r = +"add_index :#{new_table_name}, #{fields.map(&:to_sym).inspect}"
-          r << ", unique: true" if unique
-          r << ", where: '#{self.where}'" if self.where.present?
-          if default_name?
-            check_name = @model.connection.index_name(self.table, column: self.fields)
-          else
-            r = +"add_index :#{new_table_name}, #{fields.map(&:to_sym).inspect}"
-            r << ", unique: true" if unique
-            r << ", name: '#{name}'"
-            r
-          end
+          r = +"add_index #{new_table_name.to_sym.inspect}, #{fields.map(&:to_sym).inspect}"
+          r += ", unique: true"      if unique
+          r += ", where: '#{where}'" if where.present?
+          r += ", name: '#{name}'"
+          r
         end
       end
 
