@@ -10,6 +10,8 @@ module HoboFields
       MYSQL_MEDIUMTEXT_LIMIT  =   0xff_ffff
       MYSQL_LONGTEXT_LIMIT    = 0xffff_ffff
 
+      MYSQL_TEXT_LIMITS_ASCENDING = [MYSQL_TINYTEXT_LIMIT, MYSQL_TEXT_LIMIT, MYSQL_MEDIUMTEXT_LIMIT, MYSQL_LONGTEXT_LIMIT].freeze
+
       class << self
         # method for easy stubbing in tests
         def mysql_text_limits?
@@ -21,11 +23,11 @@ module HoboFields
         end
 
         def round_up_mysql_text_limit(limit)
-          [MYSQL_TINYTEXT_LIMIT, MYSQL_TEXT_LIMIT, MYSQL_MEDIUMTEXT_LIMIT].find do |mysql_supported_text_limit|
+          MYSQL_TEXT_LIMITS_ASCENDING.find do |mysql_supported_text_limit|
             if limit <= mysql_supported_text_limit
               mysql_supported_text_limit
             end
-          end || MYSQL_LONGTEXT_LIMIT
+          end or raise ArgumentError, "limit of #{limit} is too large for MySQL"
         end
       end
 

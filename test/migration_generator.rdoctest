@@ -278,6 +278,30 @@ Cleanup
     >> Advert.field_specs.delete :notes
 {.hidden}
 
+Limits that are too high will for MySQL will raise an exception.
+
+    >> ::HoboFields::Model::FieldSpec::instance_variable_set(:@mysql_text_limits, true)
+    >> ::HoboFields::Model::FieldSpec.mysql_text_limits?
+    => true
+    >>
+      begin
+        class Advert
+          fields do
+            notes :text
+            description :text, limit: 0x1_0000_0000
+          end
+        end
+      rescue => ex
+        "#{ex.class}: #{ex.message}"
+      end
+    => "ArgumentError: limit of 4294967296 is too large for MySQL"
+
+Cleanup
+{.hidden}
+
+    >> Advert.field_specs.delete :notes
+{.hidden}
+
 And in MySQL, unstated text limits are treated as the maximum (LONGTEXT) limit.
 
 To start, we'll set the database schema for `description` to match the above limit of 255.
