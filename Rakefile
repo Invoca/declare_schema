@@ -29,20 +29,20 @@ namespace "test" do
   task all: [:doctest, :unit]
 
   desc "Run the doctests"
-  task :doctest do |t|
+  task :doctest do |_t|
     files = Dir['test/*.rdoctest'].sort.map { |f| File.expand_path(f) }.join(' ')
     system("#{RUBYDOCTEST} #{files}") or exit(1)
   end
 
   desc "Run the unit tests"
-  task :unit do |t|
+  task :unit do |_t|
     Dir["test/test_*.rb"].each do |f|
       system("#{RUBY} #{f}") or exit(1)
     end
   end
 
   desc "Prepare a rails application for testing"
-  task :prepare_testapp, :force do |t, args|
+  task :prepare_testapp, :force do |_t, args|
     if args.force || !File.directory?(TESTAPP_PATH)
       FileUtils.remove_entry_secure(TESTAPP_PATH, true)
       sh %(#{BIN} new #{TESTAPP_PATH} --skip-wizard --skip-bundle)

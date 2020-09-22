@@ -14,17 +14,16 @@ module DeclareSchema
         result
       end
 
-      def yes_no?(statement, color=:magenta)
+      def yes_no?(statement, _color=:magenta)
         result = choose(statement + ' [y|n]', /^(y|n)$/i)
-        result == 'y' ? true : false
+        result == 'y'
       end
 
       def choose(prompt, format, default=nil)
         choice = ask prompt, default
-        case
-        when choice =~ format
+        if choice =~ format
           choice
-        when choice.blank? && !default.blank?
+        elsif choice.blank? && !default.blank?
           default
         else
           say 'Unknown choice! ', :red

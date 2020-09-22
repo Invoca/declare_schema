@@ -6,9 +6,9 @@ require 'generators/declare_schema/support/thor_shell'
 
 module DeclareSchema
   class MigrationGenerator < Rails::Generators::Base
-    source_root File.expand_path('../templates', __FILE__)
+    source_root File.expand_path('templates', __dir__)
 
-    argument :name, :type => :string, :optional => true
+    argument :name, type: :string, optional: true
 
     include Rails::Generators::Migration
     include DeclareSchema::Support::ThorShell
@@ -22,33 +22,33 @@ module DeclareSchema
     end
 
     def self.banner
-      "rails generate declare_schema:migration #{self.arguments.map(&:usage).join(' ')} [options]"
+      "rails generate declare_schema:migration #{arguments.map(&:usage).join(' ')} [options]"
     end
 
     class_option :drop,
-                 :aliases => '-d',
-                 :type => :boolean,
-                 :desc => "Don't prompt with 'drop or rename' - just drop everything"
+                 aliases: '-d',
+                 type: :boolean,
+                 desc: "Don't prompt with 'drop or rename' - just drop everything"
 
     class_option :default_name,
-                 :aliases => '-n',
-                 :type => :boolean,
-                 :desc => "Don't prompt for a migration name - just pick one"
+                 aliases: '-n',
+                 type: :boolean,
+                 desc: "Don't prompt for a migration name - just pick one"
 
     class_option :generate,
-                 :aliases => '-g',
-                 :type => :boolean,
-                 :desc => "Don't prompt for action - generate the migration"
+                 aliases: '-g',
+                 type: :boolean,
+                 desc: "Don't prompt for action - generate the migration"
 
     class_option :migrate,
-                 :aliases => '-m',
-                 :type => :boolean,
-                 :desc => "Don't prompt for action - generate and migrate"
+                 aliases: '-m',
+                 type: :boolean,
+                 desc: "Don't prompt for action - generate and migrate"
 
     def migrate
       return if migrations_pending?
 
-      generator = Generators::DeclareSchema::Migration::Migrator.new(lambda{|c,d,k,p| extract_renames!(c,d,k,p)})
+      generator = Generators::DeclareSchema::Migration::Migrator.new(->(c, d, k, p) { extract_renames!(c, d, k, p) })
       up, down = generator.generate
 
       if up.blank?
@@ -93,18 +93,18 @@ module DeclareSchema
           end
         end
       end
-    rescue ::DeclareSchema::Model::FieldSpec::UnknownSqlTypeError => e
-      say "Invalid field type: #{e}"
+    rescue ::DeclareSchema::Model::FieldSpec::UnknownSqlTypeError => ex
+      say "Invalid field type: #{ex}"
     end
 
-  private
+    private
 
     def migrations_pending?
       migrations = case Rails::VERSION::MAJOR
                    when 4
                      ActiveRecord::Migrator.migrations('db/migrate')
                    when 5
-                    ActiveRecord::MigrationContext.new(ActiveRecord::Migrator.migrations_paths).migrations
+                     ActiveRecord::MigrationContext.new(ActiveRecord::Migrator.migrations_paths).migrations
                    else
                      ActiveRecord::MigrationContext.new(ActiveRecord::Migrator.migrations_paths, ActiveRecord::SchemaMigration).migrations
                    end
@@ -118,7 +118,7 @@ module DeclareSchema
       if pending_migrations.any?
         say "You have #{pending_migrations.size} pending migration#{'s' if pending_migrations.size > 1}:"
         pending_migrations.each do |pending_migration|
-          say '  %4d %s' % [pending_migration.version, pending_migration.name]
+          say format('  %4d %s', pending_migration.version, pending_migration.name)
         end
         true
       else
@@ -126,14 +126,14 @@ module DeclareSchema
       end
     end
 
-    def extract_renames!(to_create, to_drop, kind_str, name_prefix="")
+    def extract_renames!(to_create, to_drop, kind_str, name_prefix = "")
       to_rename = {}
 
       unless options[:drop]
 
         rename_to_choices = to_create
         to_drop.dup.each do |t|
-          while true
+          loop do
             if rename_to_choices.empty?
               say "\nCONFIRM DROP! #{kind_str} #{name_prefix}#{t}"
               resp = ask("Enter 'drop #{t}' to confirm or press enter to keep:")

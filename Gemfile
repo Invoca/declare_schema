@@ -10,13 +10,14 @@ group :testapp do
   gem 'listen'
 end
 
-gem 'bundler',      '< 2'
 gem 'appraisal'
+gem 'bundler',      '< 2'
 gem 'pry'
 gem 'pry-byebug'
 gem 'rails',        '~> 5.2', '>= 5.2.4.3'
-gem 'rubydoctest'
 gem 'responders'
+gem 'rubocop'
+gem 'rubydoctest'
 gem 'sqlite3'
 gem 'test_overrides'
 gem 'yard'

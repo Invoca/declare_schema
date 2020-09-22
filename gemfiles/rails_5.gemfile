@@ -7,16 +7,16 @@ gem "appraisal"
 gem "pry"
 gem "pry-byebug"
 gem "rails", "~> 5.2"
-gem "rubydoctest"
 gem "responders"
+gem "rubydoctest"
 gem "sqlite3"
 gem "test_overrides"
 gem "yard"
 
 group :testapp do
   gem "bootsnap", ">= 1.1.0", require: false
-  gem "listen"
   gem "kramdown"
+  gem "listen"
   gem "RedCloth"
 end
 

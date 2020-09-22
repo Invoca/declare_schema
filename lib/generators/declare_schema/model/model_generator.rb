@@ -5,7 +5,7 @@ require 'generators/declare_schema/support/model'
 
 module DeclareSchema
   class ModelGenerator < ActiveRecord::Generators::Base
-    source_root File.expand_path('../templates', __FILE__)
+    source_root File.expand_path('templates', __dir__)
 
     include DeclareSchema::Support::Model
   end

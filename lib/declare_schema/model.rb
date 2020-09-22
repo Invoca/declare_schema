@@ -60,7 +60,7 @@ module DeclareSchema
         index(fields.flatten, unique: true, name: "PRIMARY_KEY")
       end
 
-      def constraint(fkey, options={})
+      def constraint(fkey, options = {})
         fkey_s = fkey.to_s
         unless constraint_specs.any? { |constraint_spec| constraint_spec.foreign_key == fkey_s }
           constraint_specs << DeclareSchema::Model::ForeignKeySpec.new(self, fkey, options)
@@ -147,7 +147,7 @@ module DeclareSchema
 
       # Extend belongs_to so that it creates a FieldSpec for the foreign key
       def belongs_to(name, *args, &block)
-        if args.size == 0 || (args.size == 1 && args[0].kind_of?(Proc))
+        if args.size == 0 || (args.size == 1 && args[0].is_a?(Proc))
           options = {}
           args.push(options)
         elsif args.size == 1
@@ -171,7 +171,7 @@ module DeclareSchema
         fk_options[:index_name] = index_options[:name]
 
         fk_options[:dependent] = options.delete(:far_end_dependent) if options.has_key?(:far_end_dependent)
-        super(name, *args, &block).tap do |bt|
+        super(name, *args, &block).tap do |_bt|
           refl = reflections[name.to_s] or raise "Couldn't find reflection #{name} in #{reflections.keys}"
           fkey = refl.foreign_key
           declare_field(fkey.to_sym, :integer, column_options)
@@ -199,7 +199,7 @@ module DeclareSchema
       # Declare a rich-type for any attribute (i.e. getter method). This
       # does not effect the attribute in any way - it just records the
       # metadata.
-      def declare_attr_type(name, type, options={})
+      def declare_attr_type(name, type, options = {})
         klass = DeclareSchema.to_class(type)
         attr_types[name] = DeclareSchema.to_class(type)
         klass.declared(self, name, options) if klass.respond_to?(:declared)
@@ -229,7 +229,7 @@ module DeclareSchema
       def add_formatting_for_field(name, type, _args)
         if (type_class = DeclareSchema.to_class(type))
           if "format".in?(type_class.instance_methods)
-            self.before_validation do |record|
+            before_validation do |record|
               record.send("#{name}=", record.send(name)&.format)
             end
           end
@@ -252,7 +252,7 @@ module DeclareSchema
       # automatically delcares the 'position' field
       def acts_as_list_with_field_declaration(options = {})
         declare_field(options.fetch(:column, "position"), :integer)
-        default_scope { order("#{self.table_name}.position ASC") }
+        default_scope { order("#{table_name}.position ASC") }
         acts_as_list_without_field_declaration(options)
       end
 
@@ -260,22 +260,22 @@ module DeclareSchema
       # the association is a collection (has_many or habtm) return the
       # AssociationReflection instead
       public \
-      def attr_type(name)
+        def attr_type(name)
         if attr_types.nil? && self != self.name.constantize
           raise "attr_types called on a stale class object (#{self.name}). Avoid storing persistent references to classes"
         end
 
         attr_types[name] ||
-          if (refl = reflections[name.to_s])
-            if refl.macro.in?([:has_one, :belongs_to]) && !refl.options[:polymorphic]
-              refl.klass
-            else
-              refl
-            end
-          end ||
-            if (col = column(name.to_s))
-              DeclareSchema::PLAIN_TYPES[col.type] || col.klass
-            end
+        if (refl = reflections[name.to_s])
+          if refl.macro.in?([:has_one, :belongs_to]) && !refl.options[:polymorphic]
+            refl.klass
+          else
+            refl
+          end
+        end ||
+        if (col = column(name.to_s))
+          DeclareSchema::PLAIN_TYPES[col.type] || col.klass
+        end
       end
 
       # Return the entry from #columns for the named column

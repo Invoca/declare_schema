@@ -45,7 +45,7 @@ module DeclareSchema
           File.delete(template_path)
 
         when /^(g|generate|destroy)$/
-          cmd = $1
+          cmd = Regexp.last_match(1)
           if args.empty?
             puts "\nThe generator name is missing!\n\n"
             puts BANNER

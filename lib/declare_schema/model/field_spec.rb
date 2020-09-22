@@ -5,10 +5,10 @@ module DeclareSchema
     class FieldSpec
       class UnknownSqlTypeError < RuntimeError; end
 
-      MYSQL_TINYTEXT_LIMIT    =        0xff
-      MYSQL_TEXT_LIMIT        =      0xffff
-      MYSQL_MEDIUMTEXT_LIMIT  =   0xff_ffff
-      MYSQL_LONGTEXT_LIMIT    = 0xffff_ffff
+      MYSQL_TINYTEXT_LIMIT = 0xff
+      MYSQL_TEXT_LIMIT = 0xffff
+      MYSQL_MEDIUMTEXT_LIMIT = 0xff_ffff
+      MYSQL_LONGTEXT_LIMIT = 0xffff_ffff
 
       MYSQL_TEXT_LIMITS_ASCENDING = [MYSQL_TINYTEXT_LIMIT, MYSQL_TEXT_LIMIT, MYSQL_MEDIUMTEXT_LIMIT, MYSQL_LONGTEXT_LIMIT].freeze
 
@@ -36,6 +36,7 @@ module DeclareSchema
         # "id" which works for invoca.
         # raise ArgumentError, "you cannot provide a field spec for the primary key" if name == model.primary_key
         raise ArgumentError, "you cannot provide a field spec for the primary key" if name == "id"
+
         self.model = model
         self.name = name.to_sym
         self.type = type.is_a?(String) ? type.to_sym : type
@@ -144,7 +145,7 @@ module DeclareSchema
                 if col_value.nil? && native_type
                   col_value = native_type[k]
                 end
-                col_value != self.send(k)
+                col_value != send(k)
               end
             end
           end

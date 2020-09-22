@@ -24,4 +24,3 @@ Gem::Specification.new do |s|
   s.add_dependency 'invoca-utils', '~> 0.4'
   s.add_dependency 'rails', '>= 4.2'
 end
-
