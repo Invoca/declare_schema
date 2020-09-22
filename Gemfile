@@ -6,10 +6,11 @@ source 'https://gem.fury.io/invoca'
 gemspec
 
 group :testapp do
-  gem 'bootsnap',     '>= 1.1.0', require: false
+  gem 'bootsnap',   '>= 1.1.0', require: false
   gem 'listen'
 end
 
+gem 'bundler',      '< 2'
 gem 'appraisal'
 gem 'pry'
 gem 'pry-byebug'
