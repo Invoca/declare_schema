@@ -6,19 +6,21 @@ module Generators
   module DeclareSchema
     module Migration
       HabtmModelShim = Struct.new(:join_table, :foreign_keys, :foreign_key_classes, :connection) do
-        def self.from_reflection(refl)
-          join_table = refl.join_table
-          foreign_keys_and_classes = [
-            [refl.foreign_key.to_s, refl.active_record],
-            [refl.association_foreign_key.to_s, refl.class_name.constantize]
-          ].sort { |a, b| a.first <=> b.first }
-          foreign_keys = foreign_keys_and_classes.map(&:first)
-          foreign_key_classes = foreign_keys_and_classes.map(&:last)
-          # this may fail in weird ways if HABTM is running across two DB connections (assuming that's even supported)
-          # figure that anybody who sets THAT up can deal with their own migrations...
-          connection = refl.active_record.connection
+        class << self
+          def from_reflection(refl)
+            join_table = refl.join_table
+            foreign_keys_and_classes = [
+              [refl.foreign_key.to_s, refl.active_record],
+              [refl.association_foreign_key.to_s, refl.class_name.constantize]
+            ].sort { |a, b| a.first <=> b.first }
+            foreign_keys = foreign_keys_and_classes.map(&:first)
+            foreign_key_classes = foreign_keys_and_classes.map(&:last)
+            # this may fail in weird ways if HABTM is running across two DB connections (assuming that's even supported)
+            # figure that anybody who sets THAT up can deal with their own migrations...
+            connection = refl.active_record.connection
 
-          new(join_table, foreign_keys, foreign_key_classes, connection)
+            new(join_table, foreign_keys, foreign_key_classes, connection)
+          end
         end
 
         def table_name
@@ -65,7 +67,6 @@ module Generators
       end
 
       class Migrator
-
         class Error < RuntimeError; end
 
         @ignore_models = []
@@ -79,19 +80,23 @@ module Generators
             @active_record_class.is_a?(Class) or @active_record_class = @active_record_class.to_s.constantize
             @active_record_class
           end
-        end
 
-        def self.run(renames = {})
-          g = Migrator.new
-          g.renames = renames
-          g.generate
-        end
+          def run(renames = {})
+            g = Migrator.new
+            g.renames = renames
+            g.generate
+          end
 
-        def self.default_migration_name
-          existing = Dir["#{Rails.root}/db/migrate/*declare_schema_migration*"]
-          max = existing.grep(/([0-9]+)\.rb$/) { Regexp.last_match(1).to_i }.max
-          n = max ? max + 1 : 1
-          "declare_schema_migration_#{n}"
+          def default_migration_name
+            existing = Dir["#{Rails.root}/db/migrate/*declare_schema_migration*"]
+            max = existing.grep(/([0-9]+)\.rb$/) { Regexp.last_match(1).to_i }.max
+            n = max ? max + 1 : 1
+            "declare_schema_migration_#{n}"
+          end
+
+          def connection
+            ActiveRecord::Base.connection
+          end
         end
 
         def initialize(ambiguity_resolver = {})
@@ -113,26 +118,24 @@ module Generators
           ActiveRecord::Base.send(:descendants).reject { |c| (c.base_class != c) || c.name.starts_with?("CGI::") }
         end
 
-        def self.connection
-          ActiveRecord::Base.connection
-        end
-
         def connection
           self.class.connection
         end
 
-        def self.fix_native_types(types)
-          case connection.class.name
-          when /mysql/i
-            types[:integer][:limit] ||= 11
-            types[:text][:limit]    ||= 0xffff
-            types[:binary][:limit]  ||= 0xffff
+        class << self
+          def fix_native_types(types)
+            case connection.class.name
+            when /mysql/i
+              types[:integer][:limit] ||= 11
+              types[:text][:limit]    ||= 0xffff
+              types[:binary][:limit]  ||= 0xffff
+            end
+            types
           end
-          types
-        end
 
-        def self.native_types
-          @native_types ||= fix_native_types connection.native_database_types
+          def native_types
+            @native_types ||= fix_native_types connection.native_database_types
+          end
         end
 
         def native_types
