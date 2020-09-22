@@ -5,10 +5,10 @@ module DeclareSchema
     class FieldSpec
       class UnknownSqlTypeError < RuntimeError; end
 
-      MYSQL_TINYTEXT_LIMIT = 0xff
-      MYSQL_TEXT_LIMIT = 0xffff
-      MYSQL_MEDIUMTEXT_LIMIT = 0xff_ffff
-      MYSQL_LONGTEXT_LIMIT = 0xffff_ffff
+      MYSQL_TINYTEXT_LIMIT    = 0xff
+      MYSQL_TEXT_LIMIT        = 0xffff
+      MYSQL_MEDIUMTEXT_LIMIT  = 0xff_ffff
+      MYSQL_LONGTEXT_LIMIT    = 0xffff_ffff
 
       MYSQL_TEXT_LIMITS_ASCENDING = [MYSQL_TINYTEXT_LIMIT, MYSQL_TEXT_LIMIT, MYSQL_MEDIUMTEXT_LIMIT, MYSQL_LONGTEXT_LIMIT].freeze
 
@@ -31,33 +31,33 @@ module DeclareSchema
         end
       end
 
+      attr_reader :model, :name, :type, :position, :options
+
       def initialize(model, name, type, options = {})
         # Invoca change - searching for the primary key was causing an additional database read on every model load.  Assume
         # "id" which works for invoca.
         # raise ArgumentError, "you cannot provide a field spec for the primary key" if name == model.primary_key
-        raise ArgumentError, "you cannot provide a field spec for the primary key" if name == "id"
+        name == "id" and raise ArgumentError, "you cannot provide a field spec for the primary key"
 
-        self.model = model
-        self.name = name.to_sym
-        self.type = type.is_a?(String) ? type.to_sym : type
-        position = options.delete(:position)
-        self.options = options
+        @model = model
+        @name = name.to_sym
+        @type = type.is_a?(String) ? type.to_sym : type
+        position_option = options.delete(:position)
+        @options = options
 
         case type
         when :text
-          options[:default] and raise "default may not be given for :text field #{model}##{name}"
+          @options[:default] and raise "default may not be given for :text field #{model}##{@name}"
           if self.class.mysql_text_limits?
-            options[:limit] = self.class.round_up_mysql_text_limit(options[:limit] || MYSQL_LONGTEXT_LIMIT)
+            @options[:limit] = self.class.round_up_mysql_text_limit(@options[:limit] || MYSQL_LONGTEXT_LIMIT)
           end
         when :string
-          options[:limit] or raise "limit must be given for :string field #{model}##{name}: #{self.options.inspect}; do you want 255?"
+          @options[:limit] or raise "limit must be given for :string field #{model}##{@name}: #{@options.inspect}; do you want 255?"
         end
-        self.position = position || model.field_specs.length
+        @position = position_option || model.field_specs.length
       end
 
-      attr_accessor :model, :name, :type, :position, :options
-
-      TYPE_SYNONYMS = [[:timestamp, :datetime]].freeze
+      TYPE_SYNONYMS = { timestamp: :datetime }.freeze
 
       SQLITE_COLUMN_CLASS =
         begin
@@ -67,12 +67,12 @@ module DeclareSchema
         end
 
       def sql_type
-        options[:sql_type] or begin
+        @options[:sql_type] || begin
                                 if native_type?(type)
                                   type
                                 else
                                   field_class = DeclareSchema.to_class(type)
-                                  field_class && field_class::COLUMN_TYPE or raise UnknownSqlTypeError, "#{type.inspect} for #{model}.#{name}"
+                                  field_class && field_class::COLUMN_TYPE or raise UnknownSqlTypeError, "#{type.inspect} for #{model}.#{@name}"
                                 end
                               end
       end
@@ -82,37 +82,34 @@ module DeclareSchema
       end
 
       def limit
-        options[:limit] || native_types[sql_type][:limit]
+        @options[:limit] || native_types[sql_type][:limit]
       end
 
       def precision
-        options[:precision]
+        @options[:precision]
       end
 
       def scale
-        options[:scale]
+        @options[:scale]
       end
 
       def null
-        !:null.in?(options) || options[:null]
+        !:null.in?(@options) || @options[:null]
       end
 
       def default
-        options[:default]
+        @options[:default]
       end
 
       def comment
-        options[:comment]
+        @options[:comment]
       end
 
       def same_type?(col_spec)
-        t = sql_type
-        TYPE_SYNONYMS.each do |synonyms|
-          if t.in? synonyms
-            return col_spec.type.in?(synonyms)
-          end
-        end
-        t == col_spec.type
+        type = sql_type
+        normalized_type           = TYPE_SYNONYMS[type] || type
+        normalized_col_spec_type  = TYPE_SYNONYMS[col_spec.type] || col_spec.type
+        normalized_type == normalized_col_spec_type
       end
 
       def different_to?(col_spec)
@@ -154,7 +151,7 @@ module DeclareSchema
       private
 
       def native_type?(type)
-        type.in?(native_types.keys - [:primary_key])
+        type.to_sym != :primary_key && native_types.has_key?(type)
       end
 
       def native_types

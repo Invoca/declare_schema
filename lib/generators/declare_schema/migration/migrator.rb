@@ -89,9 +89,8 @@ module Generators
 
           def default_migration_name
             existing = Dir["#{Rails.root}/db/migrate/*declare_schema_migration*"]
-            max = existing.grep(/([0-9]+)\.rb$/) { Regexp.last_match(1).to_i }.max
-            n = max ? max + 1 : 1
-            "declare_schema_migration_#{n}"
+            max = existing.grep(/([0-9]+)\.rb$/) { Regexp.last_match(1).to_i }.max.to_i
+            "declare_schema_migration_#{max + 1}"
           end
 
           def connection
@@ -134,7 +133,7 @@ module Generators
           end
 
           def native_types
-            @native_types ||= fix_native_types connection.native_database_types
+            @native_types ||= fix_native_types(connection.native_database_types)
           end
         end
 

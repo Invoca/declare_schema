@@ -59,7 +59,6 @@ Because it will be quite common for people not to have both [column_comments](ht
        end
      end
     >> up, down = Generators::DeclareSchema::Migration::Migrator.run
-    >> up
     >> up.split(',').slice(0,3).join(',')
     => 'change_column :products, :name, :string'
     >> up.split(',').slice(3,2).sort.join(',')

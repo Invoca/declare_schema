@@ -19,7 +19,7 @@ module DeclareSchema
       # For other ORMs we will wait for the rails implementation
       # see http://groups.google.com/group/rubyonrails-talk/browse_thread/thread/a507ce419076cda2
       def next_migration_number(dirname)
-        ActiveRecord::Generators::Base.next_migration_number dirname
+        ActiveRecord::Generators::Base.next_migration_number(dirname)
       end
 
       def banner
@@ -139,7 +139,7 @@ module DeclareSchema
             if rename_to_choices.empty?
               say "\nCONFIRM DROP! #{kind_str} #{name_prefix}#{t}"
               resp = ask("Enter 'drop #{t}' to confirm or press enter to keep:")
-              if resp.strip == "drop " + t.to_s
+              if resp.strip == "drop #{t}"
                 break
               elsif resp.strip.empty?
                 to_drop.delete(t)
@@ -180,6 +180,5 @@ module DeclareSchema
     def migration_name
       name || Generators::DeclareSchema::Migration::Migrator.default_migration_name
     end
-
   end
 end

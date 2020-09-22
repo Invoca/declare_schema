@@ -5,8 +5,6 @@
       case attribute.type.to_s
       when 'string'
         ', limit: 255'
-      when 'text'
-        ', limit: 0xffff'
       else
         ''
       end
@@ -22,6 +20,6 @@
 <% end -%>
 <%= "\n" unless bts.empty? -%>
 <% for hm in hms -%>
-  has_many :<%= hm %>, :dependent => :destroy
+  has_many :<%= hm %>, dependent: :destroy
 <% end -%>
 <%= "\n" unless hms.empty? -%>

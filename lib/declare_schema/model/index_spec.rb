@@ -5,7 +5,7 @@ module DeclareSchema
     class IndexSpec
       include Comparable
 
-      attr_accessor :table, :fields, :explicit_name, :name, :unique, :where
+      attr_reader :table, :fields, :explicit_name, :name, :unique, :where
 
       class IndexNameTooLongError < RuntimeError; end
 
@@ -14,18 +14,18 @@ module DeclareSchema
 
       def initialize(model, fields, options = {})
         @model = model
-        self.table = options.delete(:table_name) || model.table_name
-        self.fields = Array.wrap(fields).map(&:to_s)
-        self.explicit_name = options[:name] unless options.delete(:allow_equivalent)
-        self.name = options.delete(:name) || model.connection.index_name(table, column: self.fields).gsub(/index.*_on_/, 'on_')
-        self.unique = options.delete(:unique) || name == PRIMARY_KEY_NAME || false
+        @table = options.delete(:table_name) || model.table_name
+        @fields = Array.wrap(fields).map(&:to_s)
+        @explicit_name = options[:name] unless options.delete(:allow_equivalent)
+        @name = options.delete(:name) || model.connection.index_name(table, column: @fields).gsub(/index.*_on_/, 'on_')
+        @unique = options.delete(:unique) || name == PRIMARY_KEY_NAME || false
 
-        if name.length > MYSQL_INDEX_NAME_MAX_LENGTH
-          raise IndexNameTooLongError, "Index '#{name}' exceeds MySQL limit of #{MYSQL_INDEX_NAME_MAX_LENGTH} characters. Give it a shorter name."
+        if @name.length > MYSQL_INDEX_NAME_MAX_LENGTH
+          raise IndexNameTooLongError, "Index '#{@name}' exceeds MySQL limit of #{MYSQL_INDEX_NAME_MAX_LENGTH} characters. Give it a shorter name."
         end
 
         if (where = options[:where])
-          self.where = where.start_with?('(') ? where : "(#{where})"
+          @where = where.start_with?('(') ? where : "(#{where})"
         end
       end
 
@@ -98,7 +98,6 @@ module DeclareSchema
       end
 
       alias eql? ==
-
     end
 
     class ForeignKeySpec
