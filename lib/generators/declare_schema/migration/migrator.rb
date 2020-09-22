@@ -43,13 +43,14 @@ module Generators
           false # no single-column primary key
         end
 
-        alias_method :index_specs, \
-                     def index_specs_with_primary_key
-                       [
-                         ::DeclareSchema::Model::IndexSpec.new(self, foreign_keys, unique: true, name: "PRIMARY_KEY"),
-                         ::DeclareSchema::Model::IndexSpec.new(self, foreign_keys.last) # not unique by itself; combines with primary key to be unique
-                       ]
-                     end
+        def index_specs_with_primary_key
+          [
+            ::DeclareSchema::Model::IndexSpec.new(self, foreign_keys, unique: true, name: "PRIMARY_KEY"),
+            ::DeclareSchema::Model::IndexSpec.new(self, foreign_keys.last) # not unique by itself; combines with primary key to be unique
+          ]
+        end
+
+        alias_method :index_specs, :index_specs_with_primary_key
 
         def ignore_indexes
           []
