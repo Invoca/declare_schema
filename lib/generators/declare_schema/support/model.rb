@@ -2,7 +2,7 @@
 
 require_relative './eval_template'
 
-module Hobo
+module DeclareSchema
   module Support
     module Model
       def self.included(base)
@@ -12,7 +12,7 @@ module Hobo
           argument :attributes, :type => :array, :default => [], :banner => "field:type field:type"
 
           def self.banner
-            "rails generate hobo:model #{self.arguments.map(&:usage).join(' ')} [options]"
+            "rails generate declare_schema:model #{self.arguments.map(&:usage).join(' ')} [options]"
           end
 
           class_option :timestamps, :type => :boolean
@@ -21,7 +21,7 @@ module Hobo
             invoke "active_record:model", [name], {:migration => false}.merge(options)
           end
 
-          def inject_hobo_code_into_model_file
+          def inject_declare_schema_code_into_model_file
             gsub_file(model_path, /  # attr_accessible :title, :body\n/m, "")
             inject_into_class model_path, class_name do
               eval_template('model_injection.rb.erb')

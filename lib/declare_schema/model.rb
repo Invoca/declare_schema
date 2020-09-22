@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'hobo_fields/extensions/module'
+require 'declare_schema/extensions/module'
 
-module HoboFields
+module DeclareSchema
   module Model
     class << self
       def mix_in(base)
@@ -52,7 +52,7 @@ module HoboFields
         # don't double-index fields
         index_fields_s = Array.wrap(fields).map(&:to_s)
         unless index_specs.any? { |index_spec| index_spec.fields == index_fields_s }
-          index_specs << HoboFields::Model::IndexSpec.new(self, fields, options)
+          index_specs << ::DeclareSchema::Model::IndexSpec.new(self, fields, options)
         end
       end
 
@@ -63,7 +63,7 @@ module HoboFields
       def constraint(fkey, options={})
         fkey_s = fkey.to_s
         unless constraint_specs.any? { |constraint_spec| constraint_spec.foreign_key == fkey_s }
-          constraint_specs << HoboFields::Model::ForeignKeySpec.new(self, fkey, options)
+          constraint_specs << DeclareSchema::Model::ForeignKeySpec.new(self, fkey, options)
         end
       end
 
@@ -83,8 +83,8 @@ module HoboFields
         add_formatting_for_field(name, type, args)
         add_validations_for_field(name, type, args, options)
         add_index_for_field(name, args, options)
-        declare_attr_type(name, type, options) unless HoboFields.plain_type?(type)
-        field_specs[name] = HoboFields::Model::FieldSpec.new(self, name, type, options)
+        declare_attr_type(name, type, options) unless DeclareSchema.plain_type?(type)
+        field_specs[name] = ::DeclareSchema::Model::FieldSpec.new(self, name, type, options)
         attr_order << name unless name.in?(attr_order)
       end
 
@@ -103,7 +103,7 @@ module HoboFields
       private
 
       def rails_default_primary_key
-        HoboFields::Model::IndexSpec.new(self, [primary_key.to_sym], unique: true, name: HoboFields::Model::IndexSpec::PRIMARY_KEY_NAME)
+        ::DeclareSchema::Model::IndexSpec.new(self, [primary_key.to_sym], unique: true, name: DeclareSchema::Model::IndexSpec::PRIMARY_KEY_NAME)
       end
 
       # Declares that a virtual field that has a rich type (e.g. created
@@ -131,13 +131,13 @@ module HoboFields
         super
 
         if type
-          hobo_type = HoboFields.to_class(type)
+          declare_schema_type = DeclareSchema.to_class(type)
           attrs.each do |attr|
-            declare_attr_type attr, hobo_type, options
+            declare_attr_type attr, declare_schema_type, options
             type_wrapper = attr_type(attr)
             define_method "#{attr}=" do |val|
-              if !type_wrapper.in?(HoboFields::PLAIN_TYPES.values) && !val.is_a?(hobo_type) && HoboFields.can_wrap?(hobo_type, val)
-                val = hobo_type.new(val.to_s)
+              if !type_wrapper.in?(DeclareSchema::PLAIN_TYPES.values) && !val.is_a?(declare_schema_type) && DeclareSchema.can_wrap?(declare_schema_type, val)
+                val = declare_schema_type.new(val.to_s)
               end
               instance_variable_set("@#{attr}", val)
             end
@@ -191,7 +191,7 @@ module HoboFields
       # field for a polyorphic belongs_to
       def declare_polymorphic_type_field(foreign_type, column_options)
         declare_field(foreign_type, :string, column_options.merge(limit: 255))
-        # FIXME: Before hobo_fields was extracted, this used to now do:
+        # FIXME: Before declare_schema was extracted, this used to now do:
         # never_show(type_col)
         # That needs doing somewhere
       end
@@ -200,8 +200,8 @@ module HoboFields
       # does not effect the attribute in any way - it just records the
       # metadata.
       def declare_attr_type(name, type, options={})
-        klass = HoboFields.to_class(type)
-        attr_types[name] = HoboFields.to_class(type)
+        klass = DeclareSchema.to_class(type)
+        attr_types[name] = DeclareSchema.to_class(type)
         klass.declared(self, name, options) if klass.respond_to?(:declared)
       end
 
@@ -215,8 +215,8 @@ module HoboFields
           validates name, validates_options
         end
 
-        # Support for custom validations in Hobo Fields
-        if (type_class = HoboFields.to_class(type))
+        # Support for custom validations
+        if (type_class = DeclareSchema.to_class(type))
           if type_class.public_method_defined?("validate")
             validate do |record|
               v = record.send(name)&.validate
@@ -227,7 +227,7 @@ module HoboFields
       end
 
       def add_formatting_for_field(name, type, _args)
-        if (type_class = HoboFields.to_class(type))
+        if (type_class = DeclareSchema.to_class(type))
           if "format".in?(type_class.instance_methods)
             self.before_validation do |record|
               record.send("#{name}=", record.send(name)&.format)
@@ -274,7 +274,7 @@ module HoboFields
             end
           end ||
             if (col = column(name.to_s))
-              HoboFields::PLAIN_TYPES[col.type] || col.klass
+              DeclareSchema::PLAIN_TYPES[col.type] || col.klass
             end
       end
 

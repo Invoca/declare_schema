@@ -17,11 +17,11 @@ RUBYDOCTEST = ENV['RUBYDOCTEST'] || "#{RUBY} -S rubydoctest"
 
 $:.unshift File.expand_path('lib', __dir__)
 require 'invoca/utils'
-require 'hobo_fields'
+require 'declare_schema'
 
 GEM_ROOT = __dir__
-TESTAPP_PATH = ENV['TESTAPP_PATH'] || File.join(Dir.tmpdir, 'hobo_fields_testapp')
-BIN = File.expand_path('bin/hobofields', __dir__)
+TESTAPP_PATH = ENV['TESTAPP_PATH'] || File.join(Dir.tmpdir, 'declare_schema_testapp')
+BIN = File.expand_path('bin/declare_schema', __dir__)
 
 task default: 'test:all'
 
@@ -44,9 +44,9 @@ namespace "test" do
   desc "Prepare a rails application for testing"
   task :prepare_testapp, :force do |t, args|
     if args.force || !File.directory?(TESTAPP_PATH)
-      remove_entry_secure( TESTAPP_PATH, true )
+      FileUtils.remove_entry_secure(TESTAPP_PATH, true)
       sh %(#{BIN} new #{TESTAPP_PATH} --skip-wizard --skip-bundle)
-      chdir TESTAPP_PATH
+      FileUtils.chdir TESTAPP_PATH
       sh %(bundle install)
       sh %(echo "" >> Gemfile)
       sh %(echo "gem 'irt', :group => :development" >> Gemfile) # to make the bundler happy
@@ -57,7 +57,7 @@ namespace "test" do
       sh %(git init && git add . && git commit -m "initial commit")
       puts %(The testapp has been created in '#{TESTAPP_PATH}')
     else
-      chdir TESTAPP_PATH
+      FileUtils.chdir TESTAPP_PATH
       sh %(git add .)
       sh %(git reset --hard -q HEAD)
     end

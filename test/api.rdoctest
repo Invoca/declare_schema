@@ -1,4 +1,4 @@
-# HoboFields API
+# DeclareSchema API
 
 In order for the API examples to run we need to load the rails generators of our testapp:
 {.hidden}
@@ -9,13 +9,13 @@ In order for the API examples to run we need to load the rails generators of our
 
 ## Example Models
 
-Let's define some example models that we can use to demonstrate the API. With HoboFields we can use the 'hobo:model' generator like so:
+Let's define some example models that we can use to demonstrate the API. With DeclareSchema we can use the 'declare_schema:model' generator like so:
 
-    $ rails generate hobo:model advert title:string body:text
+    $ rails generate declare_schema:model advert title:string body:text
 
 This will generate the test, fixture and a model file like this:
 
-    >> Rails::Generators.invoke 'hobo:model', %w(advert title:string body:text)
+    >> Rails::Generators.invoke 'declare_schema:model', %w(advert title:string body:text)
 {.hidden}
 
     class Advert < ActiveRecord::Base
@@ -27,18 +27,18 @@ This will generate the test, fixture and a model file like this:
 
 The migration generator uses this information to create a migration. The following creates and runs the migration so we're ready to go.
 
-    $ rails generate hobo:migration -n -m
+    $ rails generate declare_schema:migration -n -m
 
 We're now ready to start demonstrating the API
 
     >> require_relative "#{Rails.root}/app/models/advert.rb" if Rails::VERSION::MAJOR > 5
-    >> Rails::Generators.invoke 'hobo:migration', %w(-n -m)
-    >> Rails::Generators.invoke 'hobo:migration', %w(-n -m)
+    >> Rails::Generators.invoke 'declare_schema:migration', %w(-n -m)
+    >> Rails::Generators.invoke 'declare_schema:migration', %w(-n -m)
 {.hidden}
 
 ## The Basics
 
-The main feature of HoboFields, aside from the migration generator, is the ability to declare rich types for your fields. For example, you can declare that a field is an email address, and the field will be automatically validated for correct email address syntax.
+The main feature of DeclareSchema, aside from the migration generator, is the ability to declare rich types for your fields. For example, you can declare that a field is an email address, and the field will be automatically validated for correct email address syntax.
 
 ### Field Types
 
@@ -77,7 +77,7 @@ You can add your own types too. More on that later.
 
 ## Model extensions
 
-HoboFields adds a few features to your models.
+DeclareSchema adds a few features to your models.
 
 ### `Model.attr_type`
 
@@ -92,7 +92,7 @@ Returns the type (i.e. class) declared for a given field or attribute
 
 ## Field validations
 
-HoboFields gives you some shorthands for declaring some common validations right in the field declaration
+DeclareSchema gives you some shorthands for declaring some common validations right in the field declaration
 
 ### Required fields
 

@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
 require 'rails/generators/active_record'
-require 'generators/hobo/support/model'
+require 'generators/declare_schema/support/model'
 
-module Hobo
+module DeclareSchema
   class ModelGenerator < ActiveRecord::Generators::Base
     source_root File.expand_path('../templates', __FILE__)
 
-    include Hobo::Support::Model
+    include DeclareSchema::Support::Model
   end
 end

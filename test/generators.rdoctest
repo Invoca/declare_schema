@@ -1,8 +1,8 @@
 doctest: prepare testapp environment
 doctest_require: 'prepare_testapp'
 
-doctest: generate hobo:model
->> Rails::Generators.invoke 'hobo:model', %w(alpha/beta one:string two:integer)
+doctest: generate declare_schema:model
+>> Rails::Generators.invoke 'declare_schema:model', %w(alpha/beta one:string two:integer)
 
 
 doctest: model file exists
@@ -42,10 +42,10 @@ doctest: fixture file exists
 => true
 
 
-doctest: generate hobo:migration
+doctest: generate declare_schema:migration
 >> require_relative "#{Rails.root}/app/models/alpha.rb" if Rails::VERSION::MAJOR > 5
 >> require_relative "#{Rails.root}/app/models/alpha/beta.rb" if Rails::VERSION::MAJOR > 5
->> Rails::Generators.invoke 'hobo:migration', %w(-n -m)
+>> Rails::Generators.invoke 'declare_schema:migration', %w(-n -m)
 
 doctest: schema.rb file exists
 >> File.exist? 'db/schema.rb'

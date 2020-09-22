@@ -2,16 +2,16 @@
 
 require 'rails/generators/migration'
 require 'rails/generators/active_record'
-require 'generators/hobo/support/thor_shell'
+require 'generators/declare_schema/support/thor_shell'
 
-module Hobo
+module DeclareSchema
   class MigrationGenerator < Rails::Generators::Base
     source_root File.expand_path('../templates', __FILE__)
 
     argument :name, :type => :string, :optional => true
 
     include Rails::Generators::Migration
-    include Hobo::Support::ThorShell
+    include DeclareSchema::Support::ThorShell
 
     # the Rails::Generators::Migration.next_migration_number gives a NotImplementedError
     # in Rails 3.0.0.beta4, so we need to implement the logic of ActiveRecord.
@@ -22,7 +22,7 @@ module Hobo
     end
 
     def self.banner
-      "rails generate hobo:migration #{self.arguments.map(&:usage).join(' ')} [options]"
+      "rails generate declare_schema:migration #{self.arguments.map(&:usage).join(' ')} [options]"
     end
 
     class_option :drop,
@@ -48,7 +48,7 @@ module Hobo
     def migrate
       return if migrations_pending?
 
-      generator = Generators::Hobo::Migration::Migrator.new(lambda{|c,d,k,p| extract_renames!(c,d,k,p)})
+      generator = Generators::DeclareSchema::Migration::Migrator.new(lambda{|c,d,k,p| extract_renames!(c,d,k,p)})
       up, down = generator.generate
 
       if up.blank?
@@ -93,7 +93,7 @@ module Hobo
           end
         end
       end
-    rescue HoboFields::Model::FieldSpec::UnknownSqlTypeError => e
+    rescue ::DeclareSchema::Model::FieldSpec::UnknownSqlTypeError => e
       say "Invalid field type: #{e}"
     end
 
@@ -176,7 +176,7 @@ module Hobo
     end
 
     def migration_name
-      name || Generators::Hobo::Migration::Migrator.default_migration_name
+      name || Generators::DeclareSchema::Migration::Migrator.default_migration_name
     end
 
   end

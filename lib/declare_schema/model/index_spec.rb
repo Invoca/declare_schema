@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module HoboFields
+module DeclareSchema
   module Model
     class IndexSpec
       include Comparable

@@ -4,14 +4,14 @@ require 'fileutils'
 require 'tmpdir'
 require 'rubygems'
 
-module HoboFields
+module DeclareSchema
   module Command
     BANNER = <<~EOS
       Usage:
-          hobofields new <app_name> [rails_opt]              Creates a new HoboFields Application
-          hobofields generate|g <generator> [ARGS] [options] Fires the hobo:<generator>
-          hobofields destroy <generator> [ARGS] [options]    Tries to undo generated code
-          hobofields --help|-h                               This help screen
+          declare_schema new <app_name> [rails_opt]              Creates a new declare_schema Application
+          declare_schema generate|g <generator> [ARGS] [options] Fires the declare_schema:<generator>
+          declare_schema destroy <generator> [ARGS] [options]    Tries to undo generated code
+          declare_schema --help|-h                               This help screen
 
     EOS
 
@@ -36,7 +36,7 @@ module HoboFields
             puts BANNER
             exit(1)
           end
-          template_path = File.join(Dir.tmpdir, "hobo_app_template")
+          template_path = File.join(Dir.tmpdir, "declare_schema_app_template")
           File.open(template_path, 'w') do |file|
             file.puts "gem '#{gem}', '>= #{version}'"
           end
@@ -51,10 +51,7 @@ module HoboFields
             puts BANNER
             exit(1)
           else
-            if args.first =~ /^hobo:(\w+)$/
-              puts "NOTICE: You can omit the 'hobo' namespace: e.g. `hobo #{cmd} #{$1} #{args[1..-1] * ' '}`"
-            end
-            system("bundle exec rails #{cmd} hobo:#{args * ' '}")
+            system("bundle exec rails #{cmd} declare_schema:#{args * ' '}")
           end
 
         else

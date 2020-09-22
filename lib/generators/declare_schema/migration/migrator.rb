@@ -3,7 +3,7 @@
 require 'active_record'
 
 module Generators
-  module Hobo
+  module DeclareSchema
     module Migration
 
       class HabtmModelShim < Struct.new(:join_table, :foreign_keys, :foreign_key_classes, :connection)
@@ -35,7 +35,7 @@ module Generators
           i = 0
           foreign_keys.inject({}) do |h, v|
             # some trickery to avoid an infinite loop when FieldSpec#initialize tries to call model.field_specs
-            h[v] = HoboFields::Model::FieldSpec.new(self, v, :integer, position: i, null: false)
+            h[v] = ::DeclareSchema::Model::FieldSpec.new(self, v, :integer, position: i, null: false)
             i += 1
             h
           end
@@ -48,8 +48,8 @@ module Generators
         alias_method :index_specs, \
         def index_specs_with_primary_key
           [
-            HoboFields::Model::IndexSpec.new(self, foreign_keys, unique: true, name: "PRIMARY_KEY"),
-            HoboFields::Model::IndexSpec.new(self, foreign_keys.last) # not unique by itself; combines with primary key to be unique
+            ::DeclareSchema::Model::IndexSpec.new(self, foreign_keys, unique: true, name: "PRIMARY_KEY"),
+            ::DeclareSchema::Model::IndexSpec.new(self, foreign_keys.last) # not unique by itself; combines with primary key to be unique
           ]
         end
 
@@ -59,8 +59,8 @@ module Generators
 
         def constraint_specs
           [
-            HoboFields::Model::ForeignKeySpec.new(self, foreign_keys.first, parent_table: foreign_key_classes.first.table_name, constraint_name: "#{join_table}_FK1", dependent: :delete),
-            HoboFields::Model::ForeignKeySpec.new(self, foreign_keys.last,  parent_table: foreign_key_classes.last.table_name,  constraint_name: "#{join_table}_FK2", dependent: :delete)
+            ::DeclareSchema::Model::ForeignKeySpec.new(self, foreign_keys.first, parent_table: foreign_key_classes.first.table_name, constraint_name: "#{join_table}_FK1", dependent: :delete),
+            ::DeclareSchema::Model::ForeignKeySpec.new(self, foreign_keys.last,  parent_table: foreign_key_classes.last.table_name,  constraint_name: "#{join_table}_FK2", dependent: :delete)
           ]
         end
 
@@ -90,10 +90,10 @@ module Generators
         end
 
         def self.default_migration_name
-          existing = Dir["#{Rails.root}/db/migrate/*hobo_migration*"]
+          existing = Dir["#{Rails.root}/db/migrate/*declare_schema_migration*"]
           max = existing.grep(/([0-9]+)\.rb$/) { $1.to_i }.max
           n = max ? max + 1 : 1
-          "hobo_migration_#{n}"
+          "declare_schema_migration_#{n}"
         end
 
         def initialize(ambiguity_resolver={})
@@ -154,13 +154,13 @@ module Generators
         def models_and_tables
           ignore_model_names = Migrator.ignore_models.map { | model| model.to_s.underscore }
           all_models = table_model_classes
-          hobo_models = all_models.select do |m|
+          declare_schema_models = all_models.select do |m|
             (m.name['HABTM_'] ||
               (m.include_in_migration if m.respond_to?(:include_in_migration))) && !m.name.underscore.in?(ignore_model_names)
           end
-          non_hobo_models = all_models - hobo_models
-          db_tables = connection.tables - Migrator.ignore_tables.map(&:to_s) - non_hobo_models.map(&:table_name)
-          [hobo_models, db_tables]
+          non_declare_schema_models = all_models - declare_schema_models
+          db_tables = connection.tables - Migrator.ignore_tables.map(&:to_s) - non_declare_schema_models.map(&:table_name)
+          [declare_schema_models, db_tables]
         end
 
         # return a hash of table renames and modifies the passed arrays so
@@ -394,7 +394,7 @@ module Generators
             if spec.different_to?(col) # TODO: DRY this up to a diff function that returns the differences. It's different if it has differences. -Colin
               change_spec = fk_field_options(model, c)
               change_spec[:limit]     = spec.limit     if (spec.sql_type != :text ||
-                                                         HoboFields::Model::FieldSpec::mysql_text_limits?) &&
+                                                         ::DeclareSchema::Model::FieldSpec::mysql_text_limits?) &&
                                                          (spec.limit || col.limit)
               change_spec[:precision] = spec.precision unless spec.precision.nil?
               change_spec[:scale]     = spec.scale     unless spec.scale.nil?
@@ -428,7 +428,7 @@ module Generators
         def change_indexes(model, old_table_name)
           return [[],[]] if Migrator.disable_constraints
           new_table_name = model.table_name
-          existing_indexes = HoboFields::Model::IndexSpec.for_model(model, old_table_name)
+          existing_indexes = ::DeclareSchema::Model::IndexSpec.for_model(model, old_table_name)
           model_indexes_with_equivalents = model.index_specs_with_primary_key
           model_indexes = model_indexes_with_equivalents.map do |i|
             if i.explicit_name.nil?
@@ -467,7 +467,7 @@ module Generators
           ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/) and raise 'SQLite does not support foreign keys'
           return [[],[]] if Migrator.disable_indexing
           new_table_name = model.table_name
-          existing_fks = HoboFields::Model::ForeignKeySpec.for_model(model, old_table_name)
+          existing_fks = DeclareSchema::Model::ForeignKeySpec.for_model(model, old_table_name)
           model_fks = model.constraint_specs
           add_fks = model_fks - existing_fks
           drop_fks = existing_fks - model_fks
@@ -500,7 +500,7 @@ module Generators
             end
 
             next if k == :limit && type == :text &&
-              (!HoboFields::Model::FieldSpec::mysql_text_limits? || v == HoboFields::Model::FieldSpec::MYSQL_LONGTEXT_LIMIT)
+              (!::DeclareSchema::Model::FieldSpec::mysql_text_limits? || v == ::DeclareSchema::Model::FieldSpec::MYSQL_LONGTEXT_LIMIT)
 
             if k.is_a?(Symbol)
               "#{k}: #{v.inspect}"

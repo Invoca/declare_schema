@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module HoboFields
+module DeclareSchema
   module Model
     class FieldSpec
       class UnknownSqlTypeError < RuntimeError; end
@@ -70,7 +70,7 @@ module HoboFields
                                 if native_type?(type)
                                   type
                                 else
-                                  field_class = HoboFields.to_class(type)
+                                  field_class = DeclareSchema.to_class(type)
                                   field_class && field_class::COLUMN_TYPE or raise UnknownSqlTypeError, "#{type.inspect} for #{model}.#{name}"
                                 end
                               end
@@ -157,7 +157,7 @@ module HoboFields
       end
 
       def native_types
-        Generators::Hobo::Migration::Migrator.native_types
+        Generators::DeclareSchema::Migration::Migrator.native_types
       end
     end
   end

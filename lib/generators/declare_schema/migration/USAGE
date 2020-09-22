@@ -19,7 +19,7 @@ Description:
 
 Examples:
 
-        $ rails generate hobo:migration
+        $ rails generate declare_schema:migration
 
         ---------- Up Migration ----------
         create_table :foos do |t|
@@ -35,7 +35,7 @@ Examples:
 
         Migration filename:
         (you can type spaces instead of '_' -- every little helps)
-        Filename [hobo_migration_2]: create_foo
+        Filename [declare_schema_migration_2]: create_foo
               exists  db/migrate
               create  db/migrate/20091023183838_create_foo.rb
         (in /work/foo)
