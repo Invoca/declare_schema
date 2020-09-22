@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# https://ringrevenue.atlassian.net/wiki/display/DEV/Gem+Best+Practices
 source 'https://rubygems.org'
 source 'https://gem.fury.io/invoca'
 

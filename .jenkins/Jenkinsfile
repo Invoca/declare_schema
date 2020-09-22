@@ -61,7 +61,7 @@ pipeline {
 
 void updateGitHubStatus(String context, String status, String description) {
   gitHubStatus([
-    repoSlug:    'Invoca/hobo_fields',
+    repoSlug:    'Invoca/declare_schema',
     sha:         env.GIT_COMMIT,
     description: description,
     context:     context,

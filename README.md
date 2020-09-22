@@ -1,6 +1,6 @@
-# HoboFields
+# DeclareSchema
 
-Rich field types and migration-generator for Rails.
+Declare your active_record model schemas and have database migrations generated for you!
 
 ## Testing
 To run tests:

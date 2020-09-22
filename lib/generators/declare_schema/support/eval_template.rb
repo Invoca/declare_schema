@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Hobo
+module DeclareSchema
   module Support
     module EvalTemplate
       def self.included(base)

@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+
+require 'fileutils'
+require 'rubygems'
+require_relative '../lib/declare_schema/command'
+require_relative '../lib/declare_schema/version'
+
+ARGV.freeze
+
+DeclareSchema::Command.run(:DeclareSchema, ARGV.dup, DeclareSchema::VERSION)

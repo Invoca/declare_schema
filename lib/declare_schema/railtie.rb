@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
-require 'hobo_fields'
+require 'declare_schema'
 require 'rails'
 
-module HoboFields
+module DeclareSchema
   class Railtie < Rails::Railtie
 
     ActiveSupport.on_load(:active_record) do
-      require 'hobo_fields/extensions/active_record/fields_declaration'
+      require 'declare_schema/extensions/active_record/fields_declaration'
     end
 
   end

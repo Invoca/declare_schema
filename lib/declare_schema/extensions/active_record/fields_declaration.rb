@@ -1,20 +1,20 @@
 # frozen_string_literal: true
 
 require 'active_record'
-require 'hobo_fields/model'
-require 'hobo_fields/field_declaration_dsl'
+require 'declare_schema/model'
+require 'declare_schema/field_declaration_dsl'
 
-module HoboField
+module DeclareSchema
   module FieldsDsl
     def fields(&b)
-      # Any model that calls 'fields' gets HoboFields::Model behavior
-      HoboFields::Model.mix_in(self)
+      # Any model that calls 'fields' gets DeclareSchema::Model behavior
+      DeclareSchema::Model.mix_in(self)
 
       #@include_in_migration = false #||= options.fetch(:include_in_migration, true); options.delete(:include_in_migration)
       @include_in_migration = true
 
       if b
-        dsl = HoboFields::FieldDeclarationDsl.new(self, null: false)
+        dsl = DeclareSchema::FieldDeclarationDsl.new(self, null: false)
         if b.arity == 1
           yield dsl
         else
@@ -25,4 +25,4 @@ module HoboField
   end
 end
 
-ActiveRecord::Base.singleton_class.prepend HoboField::FieldsDsl
+ActiveRecord::Base.singleton_class.prepend DeclareSchema::FieldsDsl

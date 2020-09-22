@@ -2,7 +2,7 @@
 
 require 'active_support/proxy_object'
 
-module HoboFields
+module DeclareSchema
   class FieldDeclarationDsl < BasicObject # avoid Object because that gets extended by lots of gems
     include ::Kernel                      # but we need the basic class methods
 
