@@ -29,24 +29,26 @@ module DeclareSchema
         end
       end
 
-      # extract IndexSpecs from an existing table
-      def self.for_model(model, old_table_name = nil)
-        t = old_table_name || model.table_name
-        connection = model.connection.dup
-        # TODO: Change below to use prepend
-        class << connection              # defeat Rails code that skips the primary keys by changing their name to PRIMARY_KEY_NAME
-          def each_hash(result)
-            super do |hash|
-              if hash[:Key_name] == "PRIMARY"
-                hash[:Key_name] = PRIMARY_KEY_NAME
+      class << self
+        # extract IndexSpecs from an existing table
+        def for_model(model, old_table_name = nil)
+          t = old_table_name || model.table_name
+          connection = model.connection.dup
+          # TODO: Change below to use prepend
+          class << connection              # defeat Rails code that skips the primary keys by changing their name to PRIMARY_KEY_NAME
+            def each_hash(result)
+              super do |hash|
+                if hash[:Key_name] == "PRIMARY"
+                  hash[:Key_name] = PRIMARY_KEY_NAME
+                end
+                yield hash
               end
-              yield hash
             end
           end
+          connection.indexes(t).map do |i|
+            new(model, i.columns, name: i.name, unique: i.unique, where: i.where, table_name: old_table_name) unless model.ignore_indexes.include?(i.name)
+          end.compact
         end
-        connection.indexes(t).map do |i|
-          new(model, i.columns, name: i.name, unique: i.unique, where: i.where, table_name: old_table_name) unless model.ignore_indexes.include?(i.name)
-        end.compact
       end
 
       def primary_key?
@@ -119,19 +121,21 @@ module DeclareSchema
         # Empty constraint lets mysql generate the name
       end
 
-      def self.for_model(model, old_table_name)
-        show_create_table = model.connection.select_rows("show create table #{model.connection.quote_table_name(old_table_name)}").first.last
-        constraints = show_create_table.split("\n").map { |line| line.strip if line['CONSTRAINT'] }.compact
+      class << self
+        def for_model(model, old_table_name)
+          show_create_table = model.connection.select_rows("show create table #{model.connection.quote_table_name(old_table_name)}").first.last
+          constraints = show_create_table.split("\n").map { |line| line.strip if line['CONSTRAINT'] }.compact
 
-        constraints.map do |fkc|
-          options = {}
-          name, foreign_key, parent_table = fkc.match(/CONSTRAINT `([^`]*)` FOREIGN KEY \(`([^`]*)`\) REFERENCES `([^`]*)`/).captures
-          options[:constraint_name] = name
-          options[:parent_table] = parent_table
-          options[:foreign_key] = foreign_key
-          options[:dependent] = :delete if fkc['ON DELETE CASCADE']
+          constraints.map do |fkc|
+            options = {}
+            name, foreign_key, parent_table = fkc.match(/CONSTRAINT `([^`]*)` FOREIGN KEY \(`([^`]*)`\) REFERENCES `([^`]*)`/).captures
+            options[:constraint_name] = name
+            options[:parent_table] = parent_table
+            options[:foreign_key] = foreign_key
+            options[:dependent] = :delete if fkc['ON DELETE CASCADE']
 
-          new(model, foreign_key, options)
+            new(model, foreign_key, options)
+          end
         end
       end
 

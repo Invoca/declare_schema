@@ -13,16 +13,18 @@ module DeclareSchema
     include Rails::Generators::Migration
     include DeclareSchema::Support::ThorShell
 
-    # the Rails::Generators::Migration.next_migration_number gives a NotImplementedError
-    # in Rails 3.0.0.beta4, so we need to implement the logic of ActiveRecord.
-    # For other ORMs we will wait for the rails implementation
-    # see http://groups.google.com/group/rubyonrails-talk/browse_thread/thread/a507ce419076cda2
-    def self.next_migration_number(dirname)
-      ActiveRecord::Generators::Base.next_migration_number dirname
-    end
+    class << self
+      # the Rails::Generators::Migration.next_migration_number gives a NotImplementedError
+      # in Rails 3.0.0.beta4, so we need to implement the logic of ActiveRecord.
+      # For other ORMs we will wait for the rails implementation
+      # see http://groups.google.com/group/rubyonrails-talk/browse_thread/thread/a507ce419076cda2
+      def next_migration_number(dirname)
+        ActiveRecord::Generators::Base.next_migration_number dirname
+      end
 
-    def self.banner
-      "rails generate declare_schema:migration #{arguments.map(&:usage).join(' ')} [options]"
+      def banner
+        "rails generate declare_schema:migration #{arguments.map(&:usage).join(' ')} [options]"
+      end
     end
 
     class_option :drop,
