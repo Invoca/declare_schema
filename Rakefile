@@ -15,7 +15,7 @@ include Rake::DSL
 RUBY = 'ruby'
 RUBYDOCTEST = ENV['RUBYDOCTEST'] || "#{RUBY} -S rubydoctest"
 
-$:.unshift File.expand_path('lib', __dir__)
+$LOAD_PATH.unshift File.expand_path('lib', __dir__)
 require 'invoca/utils'
 require 'declare_schema'
 

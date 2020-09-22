@@ -53,7 +53,7 @@ module DeclareSchema
     init_method = type.instance_method(:initialize)
     [-1, 1].include?(init_method.arity) &&
       init_method.owner != Object.instance_method(:initialize).owner &&
-      !@never_wrap_types.any? { |c| klass <= c }
+      @never_wrap_types.none? { |c| klass <= c }
   end
 
   def never_wrap(type)

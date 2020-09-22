@@ -7,7 +7,7 @@ module DeclareSchema
 
       private
 
-      def ask(statement, default='', color=:magenta)
+      def ask(statement, default = '', color=:magenta)
         result = super(statement, color)
         result = default if result.blank?
         say PREFIX + result.inspect

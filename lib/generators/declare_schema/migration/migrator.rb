@@ -31,7 +31,7 @@ module Generators
 
         def field_specs
           i = 0
-          foreign_keys.inject({}) do |h, v|
+          foreign_keys.reduce({}) do |h, v|
             # some trickery to avoid an infinite loop when FieldSpec#initialize tries to call model.field_specs
             h[v] = ::DeclareSchema::Model::FieldSpec.new(self, v, :integer, position: i, null: false)
             i += 1
@@ -316,7 +316,7 @@ module Generators
             end
           (["create_table :#{model.table_name}#{primary_key_option} do |t|"] +
           [(disable_auto_increment ? "  t.integer :id, limit: 8, auto_increment: false, primary_key: true" : nil)] +
-           model.field_specs.values.sort_by { |f| f.position }.map { |f| create_field(f, longest_field_name) } +
+           model.field_specs.values.sort_by(&:position).map { |f| create_field(f, longest_field_name) } +
            ["end"] + (if Migrator.disable_indexing
                         []
                       else
