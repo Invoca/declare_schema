@@ -16,18 +16,18 @@ module DeclareSchema
   extend self
 
   PLAIN_TYPES = {
-    :boolean       => DeclareSchema::Boolean,
-    :date          => Date,
-    :datetime      => ActiveSupport::TimeWithZone,
-    :time          => Time,
-    :integer       => Integer,
-    :decimal       => BigDecimal,
-    :float         => Float,
-    :string        => String,
-    :text          => String
+    boolean: DeclareSchema::Boolean,
+    date: Date,
+    datetime: ActiveSupport::TimeWithZone,
+    time: Time,
+    integer: Integer,
+    decimal: BigDecimal,
+    float: Float,
+    string: String,
+    text: String
   }.freeze
 
-  @field_types   = PLAIN_TYPES.with_indifferent_access
+  @field_types = PLAIN_TYPES.with_indifferent_access
   @never_wrap_types = Set.new([NilClass, DeclareSchema::Boolean, TrueClass, FalseClass])
   attr_reader :field_types
 
@@ -48,6 +48,7 @@ module DeclareSchema
   def can_wrap?(type, val)
     col_type = type::COLUMN_TYPE
     return false if val.blank? && (col_type == :integer || col_type == :float || col_type == :decimal)
+
     klass = Object.instance_method(:class).bind(val).call # Make sure we get the *real* class
     init_method = type.instance_method(:initialize)
     [-1, 1].include?(init_method.arity) &&
@@ -75,5 +76,3 @@ require 'declare_schema/model/field_spec'
 require 'declare_schema/model/index_spec'
 
 require 'declare_schema/railtie' if defined?(Rails)
-
-

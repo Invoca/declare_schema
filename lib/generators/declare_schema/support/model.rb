@@ -9,16 +9,16 @@ module DeclareSchema
         base.class_eval do
           include EvalTemplate
 
-          argument :attributes, :type => :array, :default => [], :banner => "field:type field:type"
+          argument :attributes, type: :array, default: [], banner: "field:type field:type"
 
           def self.banner
-            "rails generate declare_schema:model #{self.arguments.map(&:usage).join(' ')} [options]"
+            "rails generate declare_schema:model #{arguments.map(&:usage).join(' ')} [options]"
           end
 
-          class_option :timestamps, :type => :boolean
+          class_option :timestamps, type: :boolean
 
           def generate_model
-            invoke "active_record:model", [name], {:migration => false}.merge(options)
+            invoke "active_record:model", [name], { migration: false }.merge(options)
           end
 
           def inject_declare_schema_code_into_model_file
@@ -43,7 +43,7 @@ module DeclareSchema
           end
 
           def accessible_attributes
-            field_attributes.map(&:name) + bts.map {|bt| "#{bt}_id"} + bts + hms
+            field_attributes.map(&:name) + bts.map { |bt| "#{bt}_id" } + bts + hms
           end
 
           def hms

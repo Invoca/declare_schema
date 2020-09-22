@@ -1,0 +1,189 @@
+# Examples of how to specifically exclude certain things
+AllCops:
+  TargetRubyVersion: 2.6.1
+  Exclude:
+    - '**/*.yml'
+    - '**/*.sql'
+    - 'config/**/*'
+    - 'vendor/bundle/**/*'
+    - 'vendor/gems/**/*'
+    - 'node_modules/**/*'
+    - 'db/migrate/**/*.rb'
+    - '**/db/migrate/**/*.rb'
+    - '**/db/schema.rb'
+    - !ruby/regexp /old_and_unused\.rb$/
+
+# Configure cops for styles that we do not adhere to or are not agreed upon
+# Default settings and options can be viewed here: https://raw.githubusercontent.com/bbatsov/rubocop/master/config/default.yml
+# Please add new configurations in alphabetical order
+
+Layout/AccessModifierIndentation:
+  IndentationWidth: 2
+
+Layout/HashAlignment:
+  Enabled: false
+
+Layout/EmptyLinesAroundClassBody:
+  Enabled: false
+
+Layout/EndOfLine:
+  Enabled: false
+
+Layout/ExtraSpacing:
+  Enabled: false
+
+Layout/HeredocIndentation:
+  EnforcedStyle: unindent
+
+Layout/MultilineMethodCallIndentation:
+  EnforcedStyle: indented_relative_to_receiver
+
+Layout/SpaceBeforeFirstArg:
+  Enabled: false
+
+Layout/SpaceInsideBlockBraces:
+  EnforcedStyleForEmptyBraces: space
+
+Lint/AmbiguousRegexpLiteral:
+  Enabled: false
+
+Lint/AmbiguousBlockAssociation:
+  Enabled: false
+
+Metrics/AbcSize:
+  Max: 25
+
+Metrics/BlockLength:
+  Exclude:
+    - 'Rakefile'
+    - '**/*.rake'
+    - '**/*_test.rb'
+    # Autobahn - RSpec relies on large blocks
+    - '**/*_spec.rb'
+
+Metrics/ClassLength:
+  Max: 200
+  Exclude:
+    - '**/*_test.rb'
+
+Metrics/CyclomaticComplexity:
+  Max: 10
+
+Metrics/LineLength:
+  Max: 150
+  Exclude:
+    - '**/*_test.rb'
+
+Metrics/MethodLength:
+  Max: 20
+
+Metrics/ModuleLength:
+  Max: 200
+
+Metrics/ParameterLists:
+  Max: 10
+
+Metrics/PerceivedComplexity:
+  Max: 10
+
+Naming/HeredocDelimiterNaming:
+  Enabled: false
+
+Naming/RescuedExceptionsVariableName:
+  Enabled: true
+  PreferredName: 'ex'
+
+Naming/VariableNumber:
+  Enabled: false
+
+Style/AndOr:
+  EnforcedStyle: conditionals
+
+Style/ClassAndModuleChildren:
+  Enabled: true
+
+# Mapping of methods to prefer, alternate => preferred
+Style/CollectionMethods:
+  Enabled: true
+  PreferredMethods:
+    collect: 'map'
+    collect!: 'map!'
+    inject: 'reduce'
+    detect: 'find'
+    find_all: 'select'
+    length: 'size'
+
+Style/CommentedKeyword:
+  Enabled: false
+
+Style/Documentation:
+  Enabled: false
+
+Style/DoubleNegation:
+  Enabled: false
+
+Style/EachWithObject:
+  Enabled: false
+
+Style/EmptyMethod:
+  Enabled: false
+
+Style/FormatStringToken:
+  EnforcedStyle: template
+
+Style/GuardClause:
+  Enabled: false
+
+Style/HashSyntax:
+  EnforcedStyle: ruby19_no_mixed_keys
+
+Style/IfUnlessModifier:
+  Enabled: false
+
+Style/NegatedIf:
+  Enabled: false
+
+Style/Lambda:
+  EnforcedStyle: literal
+
+Style/Next:
+  Enabled: false
+
+Style/NumericLiterals:
+  MinDigits: 9
+
+Style/NumericPredicate:
+  Enabled: false
+
+Style/ParallelAssignment:
+  Enabled: false
+
+Style/PreferredHashMethods:
+  Enabled: false
+
+Style/RegexpLiteral:
+  Enabled: false
+
+Style/RescueStandardError:
+  Enabled: false
+
+Style/SignalException:
+  Enabled: false
+
+Style/StringLiterals:
+  Enabled: false
+
+Style/SymbolArray:
+  Enabled: false
+
+Style/TrailingCommaInArrayLiteral:
+  Enabled: false
+
+Style/TrailingCommaInHashLiteral:
+  Enabled: false
+
+Style/TrailingUnderscoreVariable:
+  Enabled: false
+
+Style/WordArray:
+  EnforcedStyle: brackets

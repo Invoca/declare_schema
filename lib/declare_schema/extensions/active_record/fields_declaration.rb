@@ -10,7 +10,7 @@ module DeclareSchema
       # Any model that calls 'fields' gets DeclareSchema::Model behavior
       DeclareSchema::Model.mix_in(self)
 
-      #@include_in_migration = false #||= options.fetch(:include_in_migration, true); options.delete(:include_in_migration)
+      # @include_in_migration = false #||= options.fetch(:include_in_migration, true); options.delete(:include_in_migration)
       @include_in_migration = true
 
       if b
