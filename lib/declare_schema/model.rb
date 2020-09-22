@@ -83,7 +83,6 @@ module DeclareSchema
         add_formatting_for_field(name, type, args)
         add_validations_for_field(name, type, args, options)
         add_index_for_field(name, args, options)
-        declare_attr_type(name, type, options) unless DeclareSchema.plain_type?(type)
         field_specs[name] = ::DeclareSchema::Model::FieldSpec.new(self, name, type, options)
         attr_order << name unless name.in?(attr_order)
       end
@@ -104,45 +103,6 @@ module DeclareSchema
 
       def rails_default_primary_key
         ::DeclareSchema::Model::IndexSpec.new(self, [primary_key.to_sym], unique: true, name: DeclareSchema::Model::IndexSpec::PRIMARY_KEY_NAME)
-      end
-
-      # Declares that a virtual field that has a rich type (e.g. created
-      # by attr_accessor :foo, type: :email_address) should be subject
-      # to validation (note that the rich types know how to validate themselves)
-      def validate_virtual_field(*args)
-        validates_each(*args) do |record, field, value|
-          if value.respond_to?(:validate)
-            if (msg = value.validate)
-              record.errors.add(field, msg)
-            end
-          end
-        end
-      end
-
-      # This adds a "type: t" option to attr_accessor, where t is
-      # either a class or a symbolic name of a rich type. If this option
-      # is given, the setter will wrap values that are not of the right
-      # type.
-      def attr_accessor_with_rich_types(*attrs)
-        options = attrs.extract_options!
-        type = options.delete(:type)
-        attrs << options unless options.empty?
-
-        super
-
-        if type
-          declare_schema_type = DeclareSchema.to_class(type)
-          attrs.each do |attr|
-            declare_attr_type attr, declare_schema_type, options
-            type_wrapper = attr_type(attr)
-            define_method "#{attr}=" do |val|
-              if !type_wrapper.in?(DeclareSchema::PLAIN_TYPES.values) && !val.is_a?(declare_schema_type) && DeclareSchema.can_wrap?(declare_schema_type, val)
-                val = declare_schema_type.new(val.to_s)
-              end
-              instance_variable_set("@#{attr}", val)
-            end
-          end
-        end
       end
 
       # Extend belongs_to so that it creates a FieldSpec for the foreign key
@@ -188,7 +148,7 @@ module DeclareSchema
       end
 
       # Declares the "foo_type" field that accompanies the "foo_id"
-      # field for a polyorphic belongs_to
+      # field for a polymorphic belongs_to
       def declare_polymorphic_type_field(foreign_type, column_options)
         declare_field(foreign_type, :string, column_options.merge(limit: 255))
         # FIXME: Before declare_schema was extracted, this used to now do:
@@ -248,34 +208,26 @@ module DeclareSchema
         end
       end
 
-      # Extended version of the acts_as_list declaration that
-      # automatically delcares the 'position' field
-      def acts_as_list_with_field_declaration(options = {})
-        declare_field(options.fetch(:column, "position"), :integer)
-        default_scope { order("#{table_name}.position ASC") }
-        acts_as_list_without_field_declaration(options)
-      end
-
       # Returns the type (a class) for a given field or association. If
       # the association is a collection (has_many or habtm) return the
       # AssociationReflection instead
       public \
-        def attr_type(name)
+      def attr_type(name)
         if attr_types.nil? && self != self.name.constantize
           raise "attr_types called on a stale class object (#{self.name}). Avoid storing persistent references to classes"
         end
 
         attr_types[name] ||
-        if (refl = reflections[name.to_s])
-          if refl.macro.in?([:has_one, :belongs_to]) && !refl.options[:polymorphic]
-            refl.klass
-          else
-            refl
+          if (refl = reflections[name.to_s])
+            if refl.macro.in?([:has_one, :belongs_to]) && !refl.options[:polymorphic]
+              refl.klass
+            else
+              refl
+            end
+          end ||
+          if (col = column(name.to_s))
+            DeclareSchema::PLAIN_TYPES[col.type] || col.klass
           end
-        end ||
-        if (col = column(name.to_s))
-          DeclareSchema::PLAIN_TYPES[col.type] || col.klass
-        end
       end
 
       # Return the entry from #columns for the named column
