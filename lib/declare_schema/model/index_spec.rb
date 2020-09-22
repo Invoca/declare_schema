@@ -72,11 +72,11 @@ module DeclareSchema
       end
 
       def to_key
-        @key ||= [table, fields, name, unique, where].map { |key| key.to_s }
+        @key ||= [table, fields, name, unique, where].map(&:to_s)
       end
 
       def settings
-        @settings ||= [table, fields, unique].map { |setting| setting.to_s }
+        @settings ||= [table, fields, unique].map(&:to_s)
       end
 
       def hash
@@ -155,7 +155,7 @@ module DeclareSchema
       end
 
       def to_key
-        @key ||= [@child_table, parent_table_name, @foreign_key_name, @on_delete_cascade].map { |key| key.to_s }
+        @key ||= [@child_table, parent_table_name, @foreign_key_name, @on_delete_cascade].map(&:to_s)
       end
 
       def hash
