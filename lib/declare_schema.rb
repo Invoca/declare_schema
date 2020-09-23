@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'invoca/utils'
 require 'active_support'
 require 'active_support/all'
 require_relative 'declare_schema/version'
