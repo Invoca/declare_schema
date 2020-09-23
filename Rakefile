@@ -1,42 +1,35 @@
 # frozen_string_literal: true
 
 require "bundler/gem_tasks"
-require "rake/testtask"
-require 'rake_test_warning_false'
+require "bundler/gem_tasks"
+require "rspec/core/rake_task"
+
+RSpec::Core::RakeTask.new(:spec)
 
 require 'rubygems'
 require 'tmpdir'
 require 'pry'
 
-include Rake::DSL
+$LOAD_PATH.unshift File.expand_path('lib', __dir__)
+require 'declare_schema'
 
 RUBY = 'ruby'
 RUBYDOCTEST = ENV['RUBYDOCTEST'] || "#{RUBY} -S rubydoctest"
-
-$LOAD_PATH.unshift File.expand_path('lib', __dir__)
-require 'invoca/utils'
-require 'declare_schema'
-
 GEM_ROOT = __dir__
 TESTAPP_PATH = ENV['TESTAPP_PATH'] || File.join(Dir.tmpdir, 'declare_schema_testapp')
 BIN = File.expand_path('bin/declare_schema', __dir__)
 
 task default: 'test:all'
 
+include Rake::DSL
+
 namespace "test" do
-  task all: [:doctest, :unit]
+  task all: [:doctest, :spec]
 
   desc "Run the doctests"
   task :doctest do |_t|
     files = Dir['test/*.rdoctest'].sort.map { |f| File.expand_path(f) }.join(' ')
     system("#{RUBYDOCTEST} #{files}") or exit(1)
-  end
-
-  desc "Run the unit tests"
-  task :unit do |_t|
-    Dir["test/test_*.rb"].each do |f|
-      system("#{RUBY} #{f}") or exit(1)
-    end
   end
 
   desc "Prepare a rails application for testing"

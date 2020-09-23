@@ -342,7 +342,9 @@ module Generators
 
           db_columns = model.connection.columns(current_table_name).index_by(&:name)
           key_missing = db_columns[model.primary_key].nil? && model.primary_key.present?
-          db_columns -= [model.primary_key.presence]
+          if model.primary_key.present?
+            db_columns.delete(model.primary_key)
+          end
 
           model_column_names = model.field_specs.keys.map(&:to_s)
           db_column_names = db_columns.keys.map(&:to_s)
