@@ -52,6 +52,7 @@ doctest: schema.rb file exists
 => true
 
 doctest: db file exists
+>> system("ls -al db")
 >> File.exist? 'db/development.sqlite3'
 => true
 
