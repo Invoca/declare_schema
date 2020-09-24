@@ -300,10 +300,6 @@ module Generators
           down = [undo_changes, undo_renames, undo_drops, undo_creates, undo_index_changes, undo_fk_changes].flatten.reject(&:blank?) * "\n\n"
 
           [up, down]
-        rescue Exception => ex
-          puts "Caught exception: #{ex}"
-          puts ex.backtrace.join("\n")
-          raise
         end
 
         def create_table(model)
@@ -478,7 +474,7 @@ module Generators
           return [[], []] if Migrator.disable_indexing
 
           new_table_name = model.table_name
-          existing_fks = DeclareSchema::Model::ForeignKeySpec.for_model(model, old_table_name)
+          existing_fks = ::DeclareSchema::Model::ForeignKeySpec.for_model(model, old_table_name)
           model_fks = model.constraint_specs
           add_fks = model_fks - existing_fks
           drop_fks = existing_fks - model_fks
