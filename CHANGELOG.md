@@ -1,4 +1,4 @@
-# CHANGELOG for `declarative_schema`
+# CHANGELOG for `declare_schema`
 
 Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
