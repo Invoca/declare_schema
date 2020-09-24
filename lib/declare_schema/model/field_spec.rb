@@ -41,7 +41,8 @@ module DeclareSchema
 
         @model = model
         @name = name.to_sym
-        @type = type.is_a?(String) ? type.to_sym : type
+        type.is_a?(Symbol) or raise ArgumentError, "type must be a Symbol; got #{type.inspect}"
+        @type = type
         position_option = options.delete(:position)
         @options = options
 
@@ -72,7 +73,7 @@ module DeclareSchema
                                   type
                                 else
                                   field_class = DeclareSchema.to_class(type)
-                                  field_class && field_class::COLUMN_TYPE or raise UnknownSqlTypeError, "#{type.inspect} for #{model}.#{@name}"
+                                  field_class && field_class::COLUMN_TYPE or raise UnknownSqlTypeError, "#{type.inspect} for #{model}##{@name}"
                                 end
                               end
       end
