@@ -1,0 +1,28 @@
+---
+dist: trusty
+language: ruby
+sudo: false
+cache: bundler
+rvm:
+  - 2.4.5
+  - 2.5.8
+  - 2.6.5
+  - 2.7.1
+  - ruby-head
+gemfile:
+  - gemfiles/rails_4.gemfile
+  - gemfiles/rails_5.gemfile
+  - gemfiles/rails_6.gemfile
+matrix:
+  fast_finish: false
+  exclude:
+    - gemfile: gemfiles/rails_5.gemfile
+      rvm: 2.4.5
+    - gemfile: gemfiles/rails_6.gemfile
+      rvm: 2.4.5
+  allow_failures:
+    - rvm: ruby-head
+script: |
+  set -exo pipefail
+  bundle exec rake test:prepare_testapp[force]
+  bundle exec rake test:all < test_responses.txt
