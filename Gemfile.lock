@@ -6,7 +6,6 @@ PATH
 
 GEM
   remote: https://rubygems.org/
-  remote: https://gem.fury.io/invoca/
   specs:
     actioncable (5.2.4.4)
       actionpack (= 5.2.4.4)
