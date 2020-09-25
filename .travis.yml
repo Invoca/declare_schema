@@ -22,9 +22,16 @@ jobs:
       rvm: 2.4.5
   allow_failures:
     - rvm: ruby-head
-install:
-  - gem install --default bundler -v 1.17.3
-  - bundle install --jobs=3 --retry=3 --path=${BUNDLE_PATH:-vendor/bundle}
+install: |
+  set -ex
+  gem env
+  gem list bundler
+  echo y | rvm @global do gem install bundler -v 1.17.3 --force --default
+  echo y | rvm @global do gem uninstall bundler -v 2.1.4 --force
+  gem list bundler
+  bundle --version
+  bundle _1.17.3_ --version
+  bundle install --jobs=3 --retry=3 --path=${BUNDLE_PATH:-vendor/bundle}
 script:
   - bundle exec rake test:prepare_testapp[force]
   - bundle exec rake test:all < test_responses.txt
