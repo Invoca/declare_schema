@@ -2,7 +2,7 @@ doctest: prepare testapp environment
 doctest_require: 'prepare_testapp'
 
 doctest: generate declare_schema:model
->> begin; Rails::Generators.invoke 'declare_schema:model', %w(alpha/beta one:string two:integer); rescue => ex; $stderr.puts "#{ex.class}: #{ex}\n#{ex.backtrace.join("\n")}"
+>> begin; Rails::Generators.invoke 'declare_schema:model', %w(alpha/beta one:string two:integer); rescue => ex; $stderr.puts "#{ex.class}: #{ex}\n#{ex.backtrace.join("\n")}"; end
 
 
 doctest: model file exists
@@ -53,7 +53,7 @@ doctest: schema.rb file exists
 => true
 
 doctest: db file exists
->> File.exist? "db/#{Rails.environment}.sqlite3"
+>> File.exist?("db/development.sqlite3") || File.exist?("db/test.sqlite3")
 => true
 
 doctest: Alpha::Beta class exists
