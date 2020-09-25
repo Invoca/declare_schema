@@ -25,7 +25,7 @@ jobs:
 install:
   - gem env
   - gem list bundler
-  - rm -f /home/travis/.rvm/rubies/ruby-2.7.1/lib/ruby/gems/2.7.0/specifications/default/bundler-2.1.4.gemspec
+  - rm -f /home/travis/.rvm/rubies/ruby-2.*/lib/ruby/gems/2.*/specifications/default/bundler-2.*.gemspec
   - echo y | rvm @global do gem install bundler -v 1.17.3 --force --default
   - gem install bundler -v 1.17.3 --force --default
   - gem install bundler -v 1.17.3
