@@ -22,16 +22,16 @@ jobs:
       rvm: 2.4.5
   allow_failures:
     - rvm: ruby-head
-install: |
-  set -ex
-  gem env
-  gem list bundler
-  echo y | rvm @global do gem install bundler -v 1.17.3 --force --default
-  echo y | rvm @global do gem uninstall bundler -v 2.1.4 --force
-  gem list bundler
-  bundle --version
-  bundle _1.17.3_ --version
-  bundle install --jobs=3 --retry=3 --path=${BUNDLE_PATH:-vendor/bundle}
+install:
+  - gem env
+  - gem list bundler
+  - rm -f /home/travis/.rvm/rubies/ruby-2.7.1/lib/ruby/gems/2.7.0/specifications/default/bundler-2.1.4.gemspec
+  - echo y | rvm @global do gem install bundler -v 1.17.3 --force --default
+  - gem install bundler -v 1.17.3 --force --default
+  - gem install bundler -v 1.17.3
+  - gem list bundler
+  - bundle --version
+  - bundle install --jobs=3 --retry=3 --path=${BUNDLE_PATH:-vendor/bundle}
 script:
   - bundle exec rake test:prepare_testapp[force]
   - bundle exec rake test:all < test_responses.txt
