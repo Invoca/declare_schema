@@ -2,7 +2,7 @@ doctest: prepare testapp environment
 doctest_require: 'prepare_testapp'
 
 doctest: generate declare_schema:model
->> Rails::Generators.invoke 'declare_schema:model', %w(alpha/beta one:string two:integer)
+>> begin; Rails::Generators.invoke 'declare_schema:model', %w(alpha/beta one:string two:integer); rescue => ex; $stderr.puts "#{ex.class}: #{ex}\n#{ex.backtrace.join("\n")}"
 
 
 doctest: model file exists
