@@ -48,12 +48,12 @@ doctest: generate declare_schema:migration
 >> Rails::Generators.invoke 'declare_schema:migration', %w(-n -m)
 
 doctest: schema.rb file exists
+>> system("ls -al db")
 >> File.exist? 'db/schema.rb'
 => true
 
 doctest: db file exists
->> system("ls -al db")
->> File.exist? 'db/development.sqlite3'
+>> File.exist? "db/#{Rails.environment}.sqlite3"
 => true
 
 doctest: Alpha::Beta class exists
