@@ -43,8 +43,9 @@ doctest: fixture file exists
 
 
 doctest: generate declare_schema:migration
->> require_relative "#{Rails.root}/app/models/alpha.rb" if Rails::VERSION::MAJOR > 5
->> require_relative "#{Rails.root}/app/models/alpha/beta.rb" if Rails::VERSION::MAJOR > 5
+>> puts "#{Rails.root}/app/models/alpha.rb"
+>> require_relative "#{Rails.root}/app/models/alpha.rb" if Rails::VERSION::MAJOR > 4
+>> require_relative "#{Rails.root}/app/models/alpha/beta.rb" if Rails::VERSION::MAJOR > 4
 >> Rails::Generators.invoke 'declare_schema:migration', %w(-n -m)
 
 doctest: schema.rb file exists
