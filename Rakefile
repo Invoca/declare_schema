@@ -29,7 +29,7 @@ namespace "test" do
   desc "Run the doctests"
   task :doctest do |_t|
     files = Dir['test/*.rdoctest'].sort.map { |f| File.expand_path(f) }.join(' ')
-    system("#{RUBYDOCTEST} #{files}") or exit(1)
+    system("#{RUBYDOCTEST} --trace --verbose #{files}") or exit(1)
   end
 
   desc "Prepare a rails application for testing"
