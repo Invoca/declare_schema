@@ -1,6 +1,6 @@
 -*- indent-tabs-mode:nil; -*-
 
-# HoboFields - Migration Generator
+# DeclareSchema - Migration Generator
 
 Our test requires to prepare the testapp:
 {.hidden}
@@ -21,7 +21,7 @@ And requires also that you enter the right choice when prompted. OK we're ready 
       end
       self.primary_key="foo_id"
     end
-   >> Rails::Generators.invoke 'hobo:migration', %w(-n -m)
+   >> Rails::Generators.invoke 'declare_schema:migration', %w(-n -m)
    >> Foo.primary_key
    => 'foo_id'
 
@@ -32,7 +32,7 @@ And requires also that you enter the right choice when prompted. OK we're ready 
       self.primary_key="id"
     end
     puts "\n\e[45m Please enter 'id' (no quotes) at the next prompt \e[0m"
-   >> Rails::Generators.invoke 'hobo:migration', %w(-n -m)
+   >> Rails::Generators.invoke 'declare_schema:migration', %w(-n -m)
    >> Foo.primary_key
    => 'id'
 
@@ -44,13 +44,13 @@ And requires also that you enter the right choice when prompted. OK we're ready 
       self.primary_key="foo_id"
     end
     puts "\n\e[45m Please enter 'drop id' (no quotes) at the next prompt \e[0m"
-   >> Rails::Generators.invoke 'hobo:migration', %w(-n -m)
+   >> Rails::Generators.invoke 'declare_schema:migration', %w(-n -m)
    >> Foo.primary_key
    => 'foo_id'
 
 ### ensure it doesn't cause further migrations
 
    doctest: check no further migrations
-   >> up, down = Generators::Hobo::Migration::Migrator.run
+   >> up, down = Generators::DeclareSchema::Migration::Migrator.run
    >> up
    => ""

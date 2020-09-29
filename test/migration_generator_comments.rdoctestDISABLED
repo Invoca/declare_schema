@@ -1,4 +1,4 @@
-# HoboFields - Migration Generator Comments
+# DeclareSchema - Migration Generator Comments
 
 Our test requires to prepare the testapp for a different environment:
 {.hidden}
@@ -22,7 +22,7 @@ Our test requires to prepare the testapp for a different environment:
 
 ## Comments
 
-Comments can be added to tables and fields with HoboFields.
+Comments can be added to tables and fields with DeclareSchema.
 
     >>
      class Product < ActiveRecord::Base
@@ -33,7 +33,7 @@ Comments can be added to tables and fields with HoboFields.
      end
     >> Rails.env
     => "mysql_test"
-    >> Rails::Generators.invoke 'hobo:migration', %w(-n -m)
+    >> Rails::Generators.invoke 'declare_schema:migration', %w(-n -m)
 
 These comments will be saved to your schema if you have the [column_comments](http://github.com/bryanlarsen/column_comments) plugin installed.  If you do not have this plugin installed, the comments will be available by querying `field_specs`:
 
@@ -44,7 +44,7 @@ The plugin [activerecord-comments](http://github.com/bryanlarsen/activerecord-co
 
     Product.column("name").comment
 
-Because it will be quite common for people not to have both [column_comments](http://github.com/bryanlarsen/column_comments) and [activerecord-comments](http://github.com/bryanlarsen/activerecord-comments) installed, it is impossible for HoboFields to determine the difference between no previous comment and a previously missing plugin.   Therefore, HoboFields will not generate a migration if the only change was to add a comment.  HoboFields will generate a migration for a comment change, but only if the plugin is installed.
+Because it will be quite common for people not to have both [column_comments](http://github.com/bryanlarsen/column_comments) and [activerecord-comments](http://github.com/bryanlarsen/activerecord-comments) installed, it is impossible for DeclareSchema to determine the difference between no previous comment and a previously missing plugin.   Therefore, DeclareSchema will not generate a migration if the only change was to add a comment.  DeclareSchema will generate a migration for a comment change, but only if the plugin is installed.
 
     >> require 'activerecord-comments'
 
@@ -58,8 +58,7 @@ Because it will be quite common for people not to have both [column_comments](ht
          description :string, comment: "Long name"
        end
      end
-    >> up, down = Generators::Hobo::Migration::Migrator.run
-    >> up
+    >> up, down = Generators::DeclareSchema::Migration::Migrator.run
     >> up.split(',').slice(0,3).join(',')
     => 'change_column :products, :name, :string'
     >> up.split(',').slice(3,2).sort.join(',')

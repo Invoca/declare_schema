@@ -1,8 +1,8 @@
 doctest: prepare testapp environment
 doctest_require: 'prepare_testapp'
 
-doctest: generate hobo:model
->> Rails::Generators.invoke 'hobo:model', %w(alpha/beta one:string two:integer)
+doctest: generate declare_schema:model
+>> begin; Rails::Generators.invoke 'declare_schema:model', %w(alpha/beta one:string two:integer); rescue => ex; $stderr.puts "#{ex.class}: #{ex}\n#{ex.backtrace.join("\n")}"; end
 
 
 doctest: model file exists
@@ -42,17 +42,19 @@ doctest: fixture file exists
 => true
 
 
-doctest: generate hobo:migration
->> require_relative "#{Rails.root}/app/models/alpha.rb" if Rails::VERSION::MAJOR > 5
->> require_relative "#{Rails.root}/app/models/alpha/beta.rb" if Rails::VERSION::MAJOR > 5
->> Rails::Generators.invoke 'hobo:migration', %w(-n -m)
+doctest: generate declare_schema:migration
+>> puts "#{Rails.root}/app/models/alpha.rb"
+>> require "#{Rails.root}/app/models/alpha.rb" if Rails::VERSION::MAJOR > 4
+>> require "#{Rails.root}/app/models/alpha/beta.rb" if Rails::VERSION::MAJOR > 4
+>> Rails::Generators.invoke 'declare_schema:migration', %w(-n -m)
 
 doctest: schema.rb file exists
+>> system("ls -al db")
 >> File.exist? 'db/schema.rb'
 => true
 
 doctest: db file exists
->> File.exist? 'db/development.sqlite3'
+>> File.exist?("db/development.sqlite3") || File.exist?("db/test.sqlite3")
 => true
 
 doctest: Alpha::Beta class exists
