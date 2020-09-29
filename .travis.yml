@@ -22,14 +22,12 @@ jobs:
       rvm: 2.4.5
   allow_failures:
     - rvm: ruby-head
-install:
-  - gem env
-  - gem list bundler
+before_install:
   - rm -f /home/travis/.rvm/rubies/ruby-2.*/lib/ruby/gems/2.*/specifications/default/bundler-2.*.gemspec
   - echo y | rvm @global do gem install bundler -v 1.17.3 --force --default
   - gem install bundler -v 1.17.3 --force --default
   - gem install bundler -v 1.17.3
-  - gem list bundler
+install:
   - bundle --version
   - bundle install --jobs=3 --retry=3 --path=${BUNDLE_PATH:-vendor/bundle}
 script:
