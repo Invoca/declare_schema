@@ -217,12 +217,18 @@ module Generators
 
 
         def always_ignore_tables
-          # TODO: figure out how to do this in a sane way and be compatible with 2.2 and 2.3 - class has moved
-          sessions_table = CGI::Session::ActiveRecordStore::Session.table_name if
-            defined?(CGI::Session::ActiveRecordStore::Session) &&
-            defined?(ActionController::Base) &&
-            ActionController::Base.session_store == CGI::Session::ActiveRecordStore
-          ['schema_info', 'schema_migrations',  'simple_sesions'].compact
+          sessions_table =
+            begin
+              if defined?(CGI::Session::ActiveRecordStore::Session) &&
+                 defined?(ActionController::Base) &&
+                 ActionController::Base.session_store == CGI::Session::ActiveRecordStore
+                CGI::Session::ActiveRecordStore::Session.table_name
+              end
+            rescue
+              nil
+            end
+
+          ['schema_info', 'schema_migrations', 'ar_internal_metadata', sessions_table].compact
         end
 
 
