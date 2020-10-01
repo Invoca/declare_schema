@@ -106,15 +106,23 @@ module Generators
 
         attr_accessor :renames
 
+        # TODO: Add an application callback (maybe an initializer in a special group?) that
+        # the application can use to load other models that live in the database, to support DeclareSchema migrations
+        # for them.
         def load_rails_models
+          ActiveRecord::Migration.verbose = false
+
           Rails.application.eager_load!
+          Rails::Engine.subclasses.each(&:eager_load!)
         end
 
         # Returns an array of model classes that *directly* extend
         # ActiveRecord::Base, excluding anything in the CGI module
         def table_model_classes
           load_rails_models
-          ActiveRecord::Base.send(:descendants).reject { |c| (c.base_class != c) || c.name.starts_with?("CGI::") }
+          ActiveRecord::Base.send(:descendants).select do |klass|
+            klass.base_class == klass && !klass.name.starts_with?("CGI::")
+          end
         end
 
         def connection
