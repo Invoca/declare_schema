@@ -232,7 +232,8 @@ module Generators
           [
             ActiveRecord::Base.schema_migrations_table_name,
             ActiveRecord::Base.internal_metadata_table_name,
-            sessions_table
+            sessions_table,
+            'schema_info'
           ].compact
         end
 
