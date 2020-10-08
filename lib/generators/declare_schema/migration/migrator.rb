@@ -225,7 +225,7 @@ module Generators
           end
         end
 
-        def always_ignore_tables
+        def self.always_ignore_tables
           sessions_table =
             begin
               if defined?(CGI::Session::ActiveRecordStore::Session) &&
@@ -264,7 +264,7 @@ module Generators
           model_table_names = models_by_table_name.keys
 
           to_create = model_table_names - db_tables
-          to_drop = db_tables - model_table_names - always_ignore_tables
+          to_drop = db_tables - model_table_names - self.class.always_ignore_tables
           to_change = model_table_names
           to_rename = extract_table_renames!(to_create, to_drop)
 
