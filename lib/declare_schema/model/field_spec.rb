@@ -102,10 +102,6 @@ module DeclareSchema
         @options[:default]
       end
 
-      def comment
-        @options[:comment]
-      end
-
       def same_type?(col_spec)
         type = sql_type
         normalized_type           = TYPE_SYNONYMS[type] || type
@@ -115,13 +111,6 @@ module DeclareSchema
 
       def different_to?(col_spec)
         !same_type?(col_spec) ||
-          # we should be able to use col_spec.comment, but col_spec has
-          # a nil table_name for some strange reason.
-          (model.table_exists? &&
-            ActiveRecord::Base.respond_to?(:column_comment) &&
-            !(col_comment = ActiveRecord::Base.column_comment(col_spec.name, model.table_name)).nil? &&
-            col_comment != comment
-          ) ||
           begin
             native_type = native_types[type]
             check_attributes = [:null, :default]
