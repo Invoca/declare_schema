@@ -229,7 +229,12 @@ module Generators
               nil
             end
 
-          ['schema_info', 'schema_migrations', 'ar_internal_metadata', sessions_table].compact
+          [
+            'schema_info',
+            ActiveRecord::Base.schema_migrations_table_name,
+            ActiveRecord::Base.internal_metadata_table_name,
+            sessions_table
+          ].compact
         end
 
         def generate
