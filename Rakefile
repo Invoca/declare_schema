@@ -38,19 +38,19 @@ namespace "test" do
       FileUtils.remove_entry_secure(TESTAPP_PATH, true)
       sh %(#{BIN} new #{TESTAPP_PATH} --skip-wizard --skip-bundle)
       FileUtils.chdir TESTAPP_PATH
-      sh %(bundle install)
-      sh %(echo "" >> Gemfile)
-      sh %(echo "gem 'irt', :group => :development" >> Gemfile) # to make the bundler happy
-      sh %(echo "gem 'therubyracer'" >> Gemfile)
-      sh %(echo "gem 'kramdown'" >> Gemfile)
-      sh %(echo "" > app/models/.gitignore) # because git reset --hard would rm the dir
-      rm %(.gitignore) # we need to reset everything in a testapp
-      sh %(git init && git add . && git commit -m "initial commit")
-      puts %(The testapp has been created in '#{TESTAPP_PATH}')
+      sh "bundle install"
+      sh "(echo '';
+           echo \"gem 'irt', :group => :development\";
+           echo \"gem 'therubyracer'\";
+           echo \"gem 'kramdown'\") > Gemfile"
+      sh("echo '' > app/models/.gitignore") # because git reset --hard would rm the dir
+      rm ".gitignore" # we need to reset everything in a testapp
+      sh "git init && git add . && git commit -m \"initial commit\""
+      puts "The testapp has been created in '#{TESTAPP_PATH}'"
     else
-      FileUtils.chdir TESTAPP_PATH
-      sh %(git add .)
-      sh %(git reset --hard -q HEAD)
+      FileUtils.chdir(TESTAPP_PATH)
+      sh "git add ."
+      sh "git reset --hard -q HEAD"
     end
   end
 end
