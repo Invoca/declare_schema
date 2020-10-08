@@ -1,56 +1,58 @@
--*- indent-tabs-mode:nil; -*-
+# frozen_string_literal: true
 
-# DeclareSchema - Migration Generator
+RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
+  let(:model_base_class) { Rails::VERSION::MAJOR > 4 ? 'ApplicationRecord' : 'ActiveRecord::Base' }
 
-Our test requires to prepare the testapp:
-{.hidden}
+  before :all do
+    load File.expand_path('prepare_testapp.rb', __dir__)
+    ActiveRecord::Base.connection.execute("DROP TABLE foos") rescue nil
+  end
 
-    doctest_require: 'prepare_testapp'
-
-{.hidden}
-
-And requires also that you enter the right choice when prompted. OK we're ready to get going.
-
-## Alternate Primary Keys
-
-### create
-   doctest: create table with custom primary_key
-   >>
-    class Foo < ActiveRecord::Base
-      fields do
+  it "allows alternate primary keys" do
+    instance_exec do
+      class Foo < ActiveRecord::Base
+        fields do
+        end
+        self.primary_key = "foo_id"
       end
-      self.primary_key="foo_id"
     end
-   >> Rails::Generators.invoke 'declare_schema:migration', %w(-n -m)
-   >> Foo.primary_key
-   => 'foo_id'
 
-### migrate from
-   doctest: rename from custom primary_key
-   >>
-    class Foo < ActiveRecord::Base
-      self.primary_key="id"
+    puts "A"
+
+    Rails::Generators.invoke('declare_schema:migration', %w[-n -m])
+    expect(Foo.primary_key).to eq('foo_id')
+
+    puts "B"
+    ### migrate from
+    # rename from custom primary_key
+    instance_exec do
+      class Foo < ActiveRecord::Base
+        self.primary_key = "id"
+      end
     end
+
+    puts "C"
     puts "\n\e[45m Please enter 'id' (no quotes) at the next prompt \e[0m"
-   >> Rails::Generators.invoke 'declare_schema:migration', %w(-n -m)
-   >> Foo.primary_key
-   => 'id'
+    Rails::Generators.invoke('declare_schema:migration', %w[-n -m])
+    expect(Foo.primary_key).to eq('id')
 
-### migrate to
+    ### migrate to
 
-   doctest: rename to custom primary_key
-   >>
-    class Foo < ActiveRecord::Base
-      self.primary_key="foo_id"
+    # rename to custom primary_key
+    instance_exec do
+      class Foo < ActiveRecord::Base
+        self.primary_key = "foo_id"
+      end
     end
+
     puts "\n\e[45m Please enter 'drop id' (no quotes) at the next prompt \e[0m"
-   >> Rails::Generators.invoke 'declare_schema:migration', %w(-n -m)
-   >> Foo.primary_key
-   => 'foo_id'
+    Rails::Generators.invoke('declare_schema:migration', %w[-n -m])
+    expect(Foo.primary_key).to eq('foo_id')
 
-### ensure it doesn't cause further migrations
+    ### ensure it doesn't cause further migrations
 
-   doctest: check no further migrations
-   >> up, down = Generators::DeclareSchema::Migration::Migrator.run
-   >> up
-   => ""
+    # check no further migrations
+    up, down = Generators::DeclareSchema::Migration::Migrator.run
+    expect(up).to eq("")
+  end
+end
