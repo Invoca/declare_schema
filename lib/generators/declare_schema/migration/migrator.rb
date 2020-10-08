@@ -230,10 +230,10 @@ module Generators
             end
 
           [
+            'schema_info',
             ActiveRecord::Base.schema_migrations_table_name,
             ActiveRecord::Base.internal_metadata_table_name,
-            sessions_table,
-            'schema_info'
+            sessions_table
           ].compact
         end
 
