@@ -1,62 +1,58 @@
-doctest: prepare testapp environment
-doctest_require: 'prepare_testapp'
+# frozen_string_literal: true
 
-doctest: generate declare_schema:model
->> begin; Rails::Generators.invoke 'declare_schema:model', %w(alpha/beta one:string two:integer); rescue => ex; $stderr.puts "#{ex.class}: #{ex}\n#{ex.backtrace.join("\n")}"; end
+RSpec.describe 'DeclareSchema Migration Generator' do
+  let(:model_base_class) { Rails::VERSION::MAJOR > 4 ? 'ApplicationRecord' : 'ActiveRecord::Base' }
 
+  before :all do
+    load File.expand_path('prepare_testapp.rb', __dir__)
+    ActiveRecord::Base.connection.execute("DROP TABLE adverts") rescue nil
+    ActiveRecord::Base.connection.execute("DROP TABLE alpha_betas") rescue nil
+  end
 
-doctest: model file exists
->> File.exist? 'app/models/alpha/beta.rb'
-=> true
+  it "generates nested models" do
+    Rails::Generators.invoke('declare_schema:model', %w[alpha/beta one:string two:integer])
 
-doctest: model content matches
->> File.read 'app/models/alpha/beta.rb'
-=> "class Alpha::Beta < #{Rails::VERSION::MAJOR > 4 ? 'ApplicationRecord' : 'ActiveRecord::Base'}\n\n  fields do\n    one :string, limit: 255\n    two :integer\n  end\n\nend\n"
+    expect(File.exist?('app/models/alpha/beta.rb')).to be_truthy
 
-doctest: module file exists
->> File.exist? 'app/models/alpha.rb'
-=> true
+    expect(File.read('app/models/alpha/beta.rb')).to eq(<<~EOS)
+      class Alpha::Beta < #{model_base_class}
+  
+        fields do
+          one :string, limit: 255
+          two :integer
+        end
+  
+      end
+    EOS
 
-doctest: module content matches
->> File.read 'app/models/alpha.rb'
-=> "module Alpha\n  def self.table_name_prefix\n    'alpha_'\n  end\nend\n"
+    expect(File.read('app/models/alpha.rb')).to eq(<<~EOS)
+      module Alpha
+        def self.table_name_prefix
+          'alpha_'
+        end
+      end
+    EOS
 
+    expect(File.read('test/models/alpha/beta_test.rb')).to eq(<<~EOS)
+      require 'test_helper'
+      
+      class Alpha::BetaTest < ActiveSupport::TestCase
+        # test "the truth" do
+        #   assert true
+        # end
+      end
+    EOS
 
-doctest: test file exists
->> File.exist? 'test/models/alpha/beta_test.rb'
-=> true
+    expect(File.exist?('test/fixtures/alpha/beta.yml')).to be_truthy
 
-doctest: test content matches
->> File.read 'test/models/alpha/beta_test.rb'
-=>
-require 'test_helper'
+    require "#{Rails.root}/app/models/alpha.rb"
+    require "#{Rails.root}/app/models/alpha/beta.rb"
+    Rails::Generators.invoke 'declare_schema:migration', %w[-n -m]
 
-class Alpha::BetaTest < ActiveSupport::TestCase
-  # test "the truth" do
-  #   assert true
-  # end
+    expect(File.exist?('db/schema.rb')).to be_truthy
+
+    expect(File.exist?("db/development.sqlite3") || File.exist?("db/test.sqlite3")).to be_truthy
+
+    expect { Alpha::Beta }.to_not raise_exception
+  end
 end
-
-doctest: fixture file exists
->> File.exist? 'test/fixtures/alpha/beta.yml'
-=> true
-
-
-doctest: generate declare_schema:migration
->> puts "#{Rails.root}/app/models/alpha.rb"
->> require "#{Rails.root}/app/models/alpha.rb" if Rails::VERSION::MAJOR > 4
->> require "#{Rails.root}/app/models/alpha/beta.rb" if Rails::VERSION::MAJOR > 4
->> Rails::Generators.invoke 'declare_schema:migration', %w(-n -m)
-
-doctest: schema.rb file exists
->> system("ls -al db")
->> File.exist? 'db/schema.rb'
-=> true
-
-doctest: db file exists
->> File.exist?("db/development.sqlite3") || File.exist?("db/test.sqlite3")
-=> true
-
-doctest: Alpha::Beta class exists
->> Alpha::Beta
-# will error if class doesn't exist
