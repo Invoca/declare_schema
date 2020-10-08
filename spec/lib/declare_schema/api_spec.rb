@@ -1,136 +1,121 @@
-# DeclareSchema API
+# frozen_string_literal: true
 
-In order for the API examples to run we need to load the rails generators of our testapp:
-{.hidden}
+require 'rails'
+require 'rails/generators'
 
-    doctest: prepare testapp environment
-    doctest_require: 'prepare_testapp'
-{.hidden}
+RSpec.describe 'DeclareSchema API' do
+  before :all do
+    load File.expand_path('prepare_testapp.rb', __dir__)
+    ActiveRecord::Base.connection.execute("DROP TABLE adverts") rescue nil
+  end
 
-## Example Models
+  describe 'example models' do
+    it 'generates a model' do
+      expect(system("bundle exec rails generate declare_schema:model advert title:string body:text")).to be_truthy
 
-Let's define some example models that we can use to demonstrate the API. With DeclareSchema we can use the 'declare_schema:model' generator like so:
+      # The above will generate the test, fixture and a model file like this:
+      # model_declaration = Rails::Generators.invoke('declare_schema:model', ['advert2', 'title:string', 'body:text'])
+      # expect(model_declaration.first).to eq([["Advert"], nil, "app/models/advert.rb", nil,
+      #                                       [["AdvertTest"], "test/models/advert_test.rb", nil, "test/fixtures/adverts.yml"]])
 
-    $ rails generate declare_schema:model advert title:string body:text
+      expect(File.read("#{TESTAPP_PATH}/app/models/advert.rb")).to eq(<<~EOS)
+        class Advert < ApplicationRecord
 
-This will generate the test, fixture and a model file like this:
+          fields do
+            title :string, limit: 255
+            body  :text
+          end
 
-    >> Rails::Generators.invoke 'declare_schema:model', %w(advert title:string body:text)
-{.hidden}
+        end
+      EOS
+      system("rm -rf #{TESTAPP_PATH}/app/models/advert2.rb #{TESTAPP_PATH}/test/models/advert2.rb #{TESTAPP_PATH}/test/fixtures/advert2.rb")
 
-    class Advert < ActiveRecord::Base
-      fields do
-        title :string
-        body :text, limit: 0xffff, null: true
+      # The migration generator uses this information to create a migration.
+      # The following creates and runs the migration:
+
+      expect(system("bundle exec rails generate declare_schema:migration -n -m")).to be_truthy
+
+      # We're now ready to start demonstrating the API
+
+      require './app/models/advert.rb'
+      Rails::Generators.invoke('declare_schema:migration', %w[-n -m])
+
+      ## The Basics
+
+      # The main feature of DeclareSchema, aside from the migration generator, is the ability to declare rich types for your fields. For example, you can declare that a field is an email address, and the field will be automatically validated for correct email address syntax.
+
+      ### Field Types
+
+      # Field values are returned as the type you specify.
+
+      Advert.destroy_all
+
+      a = Advert.new(body: "This is the body", id: 1, title: "title")
+      expect(a.body).to eq("This is the body")
+
+      # This also works after a round-trip to the database
+
+      a.save!
+      expect(a.reload.body).to eq("This is the body")
+
+      ## Names vs. Classes
+
+      ## Model extensions
+
+      # DeclareSchema adds a few features to your models.
+
+      ### `Model.attr_type`
+
+      # Returns the type (i.e. class) declared for a given field or attribute
+
+      Advert.connection.schema_cache.clear!
+      Advert.reset_column_information
+      expect(Advert.attr_type(:title)).to eq(String)
+      expect(Advert.attr_type(:body)).to eq(String)
+
+      ## Field validations
+
+      # DeclareSchema gives you some shorthands for declaring some common validations right in the field declaration
+
+      ### Required fields
+
+      # The `:required` argument to a field gives a `validates_presence_of`:
+
+      instance_exec do
+        class AdvertWithRequiredTitle < ActiveRecord::Base
+          self.table_name = 'adverts'
+
+          fields do
+            title :string, :required, limit: 255
+          end
+        end
       end
+
+      a = AdvertWithRequiredTitle.new
+      expect(a.valid? || a.errors.full_messages).to eq(["Title can't be blank"])
+      a.id = 2
+      a.body = "hello"
+      a.title = "Jimbo"
+      a.save!
+
+      ### Unique fields
+
+      # The `:unique` argument in a field declaration gives `validates_uniqueness_of`:
+
+      instance_exec do
+        class AdvertWithUniqueTitle < ActiveRecord::Base
+          self.table_name = 'adverts'
+
+          fields do
+            title :string, :unique, limit: 255
+          end
+        end
+      end
+
+      a = AdvertWithUniqueTitle.new :title => "Jimbo", id: 3, body: "hello"
+      expect(a.valid? || a.errors.full_messages).to eq(["Title has already been taken"])
+      a.title = "Sambo"
+      a.save!
     end
-
-The migration generator uses this information to create a migration. The following creates and runs the migration so we're ready to go.
-
-    $ rails generate declare_schema:migration -n -m
-
-We're now ready to start demonstrating the API
-
-    >> require_relative "#{Rails.root}/app/models/advert.rb" if Rails::VERSION::MAJOR > 5
-    >> Rails::Generators.invoke 'declare_schema:migration', %w(-n -m)
-    >> Rails::Generators.invoke 'declare_schema:migration', %w(-n -m)
-{.hidden}
-
-## The Basics
-
-The main feature of DeclareSchema, aside from the migration generator, is the ability to declare rich types for your fields. For example, you can declare that a field is an email address, and the field will be automatically validated for correct email address syntax.
-
-### Field Types
-
-Field values are returned as the type you specify.
-
-        >> a = Advert.new :body => "This is the body", id: 1, title: "title"
-        >> a.body.class
-        => String
-
-This also works after a round-trip to the database
-
-        >> a.save
-        >> b = Advert.find(a.id)
-        >> b.body.class
-        => String
-
-## Names vs. Classes
-
-The full set of available symbolic names is
-
- * `:integer`
- * `:float`
- * `:decimal`
- * `:string`
- * `:text`
- * `:boolean`
- * `:date`
- * `:datetime`
- * `:html`
- * `:textile`
- * `:markdown`
- * `:password`
-
-You can add your own types too. More on that later.
-
-
-## Model extensions
-
-DeclareSchema adds a few features to your models.
-
-### `Model.attr_type`
-
-Returns the type (i.e. class) declared for a given field or attribute
-
-        >> Advert.connection.schema_cache.clear!
-        >> Advert.reset_column_information
-        >> Advert.attr_type :title
-        => String
-        >> Advert.attr_type :body
-        => String
-
-## Field validations
-
-DeclareSchema gives you some shorthands for declaring some common validations right in the field declaration
-
-### Required fields
-
-The `:required` argument to a field gives a `validates_presence_of`:
-
-        >>
-         class Advert
-           fields do
-             title :string, :required, limit: 255
-           end
-         end
-        >> a = Advert.new
-        >> a.valid?
-        => false
-        >> a.errors.full_messages
-        => ["Title can't be blank"]
-        >> a.id = 2
-        >> a.body = "hello"
-        >> a.title = "Jimbo"
-        >> a.save
-        => true
-
-
-### Unique fields
-
-The `:unique` argument in a field declaration gives `validates_uniqueness_of`:
-
-        >>
-         class Advert
-           fields do
-             title :string, :unique, limit: 255
-           end
-         end
-        >> a = Advert.new :title => "Jimbo", id: 3, body: "hello"
-        >> a.valid?
-        => false
-        >> a.errors.full_messages
-        => ["Title has already been taken"]
-        >> a.title = "Sambo"
-        >> a.save
-        => true
+  end
+end
