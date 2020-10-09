@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    declare_schema (0.1.3)
+    declare_schema (0.2.0.pre.1)
       rails (>= 4.2)
 
 GEM
@@ -159,7 +159,6 @@ GEM
     rubocop-ast (0.4.2)
       parser (>= 2.7.1.4)
     ruby-progressbar (1.10.1)
-    rubydoctest (1.1.5)
     sprockets (4.0.2)
       concurrent-ruby (~> 1.0)
       rack (> 1, < 3)
@@ -194,7 +193,6 @@ DEPENDENCIES
   responders
   rspec
   rubocop
-  rubydoctest
   sqlite3
   yard
 
