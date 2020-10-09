@@ -3,11 +3,15 @@
 require_relative '../../../lib/declare_schema/field_declaration_dsl'
 
 RSpec.describe DeclareSchema::FieldDeclarationDsl do
-  class TestModel < ActiveRecord::Base
-    fields do
-      name :string, limit: 127
+  before do
+    load File.expand_path('prepare_testapp.rb', __dir__)
 
-      timestamps
+    class TestModel < ActiveRecord::Base
+      fields do
+        name :string, limit: 127
+
+        timestamps
+      end
     end
   end
 

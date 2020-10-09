@@ -22,6 +22,22 @@ RSpec.configure do |config|
 
   RSpec::Support::ObjectFormatter.default_instance.max_formatted_output_length = 2_000
 
+  def migrate(renames = {})
+    up, down = Generators::DeclareSchema::Migration::Migrator.run(renames)
+    ActiveRecord::Migration.class_eval(up)
+    ActiveRecord::Base.send(:descendants).each { |model| model.reset_column_information }
+    [up, down]
+  end
+
+  def nuke_model_class(klass)
+    ActiveSupport::DescendantsTracker.instance_eval do
+      direct_descendants = class_variable_get('@@direct_descendants')
+      direct_descendants[ActiveRecord::Base] = direct_descendants[ActiveRecord::Base].to_a.reject { |descendant| descendant == klass }
+      direct_descendants[ApplicationRecord] = direct_descendants[ApplicationRecord].to_a.reject { |descendant| descendant == klass }
+    end
+    Object.instance_eval { remove_const(klass.name.to_sym) rescue nil }
+  end
+
   def with_modified_env(options, &block)
     ClimateControl.modify(options, &block)
   end

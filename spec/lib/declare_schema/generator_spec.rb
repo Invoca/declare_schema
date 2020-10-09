@@ -3,7 +3,7 @@
 RSpec.describe 'DeclareSchema Migration Generator' do
   let(:model_base_class) { Rails::VERSION::MAJOR > 4 ? 'ApplicationRecord' : 'ActiveRecord::Base' }
 
-  before :all do
+  before do
     load File.expand_path('prepare_testapp.rb', __dir__)
     ActiveRecord::Base.connection.execute("DROP TABLE adverts") rescue nil
     ActiveRecord::Base.connection.execute("DROP TABLE alpha_betas") rescue nil

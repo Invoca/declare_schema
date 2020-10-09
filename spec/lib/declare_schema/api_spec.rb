@@ -4,7 +4,7 @@ require 'rails'
 require 'rails/generators'
 
 RSpec.describe 'DeclareSchema API' do
-  before :all do
+  before do
     load File.expand_path('prepare_testapp.rb', __dir__)
     ActiveRecord::Base.connection.execute("DROP TABLE adverts") rescue nil
   end
@@ -81,13 +81,11 @@ RSpec.describe 'DeclareSchema API' do
 
       # The `:required` argument to a field gives a `validates_presence_of`:
 
-      instance_exec do
-        class AdvertWithRequiredTitle < ActiveRecord::Base
-          self.table_name = 'adverts'
+      class AdvertWithRequiredTitle < ActiveRecord::Base
+        self.table_name = 'adverts'
 
-          fields do
-            title :string, :required, limit: 255
-          end
+        fields do
+          title :string, :required, limit: 255
         end
       end
 
@@ -102,13 +100,11 @@ RSpec.describe 'DeclareSchema API' do
 
       # The `:unique` argument in a field declaration gives `validates_uniqueness_of`:
 
-      instance_exec do
-        class AdvertWithUniqueTitle < ActiveRecord::Base
-          self.table_name = 'adverts'
+      class AdvertWithUniqueTitle < ActiveRecord::Base
+        self.table_name = 'adverts'
 
-          fields do
-            title :string, :unique, limit: 255
-          end
+        fields do
+          title :string, :unique, limit: 255
         end
       end
 

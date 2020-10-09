@@ -3,7 +3,7 @@
 require 'fileutils'
 require 'tmpdir'
 
-TESTAPP_PATH = ENV['TESTAPP_PATH'] || File.join(Dir.tmpdir, 'declare_schema_testapp')
+TESTAPP_PATH = ENV['TESTAPP_PATH'] || File.join(Dir.tmpdir, 'declare_schema_testapp') unless defined?(TESTAPP_PATH)
 FileUtils.chdir(TESTAPP_PATH)
 
 system "rm -rf app/models/ad* app/models/alpha*"
@@ -17,3 +17,13 @@ require "#{TESTAPP_PATH}/config/environment"
 
 require 'rails/generators'
 Rails::Generators.configure!(Rails.application.config.generators)
+
+(ActiveRecord::Base.connection.tables - Generators::DeclareSchema::Migration::Migrator.always_ignore_tables).each do |table|
+  ActiveRecord::Base.connection.execute("DROP TABLE #{ActiveRecord::Base.connection.quote_table_name(table)}")
+end
+
+ActiveRecord::Base.send(:descendants).each do |model|
+  unless model.name['Active'] || model.name['Application']
+    nuke_model_class(model)
+  end
+end
