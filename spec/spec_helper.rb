@@ -22,6 +22,14 @@ RSpec.configure do |config|
 
   RSpec::Support::ObjectFormatter.default_instance.max_formatted_output_length = 2_000
 
+  def active_record_base_class
+    if Rails::VERSION::MAJOR == 4
+      'ActiveRecord::Base'
+    else
+      'ApplicationRecord'
+    end
+  end
+
   def migrate(renames = {})
     up, down = Generators::DeclareSchema::Migration::Migrator.run(renames)
     ActiveRecord::Migration.class_eval(up)
@@ -33,7 +41,9 @@ RSpec.configure do |config|
     ActiveSupport::DescendantsTracker.instance_eval do
       direct_descendants = class_variable_get('@@direct_descendants')
       direct_descendants[ActiveRecord::Base] = direct_descendants[ActiveRecord::Base].to_a.reject { |descendant| descendant == klass }
-      direct_descendants[ApplicationRecord] = direct_descendants[ApplicationRecord].to_a.reject { |descendant| descendant == klass }
+      if defined?(ApplicationRecord)
+        direct_descendants[ApplicationRecord] = direct_descendants[ApplicationRecord].to_a.reject { |descendant| descendant == klass }
+      end
     end
     Object.instance_eval { remove_const(klass.name.to_sym) rescue nil }
   end

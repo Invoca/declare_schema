@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
-  let(:model_base_class) { Rails::VERSION::MAJOR > 4 ? 'ApplicationRecord' : 'ActiveRecord::Base' }
-
   before do
     load File.expand_path('prepare_testapp.rb', __dir__)
     ActiveRecord::Base.connection.execute("DROP TABLE foos") rescue nil

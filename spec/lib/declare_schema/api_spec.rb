@@ -19,7 +19,7 @@ RSpec.describe 'DeclareSchema API' do
       #                                       [["AdvertTest"], "test/models/advert_test.rb", nil, "test/fixtures/adverts.yml"]])
 
       expect(File.read("#{TESTAPP_PATH}/app/models/advert.rb")).to eq(<<~EOS)
-        class Advert < ApplicationRecord
+        class Advert < #{active_record_base_class}
 
           fields do
             title :string, limit: 255
