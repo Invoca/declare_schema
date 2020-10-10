@@ -1,6 +1,6 @@
 
   fields do
-<% for attribute in field_attributes %>
+<% field_attributes.each do |attribute| %>
     <%= "%-#{max_attribute_length}s" % attribute.name %> <%= attribute.type.to_sym.inspect %><%=
       case attribute.type.to_s
       when 'string'
@@ -16,15 +16,13 @@
 <% end %>
   end
 
-<% for bt in bts %>
+<% bts.each do |bt| %>
   belongs_to <%= bt.to_sym.inspect %>
 <% end %>
 <% if bts.any? %>
-
 <% end %>
-<% for hm in hms %>
+<% hms.each do |hm| %>
   has_many <%= hm.to_sym.inspect %>, dependent: :destroy
 <% end %>
 <% if hms.any? %>
-
 <% end %>
