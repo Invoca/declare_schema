@@ -1,7 +1,7 @@
 
   fields do
-<% for attribute in field_attributes -%>
-    <%= "%-#{max_attribute_length}s" % attribute.name %> :<%= attribute.type %><%=
+<% for attribute in field_attributes %>
+    <%= "%-#{max_attribute_length}s" % attribute.name %> <%= attribute.type.to_sym.inspect %><%=
       case attribute.type.to_s
       when 'string'
         ', limit: 255'
@@ -9,17 +9,22 @@
         ''
       end
     %>
-<% end -%>
-<% if options[:timestamps] -%>
+
+<% end %>
+<% if options[:timestamps] %>
     timestamps
-<% end -%>
+<% end %>
   end
 
-<% for bt in bts -%>
-  belongs_to :<%= bt %>
-<% end -%>
-<%= "\n" unless bts.empty? -%>
-<% for hm in hms -%>
-  has_many :<%= hm %>, dependent: :destroy
-<% end -%>
-<%= "\n" unless hms.empty? -%>
+<% for bt in bts %>
+  belongs_to <%= bt.to_sym.inspect %>
+<% end %>
+<% if bts.any? %>
+
+<% end %>
+<% for hm in hms %>
+  has_many <%= hm.to_sym.inspect %>, dependent: :destroy
+<% end %>
+<% if hms.any? %>
+
+<% end %>
