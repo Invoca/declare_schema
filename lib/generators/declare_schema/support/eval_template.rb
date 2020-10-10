@@ -11,7 +11,18 @@ module DeclareSchema
             def eval_template(template_name)
               source  = File.expand_path(find_in_source_paths(template_name))
               context = instance_eval('binding')
-              ERB.new(::File.binread(source), trim_mode: '-').tap { |erb| erb.filename = source }.result(context)
+              erb = ERB.new(::File.binread(source), trim_mode: '-')
+              erb.filename = source
+              erb.lineno = 1
+              begin
+                erb.result(context)
+              rescue Exception => ex
+                raise ex.class, <<~EOS
+                  #{ex.message}
+                  #{erb.src}
+                  lineno: #{erb.lineno}
+                EOS
+              end
             end
           end
         end
