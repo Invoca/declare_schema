@@ -20,7 +20,7 @@ module DeclareSchema
                 raise ex.class, <<~EOS
                   #{ex.message}
                   #{erb.src}
-                  lineno: #{erb.lineno}
+                    #{ex.backtrace.join("\n  ")}
                 EOS
               end
             end
