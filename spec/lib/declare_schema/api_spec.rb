@@ -39,7 +39,9 @@ RSpec.describe 'DeclareSchema API' do
 
       Rails.application.config.autoload_paths += ['./app/models']
 
-      require './app/models/advert.rb'
+      system("ls -lR")
+
+      # require './app/models/advert.rb'
       Rails::Generators.invoke('declare_schema:migration', %w[-n -m])
 
       ## The Basics
