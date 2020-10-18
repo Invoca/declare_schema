@@ -43,13 +43,16 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     expect(File.exist?('test/fixtures/alpha/beta.yml')).to be_truthy
 
-    require "#{Rails.root}/app/models/alpha.rb"
-    require "#{Rails.root}/app/models/alpha/beta.rb"
+    $LOAD_PATH << "#{TESTAPP_PATH}/app/models"
+
     Rails::Generators.invoke 'declare_schema:migration', %w[-n -m]
 
     expect(File.exist?('db/schema.rb')).to be_truthy
 
     expect(File.exist?("db/development.sqlite3") || File.exist?("db/test.sqlite3")).to be_truthy
+
+    module Alpha; end
+    require 'alpha/beta'
 
     expect { Alpha::Beta }.to_not raise_exception
   end
