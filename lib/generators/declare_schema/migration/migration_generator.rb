@@ -3,7 +3,7 @@
 require 'rails/generators/migration'
 require 'rails/generators/active_record'
 require 'generators/declare_schema/support/thor_shell'
-require_relative '../../../declare_schema/model/field_spec'
+require 'declare_schema/model/field_spec'
 
 module DeclareSchema
   class MigrationGenerator < Rails::Generators::Base
@@ -180,6 +180,14 @@ module DeclareSchema
 
     def migration_name
       name || Generators::DeclareSchema::Migration::Migrator.default_migration_name
+    end
+  end
+end
+
+module Generators
+  module DeclareSchema
+    module Migration
+      MigrationGenerator = ::DeclareSchema::MigrationGenerator
     end
   end
 end
