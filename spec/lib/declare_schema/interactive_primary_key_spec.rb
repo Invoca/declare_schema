@@ -39,8 +39,6 @@ RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
       self.primary_key = "foo_id"
     end
 
-    puts "***", ActiveRecord::Base.connection.select_all("pragma table_info(foos)").inspect
-
     puts "\n\e[45m Please enter 'drop id' (no quotes) at the next prompt \e[0m"
     Rails::Generators.invoke('declare_schema:migration', %w[-n -m])
     expect(Foo.primary_key).to eq('foo_id')
