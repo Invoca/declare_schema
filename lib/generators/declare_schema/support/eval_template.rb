@@ -9,7 +9,7 @@ module DeclareSchema
             private
 
             def eval_template(template_name)
-              source  = File.expand_path(find_in_source_paths(template_name))
+              source = File.expand_path(find_in_source_paths(template_name))
               erb = ERB.new(::File.read(source).force_encoding(Encoding::UTF_8), trim_mode: '>')
               erb.filename = source
               begin

@@ -86,7 +86,7 @@ module DeclareSchema
         @down = down
         @migration_class_name = final_migration_name.camelize
 
-        migration_template 'migration.rb.erb', "db/migrate/#{final_migration_name.underscore}.rb"
+        migration_template('migration.rb.erb', "db/migrate/#{final_migration_name.underscore}.rb")
         if action == 'm'
           case Rails::VERSION::MAJOR
           when 4
@@ -118,14 +118,13 @@ module DeclareSchema
                              ActiveRecord::Migrator.new(:up, migrations, ActiveRecord::SchemaMigration).pending_migrations
                            end
 
-      if pending_migrations.any?
-        say "You have #{pending_migrations.size} pending migration#{'s' if pending_migrations.size > 1}:"
-        pending_migrations.each do |pending_migration|
-          say format('  %4d %s', pending_migration.version, pending_migration.name)
+      pending_migrations.any?.tap do |any|
+        if any
+          say "You have #{pending_migrations.size} pending migration#{'s' if pending_migrations.size > 1}:"
+          pending_migrations.each do |pending_migration|
+            say format('  %4d %s', pending_migration.version, pending_migration.name)
+          end
         end
-        true
-      else
-        false
       end
     end
 
@@ -139,10 +138,10 @@ module DeclareSchema
           loop do
             if rename_to_choices.empty?
               say "\nCONFIRM DROP! #{kind_str} #{name_prefix}#{t}"
-              resp = ask("Enter 'drop #{t}' to confirm or press enter to keep:")
-              if resp.strip == "drop #{t}"
+              resp = ask("Enter 'drop #{t}' to confirm or press enter to keep:").strip
+              if resp == "drop #{t}"
                 break
-              elsif resp.strip.empty?
+              elsif resp.empty?
                 to_drop.delete(t)
                 break
               else
@@ -151,8 +150,7 @@ module DeclareSchema
             else
               say "\nDROP, RENAME or KEEP?: #{kind_str} #{name_prefix}#{t}"
               say "Rename choices: #{to_create * ', '}"
-              resp = ask "Enter either 'drop #{t}' or one of the rename choices or press enter to keep:"
-              resp = resp.strip
+              resp = ask("Enter either 'drop #{t}' or one of the rename choices or press enter to keep:").strip
 
               if resp == "drop #{t}"
                 # Leave things as they are
