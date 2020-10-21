@@ -3,8 +3,6 @@
 RSpec.describe 'DeclareSchema Migration Generator' do
   before do
     load File.expand_path('prepare_testapp.rb', __dir__)
-    ActiveRecord::Base.connection.execute("DROP TABLE adverts") rescue nil
-    ActiveRecord::Base.connection.execute("DROP TABLE alpha_betas") rescue nil
   end
 
   it "generates nested models" do

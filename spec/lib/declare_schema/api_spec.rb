@@ -6,7 +6,6 @@ require 'rails/generators'
 RSpec.describe 'DeclareSchema API' do
   before do
     load File.expand_path('prepare_testapp.rb', __dir__)
-    ActiveRecord::Base.connection.execute("DROP TABLE adverts") rescue nil
   end
 
   describe 'example models' do

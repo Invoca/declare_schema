@@ -3,7 +3,6 @@
 RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
   before do
     load File.expand_path('prepare_testapp.rb', __dir__)
-    ActiveRecord::Base.connection.execute("DROP TABLE foos") rescue nil
   end
 
   it "allows alternate primary keys" do
