@@ -410,7 +410,7 @@ module Generators
             spec = model.field_specs[c]
             if spec.different_to?(col) # TODO: DRY this up to a diff function that returns the differences. It's different if it has differences. -Colin
               change_spec = fk_field_options(model, c)
-              change_spec[:limit]     = spec.limit     if (spec.sql_type != :text ||
+              change_spec[:limit]     ||= spec.limit   if (spec.sql_type != :text ||
                                                          ::DeclareSchema::Model::FieldSpec.mysql_text_limits?) &&
                                                           (spec.limit || col.limit)
               change_spec[:precision] = spec.precision unless spec.precision.nil?
