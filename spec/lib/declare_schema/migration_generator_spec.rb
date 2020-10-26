@@ -196,7 +196,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     up, down = Generators::DeclareSchema::Migration::Migrator.run
     expect(up).to eq(<<~EOS.strip)
-      add_column :adverts, :notes, :text, null: false
+      add_column :adverts, :notes, :text, null: false, limit: 4294967295
       add_column :adverts, :description, :text, null: false, limit: 255
     EOS
 
@@ -238,7 +238,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     end
 
     up, down = Generators::DeclareSchema::Migration::Migrator.run
-    expect(up).to eq("change_column :adverts, :description, :text, null: false")
+    expect(up).to eq("change_column :adverts, :description, :text, limit: 4294967295, null: false")
     expect(down).to eq("change_column :adverts, :description, :text")
 
     # TODO TECH-4814: The above test should have this output:
@@ -253,7 +253,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     end
 
     up, down = Generators::DeclareSchema::Migration::Migrator.run
-    expect(up).to eq("change_column :adverts, :description, :text, null: false")
+    expect(up).to eq("change_column :adverts, :description, :text, limit: 4294967295, null: false")
     expect(down).to eq("change_column :adverts, :description, :text")
     ::DeclareSchema::Model::FieldSpec::instance_variable_set(:@mysql_text_limits, false)
 
