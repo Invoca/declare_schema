@@ -96,6 +96,20 @@ module Generators
           def connection
             ActiveRecord::Base.connection
           end
+
+          def fix_native_types(types)
+            case connection.class.name
+            when /mysql/i
+              types[:integer][:limit] ||= 11
+              types[:text][:limit]    ||= 0xffff
+              types[:binary][:limit]  ||= 0xffff
+            end
+            types
+          end
+
+          def native_types
+            @native_types ||= fix_native_types(connection.native_database_types)
+          end
         end
 
         def initialize(ambiguity_resolver = {})
@@ -127,22 +141,6 @@ module Generators
 
         def connection
           self.class.connection
-        end
-
-        class << self
-          def fix_native_types(types)
-            case connection.class.name
-            when /mysql/i
-              types[:integer][:limit] ||= 11
-              types[:text][:limit]    ||= 0xffff
-              types[:binary][:limit]  ||= 0xffff
-            end
-            types
-          end
-
-          def native_types
-            @native_types ||= fix_native_types(connection.native_database_types)
-          end
         end
 
         def native_types
@@ -518,8 +516,7 @@ module Generators
               next if k == :null && v == true
             end
 
-            next if k == :limit && type == :text &&
-                    (!::DeclareSchema::Model::FieldSpec.mysql_text_limits? || v == ::DeclareSchema::Model::FieldSpec::MYSQL_LONGTEXT_LIMIT)
+            next if k == :limit && type == :text && !::DeclareSchema::Model::FieldSpec.mysql_text_limits?
 
             if k.is_a?(Symbol)
               "#{k}: #{v.inspect}"
@@ -530,10 +527,20 @@ module Generators
         end
 
         def fk_field_options(model, field_name)
-          if (foreign_key = model.constraint_specs.find { |fk| field_name == fk.foreign_key.to_s }) && (parent_table = foreign_key.parent_table_name)
+          foreign_key = model.constraint_specs.find { |fk| field_name == fk.foreign_key.to_s }
+          if foreign_key && (parent_table = foreign_key.parent_table_name)
             parent_columns = connection.columns(parent_table) rescue []
-            pk_column = parent_columns.find { |column| column.name == "id" } # right now foreign keys assume id is the target
-            pk_limit  = pk_column ? pk_column.cast_type.limit : 8
+            pk_limit  =
+              if (pk_column = parent_columns.find { |column| column.name.to_s == "id" }) # right now foreign keys assume id is the target
+                if Rails::VERSION::MAJOR <= 4
+                  pk_column.cast_type.limit
+                else
+                  pk_column.limit
+                end
+              else
+                8
+              end
+
             { limit: pk_limit }
           else
             {}
