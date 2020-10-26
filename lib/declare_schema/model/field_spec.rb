@@ -53,7 +53,7 @@ module DeclareSchema
             @options[:limit] = self.class.round_up_mysql_text_limit(@options[:limit] || MYSQL_LONGTEXT_LIMIT)
           end
         when :string
-          @options[:limit] or raise "limit must be given for :string field #{model}##{@name}: #{@options.inspect}; do you want 255?"
+          @options[:limit] or raise "limit must be given for :string field #{model}##{@name}: #{@options.inspect}; do you want `limit: 255`?"
         end
         @position = position_option || model.field_specs.length
       end
