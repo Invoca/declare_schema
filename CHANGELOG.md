@@ -4,7 +4,7 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.0] - Unreleased
+## [0.2.0] - 2020-10-26
 ### Added
 - Automatically eager_load! all Rails::Engines before generating migrations.
 
@@ -15,7 +15,7 @@ Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0
 - Fixed a bug where `:text limit: 0xffff_ffff` (max size) was omitted from migrations.
 - Fixed a bug where `:bigint` foreign keys were omitted from the migration. 
 
-## [0.1.3] - Unreleased
+## [0.1.3] - 2020-10-08
 ### Changed
 - Updated the `always_ignore_tables` list in `Migrator` to access Rails metadata table names
 using the appropriate Rails configuration attributes.
