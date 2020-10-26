@@ -11,6 +11,10 @@ Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0
 ### Changed
 - Changed tests from rdoctest to rspec.
 
+### Fixed
+- Fixed a bug where `:text limit: 0xffff_ffff` (max size) was omitted from migrations.
+- Fixed a bug where `:bigint` foreign keys were omitted from the migration. 
+
 ## [0.1.3] - Unreleased
 ### Changed
 - Updated the `always_ignore_tables` list in `Migrator` to access Rails metadata table names
