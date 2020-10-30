@@ -108,7 +108,12 @@ module DeclareSchema
       # Extend belongs_to so that it creates a FieldSpec for the foreign key
       def belongs_to(name, scope = nil, **options, &block)
         column_options = {}
-        column_options[:null] = options.delete(:null) || false
+
+        column_options[:null] = if options.has_key?(:null)
+                                  options.delete(:null)
+                                elsif options.has_key?(:optional)
+                                  options[:optional] # infer :null from :optional
+                                end || false
         column_options[:default] = options.delete(:default) if options.has_key?(:default)
         column_options[:limit] = options.delete(:limit) if options.has_key?(:limit)
 
@@ -124,7 +129,7 @@ module DeclareSchema
         fk = options[:foreign_key]&.to_s || "#{name}_id"
 
         if !options.has_key?(:optional) && Rails::VERSION::MAJOR >= 5
-          options[:optional] = column_options[:null]
+          options[:optional] = column_options[:null] # infer :optional from :null
         end
 
         fk_options[:dependent] = options.delete(:far_end_dependent) if options.has_key?(:far_end_dependent)
