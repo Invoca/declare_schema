@@ -106,15 +106,7 @@ module DeclareSchema
       end
 
       # Extend belongs_to so that it creates a FieldSpec for the foreign key
-      def belongs_to(name, *args, &block)
-        if args.size == 0 || (args.size == 1 && args[0].is_a?(Proc))
-          options = {}
-          args.push(options)
-        elsif args.size == 1
-          options = args[0]
-        else
-          options = args[1]
-        end
+      def belongs_to(name, scope = nil, **options, &block)
         column_options = {}
         column_options[:null] = options.delete(:null) || false
         column_options[:default] = options.delete(:default) if options.has_key?(:default)
