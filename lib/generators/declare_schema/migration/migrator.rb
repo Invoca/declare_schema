@@ -69,12 +69,14 @@ module Generators
       class Migrator
         class Error < RuntimeError; end
 
-        @ignore_models = []
-        @ignore_tables = []
-        @active_record_class = ActiveRecord::Base
+        @ignore_models                    = []
+        @ignore_tables                    = []
+        @after_load_rails_models_callback = nil
+        @active_record_class              = ActiveRecord::Base
 
         class << self
           attr_accessor :ignore_models, :ignore_tables, :disable_indexing, :disable_constraints, :active_record_class
+          attr_reader :after_load_rails_models_callback
 
           def active_record_class
             @active_record_class.is_a?(Class) or @active_record_class = @active_record_class.to_s.constantize
@@ -110,6 +112,11 @@ module Generators
           def native_types
             @native_types ||= fix_native_types(connection.native_database_types)
           end
+
+          def after_load_rails_models(&blk)
+            block_given? or raise ArgumentError, 'A block is required when setting the after_load_rails_models callback'
+            @after_load_rails_models_callback = blk
+          end
         end
 
         def initialize(ambiguity_resolver = {})
@@ -128,6 +135,7 @@ module Generators
 
           Rails.application.eager_load!
           Rails::Engine.subclasses.each(&:eager_load!)
+          self.class.after_load_rails_models_callback&.call
         end
 
         # Returns an array of model classes that *directly* extend

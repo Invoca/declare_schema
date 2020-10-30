@@ -36,6 +36,36 @@ module Generators
             end
           end
         end
+
+        describe '#after_load_rails_models' do
+          it 'requires a block be passed' do
+            expect { described_class.after_load_rails_models }.to raise_error(ArgumentError, 'A block is required when setting the after_load_rails_models callback')
+          end
+        end
+
+        describe 'load_rails_models' do
+          before do
+            expect(Rails.application).to receive(:eager_load!)
+            expect(Rails::Engine).to receive(:subclasses).and_return([])
+          end
+
+          subject { described_class.new.load_rails_models }
+
+          context 'when a after_load_rails_models callback is configured' do
+            let(:dummy_proc) { -> {} }
+
+            before do
+              described_class.after_load_rails_models(&dummy_proc)
+              expect(dummy_proc).to receive(:call).and_return(true)
+            end
+
+            it { should be_truthy }
+          end
+
+          context 'when no after_load_rails_models callback is configured' do
+            it { should be_nil }
+          end
+        end
       end
     end
   end
