@@ -9,7 +9,10 @@ Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0
 - Added support for `belongs_to optional:`.
 If given, it is passed through to `ActiveRecord`'s `belong_to`.
 If not given in Rails 5+, the `optional:` value is set equal to the `null:` value (default: `false`) and that
-is is passed to `ActiveRecord`'s `belong_to`. 
+is passed to `ActiveRecord`'s `belong_to`.
+Similarly, if `null:` is not given, it is inferred from `optional:`.
+If both are given, their values are respected, even if contradictory;
+this is a legitimate case when migrating to/from an optional association.
 
 ## [0.2.0] - 2020-10-26
 ### Added
