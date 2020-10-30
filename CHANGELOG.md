@@ -4,6 +4,11 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - Unreleased
+### Added
+- Added a new callback `after_load_rails_models` to the `Migrator` that can be
+defined in order to custom load more models that might be missed by `eager_load!`
+
 ## [0.2.0] - 2020-10-26
 ### Added
 - Automatically eager_load! all Rails::Engines before generating migrations.
@@ -13,7 +18,7 @@ Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0
 
 ### Fixed
 - Fixed a bug where `:text limit: 0xffff_ffff` (max size) was omitted from migrations.
-- Fixed a bug where `:bigint` foreign keys were omitted from the migration. 
+- Fixed a bug where `:bigint` foreign keys were omitted from the migration.
 
 ## [0.1.3] - 2020-10-08
 ### Changed
@@ -29,6 +34,7 @@ using the appropriate Rails configuration attributes.
 ### Added
 - Initial version from https://github.com/Invoca/hobo_fields v4.1.0.
 
+[0.3.0]: https://github.com/Invoca/declare_schema/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Invoca/declare_schema/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/Invoca/declare_schema/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/Invoca/declare_schema/compare/v0.1.1...v0.1.2
