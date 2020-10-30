@@ -18,6 +18,8 @@ require "#{TESTAPP_PATH}/config/environment"
 require 'rails/generators'
 Rails::Generators.configure!(Rails.application.config.generators)
 
+ActiveRecord::Base.connection.schema_cache.clear!
+
 (ActiveRecord::Base.connection.tables - Generators::DeclareSchema::Migration::Migrator.always_ignore_tables).each do |table|
   ActiveRecord::Base.connection.execute("DROP TABLE #{ActiveRecord::Base.connection.quote_table_name(table)}")
 end
