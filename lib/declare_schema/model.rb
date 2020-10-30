@@ -121,20 +121,27 @@ module DeclareSchema
         fk_options[:constraint_name] = options.delete(:constraint) if options.has_key?(:constraint)
         fk_options[:index_name] = index_options[:name]
 
+        fk = options[:foreign_key]&.to_s || "#{name}_id"
+
+        if !options.has_key?(:optional) && Rails::VERSION::MAJOR >= 5
+          options[:optional] = column_options[:null]
+        end
+
         fk_options[:dependent] = options.delete(:far_end_dependent) if options.has_key?(:far_end_dependent)
-        super(name, *args, &block).tap do |_bt|
-          refl = reflections[name.to_s] or raise "Couldn't find reflection #{name} in #{reflections.keys}"
-          fkey = refl.foreign_key
-          declare_field(fkey.to_sym, :integer, column_options)
-          if refl.options[:polymorphic]
-            foreign_type = options[:foreign_type] || "#{name}_type"
-            declare_polymorphic_type_field(foreign_type, column_options)
-            index([foreign_type, fkey], index_options) if index_options[:name] != false
-          else
-            index(fkey, index_options) if index_options[:name] != false
-            options[:constraint_name] = options
-            constraint(fkey, fk_options) if fk_options[:constraint_name] != false
-          end
+
+        super(name, scope, options)
+
+        refl = reflections[name.to_s] or raise "Couldn't find reflection #{name} in #{reflections.keys}"
+        fkey = refl.foreign_key or raise "Couldn't find foreign_key for #{name} in #{refl.inspect}"
+        declare_field(fkey.to_sym, :integer, column_options)
+        if refl.options[:polymorphic]
+          foreign_type = options[:foreign_type] || "#{name}_type"
+          declare_polymorphic_type_field(foreign_type, column_options)
+          index([foreign_type, fkey], index_options) if index_options[:name] != false
+        else
+          index(fkey, index_options) if index_options[:name] != false
+          options[:constraint_name] = options
+          constraint(fkey, fk_options) if fk_options[:constraint_name] != false
         end
       end
 
