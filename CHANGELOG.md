@@ -4,6 +4,13 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - Unreleased
+### Added
+- Added support for `belongs_to optional:`.
+If given, it is passed through to `ActiveRecord`'s `belong_to`.
+If not given in Rails 5+, the `optional:` value is set equal to the `null:` value (default: `false`) and that
+is is passed to `ActiveRecord`'s `belong_to`. 
+
 ## [0.2.0] - 2020-10-26
 ### Added
 - Automatically eager_load! all Rails::Engines before generating migrations.
@@ -29,6 +36,7 @@ using the appropriate Rails configuration attributes.
 ### Added
 - Initial version from https://github.com/Invoca/hobo_fields v4.1.0.
 
+[0.3.0]: https://github.com/Invoca/declare_schema/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Invoca/declare_schema/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/Invoca/declare_schema/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/Invoca/declare_schema/compare/v0.1.1...v0.1.2
