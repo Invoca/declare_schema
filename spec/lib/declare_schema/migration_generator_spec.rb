@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'rails'
+
 RSpec.describe 'DeclareSchema Migration Generator' do
   before do
     load File.expand_path('prepare_testapp.rb', __dir__)
@@ -53,7 +55,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       add_index :adverts, [:id], unique: true, name: 'PRIMARY_KEY'
     EOS
-    # TODO: ^ add_index should not be there?
+    # TODO: ^ TECH-4975 add_index should not be there
 
     expect(down).to eq(<<~EOS.strip)
       remove_column :adverts, :body
@@ -768,6 +770,26 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           end
         end
       end
+    end
+  end
+
+  describe 'migration base class' do
+    it 'adapts to Rails 4' do
+      class Advert < active_record_base_class.constantize
+        fields do
+          title :string, limit: 100
+        end
+      end
+
+      Rails::Generators.invoke('declare_schema:migration', %w[-n -m])
+
+      migrations = Dir.glob('db/migrate/*declare_schema_migration*.rb')
+      expect(migrations.size).to eq(1), migrations.inspect
+
+      migration_content = File.read(migrations.first)
+      first_line = migration_content.split("\n").first
+      base_class = first_line.split(' < ').last
+      expect(base_class).to eq("(Rails::VERSION::MAJOR >= 5 ? ActiveRecord::Migration[4.2] : ActiveRecord::Migration)")
     end
   end
 end
