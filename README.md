@@ -50,6 +50,26 @@ Migration filename: [<enter>=declare_schema_migration_1|<custom_name>]: add_comp
 ```
 Note that the migration generator is interactive -- it can't tell the difference between renaming something vs. adding one thing and removing another, so sometimes it will ask you to clarify.
 
+## Migrator Configuration
+
+The following configuration options are available for the gem and can be used
+during the initialization of your Rails application.
+
+### before_generating_migration callback
+
+During the initializtion process for generating migrations, `DeclareSchema` will
+trigger the `eager_load!` on the `Rails` application and all `Rails::Engine`s loaded
+into scope.  If you need to generate migrations for models that aren't automatically loaded by `eager_load!`,
+load them in the `before_generating_migration` block.
+
+**Example Configuration**
+
+```ruby
+DeclareSchema::Migration::Migrator.before_generating_migration do
+  require 'lib/some/hidden/models.rb'
+end
+```
+
 ## Installing
 
 Install the `DeclareSchema` gem directly:

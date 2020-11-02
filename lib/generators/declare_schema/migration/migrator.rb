@@ -69,12 +69,14 @@ module Generators
       class Migrator
         class Error < RuntimeError; end
 
-        @ignore_models = []
-        @ignore_tables = []
-        @active_record_class = ActiveRecord::Base
+        @ignore_models                    = []
+        @ignore_tables                    = []
+        @before_generating_migration_callback = nil
+        @active_record_class              = ActiveRecord::Base
 
         class << self
           attr_accessor :ignore_models, :ignore_tables, :disable_indexing, :disable_constraints, :active_record_class
+          attr_reader :before_generating_migration_callback
 
           def active_record_class
             @active_record_class.is_a?(Class) or @active_record_class = @active_record_class.to_s.constantize
@@ -110,6 +112,11 @@ module Generators
           def native_types
             @native_types ||= fix_native_types(connection.native_database_types)
           end
+
+          def before_generating_migration(&block)
+            block or raise ArgumentError, 'A block is required when setting the before_generating_migration callback'
+            @before_generating_migration_callback = block
+          end
         end
 
         def initialize(ambiguity_resolver = {})
@@ -120,14 +127,12 @@ module Generators
 
         attr_accessor :renames
 
-        # TODO: Add an application callback (maybe an initializer in a special group?) that
-        # the application can use to load other models that live in the database, to support DeclareSchema migrations
-        # for them.
         def load_rails_models
           ActiveRecord::Migration.verbose = false
 
           Rails.application.eager_load!
           Rails::Engine.subclasses.each(&:eager_load!)
+          self.class.before_generating_migration_callback&.call
         end
 
         # Returns an array of model classes that *directly* extend

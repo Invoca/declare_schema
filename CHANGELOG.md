@@ -13,6 +13,8 @@ is passed to `ActiveRecord`'s `belong_to`.
 Similarly, if `null:` is not given, it is inferred from `optional:`.
 If both are given, their values are respected, even if contradictory;
 this is a legitimate case when migrating to/from an optional association.
+- Added a new callback `before_generating_migration` to the `Migrator` that can be
+defined in order to custom load more models that might be missed by `eager_load!`
 ### Fixed
 - Migrations are now generated where the `[4.2]` is only applied after `ActiveRecord::Migration` in Rails 5+ (since Rails 4 didn't know about that notation).
 
@@ -25,7 +27,7 @@ this is a legitimate case when migrating to/from an optional association.
 
 ### Fixed
 - Fixed a bug where `:text limit: 0xffff_ffff` (max size) was omitted from migrations.
-- Fixed a bug where `:bigint` foreign keys were omitted from the migration. 
+- Fixed a bug where `:bigint` foreign keys were omitted from the migration.
 
 ## [0.1.3] - 2020-10-08
 ### Changed
