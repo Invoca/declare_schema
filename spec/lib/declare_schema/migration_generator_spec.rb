@@ -689,81 +689,83 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     expect(Ad.field_specs['company'].options[:validates].inspect).to eq("{:presence=>true, :uniqueness=>{:case_sensitive=>false}}")
   end
 
-  describe 'belongs_to' do
-    before do
-      unless defined?(AdCategory)
-        class AdCategory < ActiveRecord::Base
-          fields { }
+  if Rails::VERSION::MAJOR >= 5
+    describe 'belongs_to' do
+      before do
+        unless defined?(AdCategory)
+          class AdCategory < ActiveRecord::Base
+            fields { }
+          end
         end
-      end
 
-      class Advert < ActiveRecord::Base
-        fields do
-          name :string, limit: 255, null: true
-          category_id :integer, limit: 8
-          nullable_category_id :integer, limit: 8, null: true
+        class Advert < ActiveRecord::Base
+          fields do
+            name :string, limit: 255, null: true
+            category_id :integer, limit: 8
+            nullable_category_id :integer, limit: 8, null: true
+          end
         end
+        up = Generators::DeclareSchema::Migration::Migrator.run.first
+        ActiveRecord::Migration.class_eval(up)
       end
-      up = Generators::DeclareSchema::Migration::Migrator.run.first
-      ActiveRecord::Migration.class_eval(up)
-    end
 
-    it 'passes through optional: when given' do
-      class AdvertBelongsTo < ActiveRecord::Base
-        self.table_name = 'adverts'
-        fields { }
-        reset_column_information
-        belongs_to :ad_category, optional: true
-      end
-      expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional: true)
-    end
-
-    describe 'contradictory settings' do # contradictory settings are ok during migration
-      it 'passes through optional: true, null: false' do
+      it 'passes through optional: when given' do
         class AdvertBelongsTo < ActiveRecord::Base
           self.table_name = 'adverts'
           fields { }
           reset_column_information
-          belongs_to :ad_category, optional: true, null: false
+          belongs_to :ad_category, optional: true
         end
         expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional: true)
-        expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(false)
       end
 
-      it 'passes through optional: false, null: true' do
-        class AdvertBelongsTo < ActiveRecord::Base
-          self.table_name = 'adverts'
-          fields { }
-          reset_column_information
-          belongs_to :ad_category, optional: false, null: true
+      describe 'contradictory settings' do # contradictory settings are ok during migration
+        it 'passes through optional: true, null: false' do
+          class AdvertBelongsTo < ActiveRecord::Base
+            self.table_name = 'adverts'
+            fields { }
+            reset_column_information
+            belongs_to :ad_category, optional: true, null: false
+          end
+          expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional: true)
+          expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(false)
         end
-        expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional: false)
-        expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(true)
+
+        it 'passes through optional: false, null: true' do
+          class AdvertBelongsTo < ActiveRecord::Base
+            self.table_name = 'adverts'
+            fields { }
+            reset_column_information
+            belongs_to :ad_category, optional: false, null: true
+          end
+          expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional: false)
+          expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(true)
+        end
       end
-    end
 
-    [false, true].each do |nullable|
-      context "nullable=#{nullable}" do
-        it 'infers optional: from null:' do
-          eval <<~EOS
-            class AdvertBelongsTo < ActiveRecord::Base
-              fields { }
-              belongs_to :ad_category, null: #{nullable}
-            end
-          EOS
-          expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional: nullable)
-          expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(nullable)
-        end
+      [false, true].each do |nullable|
+        context "nullable=#{nullable}" do
+          it 'infers optional: from null:' do
+            eval <<~EOS
+              class AdvertBelongsTo < ActiveRecord::Base
+                fields { }
+                belongs_to :ad_category, null: #{nullable}
+              end
+            EOS
+            expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional: nullable)
+            expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(nullable)
+          end
 
-        it 'infers null: from optional:' do
-          eval <<~EOS
-            class AdvertBelongsTo < ActiveRecord::Base
-              fields { }
-              belongs_to :ad_category, optional: #{nullable}
-            end
-          EOS
-          expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional: nullable)
-          expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(nullable)
+          it 'infers null: from optional:' do
+            eval <<~EOS
+              class AdvertBelongsTo < ActiveRecord::Base
+                fields { }
+                belongs_to :ad_category, optional: #{nullable}
+              end
+            EOS
+            expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional: nullable)
+            expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(nullable)
+          end
         end
       end
     end
