@@ -6,7 +6,7 @@ Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0
 
 ## [0.3.0] - Unreleased
 ### Added
-- Added a new callback `after_load_rails_models` to the `Migrator` that can be
+- Added a new callback `before_generating_migration` to the `Migrator` that can be
 defined in order to custom load more models that might be missed by `eager_load!`
 
 ## [0.2.0] - 2020-10-26

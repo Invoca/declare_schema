@@ -71,12 +71,12 @@ module Generators
 
         @ignore_models                    = []
         @ignore_tables                    = []
-        @after_load_rails_models_callback = nil
+        @before_generating_migration_callback = nil
         @active_record_class              = ActiveRecord::Base
 
         class << self
           attr_accessor :ignore_models, :ignore_tables, :disable_indexing, :disable_constraints, :active_record_class
-          attr_reader :after_load_rails_models_callback
+          attr_reader :before_generating_migration_callback
 
           def active_record_class
             @active_record_class.is_a?(Class) or @active_record_class = @active_record_class.to_s.constantize
@@ -113,9 +113,9 @@ module Generators
             @native_types ||= fix_native_types(connection.native_database_types)
           end
 
-          def after_load_rails_models(&block)
-            block or raise ArgumentError, 'A block is required when setting the after_load_rails_models callback'
-            @after_load_rails_models_callback = block
+          def before_generating_migration(&block)
+            block or raise ArgumentError, 'A block is required when setting the before_generating_migration callback'
+            @before_generating_migration_callback = block
           end
         end
 
@@ -132,7 +132,7 @@ module Generators
 
           Rails.application.eager_load!
           Rails::Engine.subclasses.each(&:eager_load!)
-          self.class.after_load_rails_models_callback&.call
+          self.class.before_generating_migration_callback&.call
         end
 
         # Returns an array of model classes that *directly* extend

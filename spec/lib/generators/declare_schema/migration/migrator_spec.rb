@@ -37,9 +37,9 @@ module Generators
           end
         end
 
-        describe '#after_load_rails_models' do
+        describe '#before_generating_migration' do
           it 'requires a block be passed' do
-            expect { described_class.after_load_rails_models }.to raise_error(ArgumentError, 'A block is required when setting the after_load_rails_models callback')
+            expect { described_class.before_generating_migration }.to raise_error(ArgumentError, 'A block is required when setting the before_generating_migration callback')
           end
         end
 
@@ -51,18 +51,18 @@ module Generators
 
           subject { described_class.new.load_rails_models }
 
-          context 'when a after_load_rails_models callback is configured' do
+          context 'when a before_generating_migration callback is configured' do
             let(:dummy_proc) { -> {} }
 
             before do
-              described_class.after_load_rails_models(&dummy_proc)
+              described_class.before_generating_migration(&dummy_proc)
               expect(dummy_proc).to receive(:call).and_return(true)
             end
 
             it { should be_truthy }
           end
 
-          context 'when no after_load_rails_models callback is configured' do
+          context 'when no before_generating_migration callback is configured' do
             it { should be_nil }
           end
         end

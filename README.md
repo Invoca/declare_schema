@@ -55,17 +55,17 @@ Note that the migration generator is interactive -- it can't tell the difference
 The following configuration options are available for the gem and can be used
 during the initialization of your Rails application.
 
-### after_load_rails_models callback
+### before_generating_migration callback
 
 During the initializtion process for generating migrations, `DeclareSchema` will
 trigger the `eager_load!` on the `Rails` application and all `Rails::Engine`s loaded
 into scope.  If you need to generate migrations for models that aren't automatically loaded by `eager_load!`,
-load them in the `after_load_rails_models` block.
+load them in the `before_generating_migration` block.
 
 **Example Configuration**
 
 ```ruby
-DeclareSchema::Migration::Migrator.after_load_rails_models do
+DeclareSchema::Migration::Migrator.before_generating_migration do
   require 'lib/some/hidden/models.rb'
 end
 ```
