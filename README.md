@@ -59,9 +59,8 @@ during the initialization of your Rails application.
 
 During the initializtion process for generating migrations, `DeclareSchema` will
 trigger the `eager_load!` on the `Rails` application and all `Rails::Engine`s loaded
-into scope.  This sometimes won't load all the necessary models for generating
-migrations against, so we've introduced a callback that when defined is executed just
-after this eager loading process.
+into scope.  If you need to generate migrations for models that aren't automatically loaded by `eager_load!`,
+load them in the `after_load_rails_models` block.
 
 **Example Configuration**
 
