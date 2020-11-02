@@ -113,9 +113,9 @@ module Generators
             @native_types ||= fix_native_types(connection.native_database_types)
           end
 
-          def after_load_rails_models(&blk)
-            block_given? or raise ArgumentError, 'A block is required when setting the after_load_rails_models callback'
-            @after_load_rails_models_callback = blk
+          def after_load_rails_models(&block)
+            block or raise ArgumentError, 'A block is required when setting the after_load_rails_models callback'
+            @after_load_rails_models_callback = block
           end
         end
 
@@ -127,9 +127,6 @@ module Generators
 
         attr_accessor :renames
 
-        # TODO: Add an application callback (maybe an initializer in a special group?) that
-        # the application can use to load other models that live in the database, to support DeclareSchema migrations
-        # for them.
         def load_rails_models
           ActiveRecord::Migration.verbose = false
 
