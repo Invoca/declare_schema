@@ -106,17 +106,14 @@ module DeclareSchema
       end
 
       # Extend belongs_to so that it creates a FieldSpec for the foreign key
-      def belongs_to(name, *args, &block)
-        if args.size == 0 || (args.size == 1 && args[0].is_a?(Proc))
-          options = {}
-          args.push(options)
-        elsif args.size == 1
-          options = args[0]
-        else
-          options = args[1]
-        end
+      def belongs_to(name, scope = nil, **options, &block)
         column_options = {}
-        column_options[:null] = options.delete(:null) || false
+
+        column_options[:null] = if options.has_key?(:null)
+                                  options.delete(:null)
+                                elsif options.has_key?(:optional)
+                                  options[:optional] # infer :null from :optional
+                                end || false
         column_options[:default] = options.delete(:default) if options.has_key?(:default)
         column_options[:limit] = options.delete(:limit) if options.has_key?(:limit)
 
@@ -129,20 +126,27 @@ module DeclareSchema
         fk_options[:constraint_name] = options.delete(:constraint) if options.has_key?(:constraint)
         fk_options[:index_name] = index_options[:name]
 
+        fk = options[:foreign_key]&.to_s || "#{name}_id"
+
+        if !options.has_key?(:optional) && Rails::VERSION::MAJOR >= 5
+          options[:optional] = column_options[:null] # infer :optional from :null
+        end
+
         fk_options[:dependent] = options.delete(:far_end_dependent) if options.has_key?(:far_end_dependent)
-        super(name, *args, &block).tap do |_bt|
-          refl = reflections[name.to_s] or raise "Couldn't find reflection #{name} in #{reflections.keys}"
-          fkey = refl.foreign_key
-          declare_field(fkey.to_sym, :integer, column_options)
-          if refl.options[:polymorphic]
-            foreign_type = options[:foreign_type] || "#{name}_type"
-            declare_polymorphic_type_field(foreign_type, column_options)
-            index([foreign_type, fkey], index_options) if index_options[:name] != false
-          else
-            index(fkey, index_options) if index_options[:name] != false
-            options[:constraint_name] = options
-            constraint(fkey, fk_options) if fk_options[:constraint_name] != false
-          end
+
+        super(name, scope, options)
+
+        refl = reflections[name.to_s] or raise "Couldn't find reflection #{name} in #{reflections.keys}"
+        fkey = refl.foreign_key or raise "Couldn't find foreign_key for #{name} in #{refl.inspect}"
+        declare_field(fkey.to_sym, :integer, column_options)
+        if refl.options[:polymorphic]
+          foreign_type = options[:foreign_type] || "#{name}_type"
+          declare_polymorphic_type_field(foreign_type, column_options)
+          index([foreign_type, fkey], index_options) if index_options[:name] != false
+        else
+          index(fkey, index_options) if index_options[:name] != false
+          options[:constraint_name] = options
+          constraint(fkey, fk_options) if fk_options[:constraint_name] != false
         end
       end
 

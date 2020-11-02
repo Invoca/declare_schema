@@ -129,7 +129,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
     end
 
-    up, down = Generators::DeclareSchema::Migration::Migrator.run
+    up = Generators::DeclareSchema::Migration::Migrator.run.first
     expect(up).to eq("add_column :adverts, :price, :integer, limit: 2")
 
     # Now run the migration, then change the limit:
@@ -154,7 +154,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
     end
 
-    up, down = Generators::DeclareSchema::Migration::Migrator.run
+    up = Generators::DeclareSchema::Migration::Migrator.run.first
     expect(up).to eq("add_column :adverts, :price, :decimal")
 
     # Limits are generally not needed for `text` fields, because by default, `text` fields will use the maximum size
@@ -170,7 +170,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
     end
 
-    up, down = Generators::DeclareSchema::Migration::Migrator.run
+    up = Generators::DeclareSchema::Migration::Migrator.run.first
     expect(up).to eq(<<~EOS.strip)
       add_column :adverts, :price, :decimal
       add_column :adverts, :notes, :text, null: false
@@ -194,7 +194,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
     end
 
-    up, down = Generators::DeclareSchema::Migration::Migrator.run
+    up = Generators::DeclareSchema::Migration::Migrator.run.first
     expect(up).to eq(<<~EOS.strip)
       add_column :adverts, :notes, :text, null: false, limit: 4294967295
       add_column :adverts, :description, :text, null: false, limit: 255
@@ -266,7 +266,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
     end
 
-    up, down = Generators::DeclareSchema::Migration::Migrator.run
+    up = Generators::DeclareSchema::Migration::Migrator.run.first
     ActiveRecord::Migration.class_eval up
     Advert.connection.schema_cache.clear!
     Advert.reset_column_information
@@ -278,6 +278,9 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     class Category < ActiveRecord::Base; end
     class Advert < ActiveRecord::Base
+      fields do
+        name :string, limit: 255, null: true
+      end
       belongs_to :category
     end
 
@@ -298,9 +301,10 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     class Category < ActiveRecord::Base; end
     class Advert < ActiveRecord::Base
+      fields { }
       belongs_to :category, foreign_key: "c_id", class_name: 'Category'
     end
-    up, down = Generators::DeclareSchema::Migration::Migrator.run
+    up = Generators::DeclareSchema::Migration::Migrator.run.first
     expect(up.gsub(/\n+/, "\n")).to eq(<<~EOS.strip)
       add_column :adverts, :c_id, :integer, limit: 8, null: false
       add_index :adverts, [:c_id], name: 'on_c_id'
@@ -313,9 +317,10 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     class Category < ActiveRecord::Base; end
     class Advert < ActiveRecord::Base
+      fields { }
       belongs_to :category, index: false
     end
-    up, down = Generators::DeclareSchema::Migration::Migrator.run
+    up = Generators::DeclareSchema::Migration::Migrator.run.first
     expect(up.gsub(/\n+/, "\n")).to eq("add_column :adverts, :category_id, :integer, limit: 8, null: false")
 
     Advert.field_specs.delete(:category_id)
@@ -325,9 +330,10 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     class Category < ActiveRecord::Base; end
     class Advert < ActiveRecord::Base
+      fields { }
       belongs_to :category, index: 'my_index'
     end
-    up, down = Generators::DeclareSchema::Migration::Migrator.run
+    up = Generators::DeclareSchema::Migration::Migrator.run.first
     expect(up.gsub(/\n+/, "\n")).to eq(<<~EOS.strip)
       add_column :adverts, :category_id, :integer, limit: 8, null: false
       add_index :adverts, [:category_id], name: 'my_index'
@@ -372,7 +378,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         title :string, index: true, limit: 255, null: true
       end
     end
-    up, down = Generators::DeclareSchema::Migration::Migrator.run
+    up = Generators::DeclareSchema::Migration::Migrator.run.first
     expect(up.gsub(/\n+/, "\n")).to eq(<<~EOS.strip)
       add_column :adverts, :title, :string, limit: 255
       add_index :adverts, [:title], name: 'on_title'
@@ -387,7 +393,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         title :string, index: true, unique: true, null: true, limit: 255
       end
     end
-    up, down = Generators::DeclareSchema::Migration::Migrator.run
+    up = Generators::DeclareSchema::Migration::Migrator.run.first
     expect(up.gsub(/\n+/, "\n")).to eq(<<~EOS.strip)
       add_column :adverts, :title, :string, limit: 255
       add_index :adverts, [:title], unique: true, name: 'on_title'
@@ -402,20 +408,20 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         title :string, index: 'my_index', limit: 255, null: true
       end
     end
-    up, down = Generators::DeclareSchema::Migration::Migrator.run
+    up = Generators::DeclareSchema::Migration::Migrator.run.first
     expect(up.gsub(/\n+/, "\n")).to eq(<<~EOS.strip)
       add_column :adverts, :title, :string, limit: 255
       add_index :adverts, [:title], name: 'my_index'
     EOS
 
-    Advert.index_specs.delete_if {|spec| spec.fields==["title"]}
+    Advert.index_specs.delete_if { |spec| spec.fields==["title"] }
 
     # You can ask for an index outside of the fields block
 
     class Advert < ActiveRecord::Base
       index :title
     end
-    up, down = Generators::DeclareSchema::Migration::Migrator.run
+    up = Generators::DeclareSchema::Migration::Migrator.run.first
     expect(up.gsub(/\n+/, "\n")).to eq(<<~EOS.strip)
       add_column :adverts, :title, :string, limit: 255
       add_index :adverts, [:title], name: 'on_title'
@@ -428,7 +434,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     class Advert < ActiveRecord::Base
       index :title, unique: true, name: 'my_index'
     end
-    up, down = Generators::DeclareSchema::Migration::Migrator.run
+    up = Generators::DeclareSchema::Migration::Migrator.run.first
     expect(up.gsub(/\n+/, "\n")).to eq(<<~EOS.strip)
       add_column :adverts, :title, :string, limit: 255
       add_index :adverts, [:title], unique: true, name: 'my_index'
@@ -441,7 +447,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     class Advert < ActiveRecord::Base
       index [:title, :category_id]
     end
-    up, down = Generators::DeclareSchema::Migration::Migrator.run
+    up = Generators::DeclareSchema::Migration::Migrator.run.first
     expect(up.gsub(/\n+/, "\n")).to eq(<<~EOS.strip)
       add_column :adverts, :title, :string, limit: 255
       add_index :adverts, [:title, :category_id], name: 'on_title_and_category_id'
@@ -544,7 +550,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         title :string, default: "Untitled", limit: 255, null: true
       end
     end
-    up, down = Generators::DeclareSchema::Migration::Migrator.run
+    up = Generators::DeclareSchema::Migration::Migrator.run.first
     ActiveRecord::Migration.class_eval(up)
 
     class FancyAdvert < Advert
@@ -613,7 +619,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         created_at :datetime
       end
     end
-    up, down = Generators::DeclareSchema::Migration::Migrator.run(adverts: :ads)
+    up = Generators::DeclareSchema::Migration::Migrator.run(adverts: :ads).first
     expect(up.gsub(/\n+/, "\n")).to eq(<<~EOS.strip)
       rename_table :adverts, :ads
       add_column :ads, :created_at, :datetime, null: false
@@ -682,5 +688,86 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     ActiveRecord::Migration.class_eval(up)
     expect(Ad.field_specs['company'].options[:validates].inspect).to eq("{:presence=>true, :uniqueness=>{:case_sensitive=>false}}")
   end
-end
 
+  if Rails::VERSION::MAJOR >= 5
+    describe 'belongs_to' do
+      before do
+        unless defined?(AdCategory)
+          class AdCategory < ActiveRecord::Base
+            fields { }
+          end
+        end
+
+        class Advert < ActiveRecord::Base
+          fields do
+            name :string, limit: 255, null: true
+            category_id :integer, limit: 8
+            nullable_category_id :integer, limit: 8, null: true
+          end
+        end
+        up = Generators::DeclareSchema::Migration::Migrator.run.first
+        ActiveRecord::Migration.class_eval(up)
+      end
+
+      it 'passes through optional: when given' do
+        class AdvertBelongsTo < ActiveRecord::Base
+          self.table_name = 'adverts'
+          fields { }
+          reset_column_information
+          belongs_to :ad_category, optional: true
+        end
+        expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional: true)
+      end
+
+      describe 'contradictory settings' do # contradictory settings are ok during migration
+        it 'passes through optional: true, null: false' do
+          class AdvertBelongsTo < ActiveRecord::Base
+            self.table_name = 'adverts'
+            fields { }
+            reset_column_information
+            belongs_to :ad_category, optional: true, null: false
+          end
+          expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional: true)
+          expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(false)
+        end
+
+        it 'passes through optional: false, null: true' do
+          class AdvertBelongsTo < ActiveRecord::Base
+            self.table_name = 'adverts'
+            fields { }
+            reset_column_information
+            belongs_to :ad_category, optional: false, null: true
+          end
+          expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional: false)
+          expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(true)
+        end
+      end
+
+      [false, true].each do |nullable|
+        context "nullable=#{nullable}" do
+          it 'infers optional: from null:' do
+            eval <<~EOS
+              class AdvertBelongsTo < ActiveRecord::Base
+                fields { }
+                belongs_to :ad_category, null: #{nullable}
+              end
+            EOS
+            expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional: nullable)
+            expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(nullable)
+          end
+
+          it 'infers null: from optional:' do
+            eval <<~EOS
+              class AdvertBelongsTo < ActiveRecord::Base
+                fields { }
+                belongs_to :ad_category, optional: #{nullable}
+              end
+            EOS
+            expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional: nullable)
+            expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(nullable)
+          end
+        end
+      end
+    end
+  end
+end

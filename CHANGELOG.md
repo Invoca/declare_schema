@@ -6,6 +6,13 @@ Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0
 
 ## [0.3.0] - Unreleased
 ### Added
+- Added support for `belongs_to optional:`.
+If given, it is passed through to `ActiveRecord`'s `belong_to`.
+If not given in Rails 5+, the `optional:` value is set equal to the `null:` value (default: `false`) and that
+is passed to `ActiveRecord`'s `belong_to`.
+Similarly, if `null:` is not given, it is inferred from `optional:`.
+If both are given, their values are respected, even if contradictory;
+this is a legitimate case when migrating to/from an optional association.
 - Added a new callback `before_generating_migration` to the `Migrator` that can be
 defined in order to custom load more models that might be missed by `eager_load!`
 
