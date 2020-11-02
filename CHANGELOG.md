@@ -13,6 +13,8 @@ is passed to `ActiveRecord`'s `belong_to`.
 Similarly, if `null:` is not given, it is inferred from `optional:`.
 If both are given, their values are respected, even if contradictory;
 this is a legitimate case when migrating to/from an optional association.
+### Fixed
+- Migrations are now generated where the `[4.2]` is only applied after `ActiveRecord::Migration` in Rails 5+ (since Rails 4 didn't know about that notation).
 
 ## [0.2.0] - 2020-10-26
 ### Added
