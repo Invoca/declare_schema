@@ -32,7 +32,7 @@ RSpec.describe 'DeclareSchema API' do
       # The migration generator uses this information to create a migration.
       # The following creates and runs the migration:
 
-      expect(system("bundle exec rails generate declare_schema:migration -n -m")).to be_truthy
+      generate_migrations '-n', '-m'
 
       # We're now ready to start demonstrating the API
 
@@ -42,7 +42,7 @@ RSpec.describe 'DeclareSchema API' do
 
       unless Rails::VERSION::MAJOR >= 6
         # TODO: get this to work on Travis for Rails 6
-        Rails::Generators.invoke('declare_schema:migration', %w[-n -m])
+        generate_migrations '-n', '-m'
       end
 
       require 'advert'

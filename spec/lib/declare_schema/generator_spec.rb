@@ -43,7 +43,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     $LOAD_PATH << "#{TESTAPP_PATH}/app/models"
 
-    expect(system("bundle exec rails generate declare_schema:migration -n -m")).to be_truthy
+    generate_migrations '-n', '-m'
 
     expect(File.exist?('db/schema.rb')).to be_truthy
 

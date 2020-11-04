@@ -12,7 +12,7 @@ RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
       self.primary_key = "foo_id"
     end
 
-    Rails::Generators.invoke('declare_schema:migration', %w[-n -m])
+    generate_migrations '-n', '-m'
     expect(Foo.primary_key).to eq('foo_id')
 
     ### migrate from
@@ -24,7 +24,7 @@ RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
     end
 
     puts "\n\e[45m Please enter 'id' (no quotes) at the next prompt \e[0m"
-    Rails::Generators.invoke('declare_schema:migration', %w[-n -m])
+    generate_migrations '-n', '-m'
     expect(Foo.primary_key).to eq('id')
 
     nuke_model_class(Foo)
@@ -39,7 +39,7 @@ RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
     end
 
     puts "\n\e[45m Please enter 'drop id' (no quotes) at the next prompt \e[0m"
-    Rails::Generators.invoke('declare_schema:migration', %w[-n -m])
+    generate_migrations '-n', '-m'
     expect(Foo.primary_key).to eq('foo_id')
 
     ### ensure it doesn't cause further migrations

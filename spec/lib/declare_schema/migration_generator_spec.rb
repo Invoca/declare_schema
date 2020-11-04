@@ -781,7 +781,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         end
       end
 
-      Rails::Generators.invoke('declare_schema:migration', %w[-n -m])
+      generate_migrations '-n', '-m'
 
       migrations = Dir.glob('db/migrate/*declare_schema_migration*.rb')
       expect(migrations.size).to eq(1), migrations.inspect
