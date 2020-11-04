@@ -8,9 +8,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
   it "generates nested models" do
     generate_model 'alpha/beta', 'one:string', 'two:integer'
 
-    expect(File.exist?('app/models/alpha/beta.rb')).to be_truthy
-
-    expect(File.read('app/models/alpha/beta.rb')).to eq(<<~EOS)
+    expect_model_definition_to_eq('alpha/beta', <<~EOS)
       class Alpha::Beta < #{active_record_base_class}
 
         fields do
@@ -21,7 +19,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
     EOS
 
-    expect(File.read('app/models/alpha.rb')).to eq(<<~EOS)
+    expect_model_definition_to_eq('alpha', <<~EOS)
       module Alpha
         def self.table_name_prefix
           'alpha_'
@@ -29,7 +27,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
     EOS
 
-    expect(File.read('test/models/alpha/beta_test.rb')).to eq(<<~EOS)
+    expect_test_definition_to_eq('alpha/beta', <<~EOS)
       require 'test_helper'
 
       class Alpha::BetaTest < ActiveSupport::TestCase
@@ -39,7 +37,19 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
     EOS
 
-    expect(File.exist?('test/fixtures/alpha/beta.yml')).to be_truthy
+    expect_test_fixture_to_eq('alpha/beta', <<~EOS)
+      # Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+      # This model initially had no columns defined. If you add columns to the
+      # model remove the '{}' from the fixture names and add the columns immediately
+      # below each fixture, per the syntax in the comments below
+      #
+      one: {}
+      # column: value
+      #
+      two: {}
+      # column: value
+    EOS
 
     $LOAD_PATH << "#{TESTAPP_PATH}/app/models"
 
