@@ -6,18 +6,18 @@ RSpec.describe 'DeclareSchema Migration Generator' do
   end
 
   it "generates nested models" do
-    Rails::Generators.invoke('declare_schema:model', %w[alpha/beta one:string two:integer])
+    generate_model 'alpha/beta', 'one:string', 'two:integer'
 
     expect(File.exist?('app/models/alpha/beta.rb')).to be_truthy
 
     expect(File.read('app/models/alpha/beta.rb')).to eq(<<~EOS)
       class Alpha::Beta < #{active_record_base_class}
-  
+
         fields do
           one :string, limit: 255
           two :integer
         end
-  
+
       end
     EOS
 
@@ -31,7 +31,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     expect(File.read('test/models/alpha/beta_test.rb')).to eq(<<~EOS)
       require 'test_helper'
-      
+
       class Alpha::BetaTest < ActiveSupport::TestCase
         # test "the truth" do
         #   assert true

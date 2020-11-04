@@ -10,7 +10,7 @@ RSpec.describe 'DeclareSchema API' do
 
   describe 'example models' do
     it 'generates a model' do
-      expect(system("bundle exec rails generate declare_schema:model advert title:string body:text")).to be_truthy
+      generate_model 'advert', 'title:string', 'body:text'
 
       # The above will generate the test, fixture and a model file like this:
       # model_declaration = Rails::Generators.invoke('declare_schema:model', ['advert2', 'title:string', 'body:text'])
