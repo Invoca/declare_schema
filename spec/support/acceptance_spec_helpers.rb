@@ -38,4 +38,24 @@ module AcceptanceSpecHelpers
     Rails.application.config.autoload_paths += ["#{TESTAPP_PATH}/app/models"]
     $LOAD_PATH << "#{TESTAPP_PATH}/app/models"
   end
+
+  def migrate_up(expected_value)
+    MigrationUpEquals.new(expected_value)
+  end
+
+  def migrate_down(expected_value)
+    MigrationDownEquals.new(expected_value)
+  end
+
+  class MigrationUpEquals < RSpec::Matchers::BuiltIn::Eq
+    def matches?(subject)
+      super(subject[0])
+    end
+  end
+
+  class MigrationDownEquals < RSpec::Matchers::BuiltIn::Eq
+    def matches?(subject)
+      super(subject[1])
+    end
+  end
 end

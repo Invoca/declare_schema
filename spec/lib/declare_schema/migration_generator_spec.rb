@@ -11,14 +11,12 @@ RSpec.describe 'DeclareSchema Migration Generator' do
   it 'generates migrations' do
     ## The migration generator -- introduction
 
-    up_down = Generators::DeclareSchema::Migration::Migrator.run
-    expect(up_down).to eq(["", ""])
+    expect(Generators::DeclareSchema::Migration::Migrator.run).to migrate_up("").and migrate_down("")
 
     class Advert < ActiveRecord::Base
     end
 
-    up_down = Generators::DeclareSchema::Migration::Migrator.run
-    expect(up_down).to eq(["", ""])
+    expect(Generators::DeclareSchema::Migration::Migrator.run).to migrate_up("").and migrate_down("")
 
     Generators::DeclareSchema::Migration::Migrator.ignore_tables = ["green_fishes"]
 
@@ -30,13 +28,17 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         name :string, limit: 255, null: true
       end
     end
-    up, down = Generators::DeclareSchema::Migration::Migrator.run
-    expect(up).to eq(<<~EOS.strip)
-      create_table :adverts, id: :bigint do |t|
-        t.string :name, limit: 255
-      end
-    EOS
-    expect(down).to eq("drop_table :adverts")
+
+    up, _ = Generators::DeclareSchema::Migration::Migrator.run.tap do |migrations|
+      expect(migrations).to(
+        migrate_up(<<~EOS.strip)
+          create_table :adverts, id: :bigint do |t|
+            t.string :name, limit: 255
+          end
+        EOS
+        .and migrate_down("drop_table :adverts")
+      )
+    end
 
     ActiveRecord::Migration.class_eval(up)
     expect(Advert.columns.map(&:name)).to eq(["id", "name"])
@@ -48,19 +50,20 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         published_at :datetime, null: true
       end
     end
-    up, down = migrate
-    expect(up).to eq(<<~EOS.strip)
-      add_column :adverts, :body, :text
-      add_column :adverts, :published_at, :datetime
 
-      add_index :adverts, [:id], unique: true, name: 'PRIMARY_KEY'
-    EOS
+    expect(migrate).to(
+      migrate_up(<<~EOS.strip)
+        add_column :adverts, :body, :text
+        add_column :adverts, :published_at, :datetime
+
+        add_index :adverts, [:id], unique: true, name: 'PRIMARY_KEY'
+      EOS
+      .and migrate_down(<<~EOS.strip)
+        remove_column :adverts, :body
+        remove_column :adverts, :published_at
+      EOS
+    )
     # TODO: ^ TECH-4975 add_index should not be there
-
-    expect(down).to eq(<<~EOS.strip)
-      remove_column :adverts, :body
-      remove_column :adverts, :published_at
-    EOS
 
     Advert.field_specs.clear # not normally needed
     class Advert < ActiveRecord::Base
@@ -70,9 +73,11 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
     end
 
-    up, down = migrate
-    expect(up).to eq("remove_column :adverts, :published_at")
-    expect(down).to eq("add_column :adverts, :published_at, :datetime")
+    expect(migrate).to(
+      migrate_up("remove_column :adverts, :published_at").and(
+        migrate_down("add_column :adverts, :published_at, :datetime")
+      )
+    )
 
     nuke_model_class(Advert)
     class Advert < ActiveRecord::Base
@@ -82,20 +87,22 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
     end
 
-    up, down = Generators::DeclareSchema::Migration::Migrator.run
-    expect(up).to eq(<<~EOS.strip)
-      add_column :adverts, :title, :string, limit: 255
-      remove_column :adverts, :name
-    EOS
+    expect(Generators::DeclareSchema::Migration::Migrator.run).to(
+      migrate_up(<<~EOS.strip)
+        add_column :adverts, :title, :string, limit: 255
+        remove_column :adverts, :name
+      EOS
+      .and migrate_down(<<~EOS.strip)
+        remove_column :adverts, :title
+        add_column :adverts, :name, :string, limit: 255
+      EOS
+    )
 
-    expect(down).to eq(<<~EOS.strip)
-      remove_column :adverts, :title
-      add_column :adverts, :name, :string, limit: 255
-    EOS
-
-    up, down = Generators::DeclareSchema::Migration::Migrator.run(adverts: { name: :title })
-    expect(up).to eq("rename_column :adverts, :name, :title")
-    expect(down).to eq("rename_column :adverts, :title, :name")
+    expect(Generators::DeclareSchema::Migration::Migrator.run(adverts: { name: :title })).to(
+      migrate_up("rename_column :adverts, :name, :title").and(
+        migrate_down("rename_column :adverts, :title, :name")
+      )
+    )
 
     migrate
 
@@ -106,9 +113,11 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
     end
 
-    up_down = Generators::DeclareSchema::Migration::Migrator.run
-    expect(up_down).to eq(["change_column :adverts, :title, :text",
-                           "change_column :adverts, :title, :string, limit: 255"])
+    expect(Generators::DeclareSchema::Migration::Migrator.run).to(
+      migrate_up("change_column :adverts, :title, :text").and(
+        migrate_down("change_column :adverts, :title, :string, limit: 255")
+      )
+    )
 
     class Advert < ActiveRecord::Base
       fields do
@@ -117,11 +126,14 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
     end
 
-    up, down = migrate
-    expect(up.split(',').slice(0,3).join(',')).to eq('change_column :adverts, :title, :string')
-    expect(up.split(',').slice(3,2).sort.join(',')).to eq(" default: \"Untitled\", limit: 255")
-    expect(down).to eq("change_column :adverts, :title, :string, limit: 255")
-
+    expect(migrate).to(
+      migrate_up(<<~EOS.strip)
+        change_column :adverts, :title, :string, limit: 255, default: "Untitled"
+      EOS
+      .and migrate_down(<<~EOS.strip)
+        change_column :adverts, :title, :string, limit: 255
+      EOS
+    )
 
     ### Limits
 
@@ -131,8 +143,9 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
     end
 
-    up = Generators::DeclareSchema::Migration::Migrator.run.first
-    expect(up).to eq("add_column :adverts, :price, :integer, limit: 2")
+    up, _ = Generators::DeclareSchema::Migration::Migrator.run.tap do |migrations|
+      expect(migrations).to migrate_up("add_column :adverts, :price, :integer, limit: 2")
+    end
 
     # Now run the migration, then change the limit:
 
@@ -143,9 +156,14 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
     end
 
-    up, down = Generators::DeclareSchema::Migration::Migrator.run
-    expect(up).to eq("change_column :adverts, :price, :integer, limit: 3")
-    expect(down).to eq("change_column :adverts, :price, :integer, limit: 2")
+    expect(Generators::DeclareSchema::Migration::Migrator.run).to(
+      migrate_up(<<~EOS.strip)
+        change_column :adverts, :price, :integer, limit: 3
+      EOS
+      .and migrate_down(<<~EOS.strip)
+        change_column :adverts, :price, :integer, limit: 2
+      EOS
+    )
 
     # Note that limit on a decimal column is ignored (use :scale and :precision)
 
@@ -156,8 +174,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
     end
 
-    up = Generators::DeclareSchema::Migration::Migrator.run.first
-    expect(up).to eq("add_column :adverts, :price, :decimal")
+    expect(Generators::DeclareSchema::Migration::Migrator.run).to migrate_up("add_column :adverts, :price, :decimal")
 
     # Limits are generally not needed for `text` fields, because by default, `text` fields will use the maximum size
     # allowed for that database type (0xffffffff for LONGTEXT in MySQL unlimited in Postgres, 1 billion in Sqlite).
@@ -172,12 +189,13 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
     end
 
-    up = Generators::DeclareSchema::Migration::Migrator.run.first
-    expect(up).to eq(<<~EOS.strip)
-      add_column :adverts, :price, :decimal
-      add_column :adverts, :notes, :text, null: false
-      add_column :adverts, :description, :text, null: false
-    EOS
+    expect(Generators::DeclareSchema::Migration::Migrator.run).to(
+      migrate_up(<<~EOS.strip)
+        add_column :adverts, :price, :decimal
+        add_column :adverts, :notes, :text, null: false
+        add_column :adverts, :description, :text, null: false
+      EOS
+    )
 
     # (There is no limit on `add_column ... :description` above since these tests are run against SQLite.)
 
@@ -196,11 +214,12 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
     end
 
-    up = Generators::DeclareSchema::Migration::Migrator.run.first
-    expect(up).to eq(<<~EOS.strip)
-      add_column :adverts, :notes, :text, null: false, limit: 4294967295
-      add_column :adverts, :description, :text, null: false, limit: 255
-    EOS
+    expect(Generators::DeclareSchema::Migration::Migrator.run).to(
+      migrate_up(<<~EOS.strip)
+        add_column :adverts, :notes, :text, null: false, limit: 4294967295
+        add_column :adverts, :description, :text, null: false, limit: 255
+      EOS
+    )
 
     Advert.field_specs.delete :notes
 
@@ -239,9 +258,14 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
     end
 
-    up, down = Generators::DeclareSchema::Migration::Migrator.run
-    expect(up).to eq("change_column :adverts, :description, :text, limit: 4294967295, null: false")
-    expect(down).to eq("change_column :adverts, :description, :text")
+    expect(Generators::DeclareSchema::Migration::Migrator.run).to(
+      migrate_up(<<~EOS.strip)
+        change_column :adverts, :description, :text, limit: 4294967295, null: false
+      EOS
+      .and migrate_down(<<~EOS.strip)
+        change_column :adverts, :description, :text
+      EOS
+    )
 
     # TODO TECH-4814: The above test should have this output:
     # TODO => "change_column :adverts, :description, :text, limit: 255
@@ -254,9 +278,14 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
     end
 
-    up, down = Generators::DeclareSchema::Migration::Migrator.run
-    expect(up).to eq("change_column :adverts, :description, :text, limit: 4294967295, null: false")
-    expect(down).to eq("change_column :adverts, :description, :text")
+    expect(Generators::DeclareSchema::Migration::Migrator.run).to(
+      migrate_up(<<~EOS.strip)
+        change_column :adverts, :description, :text, limit: 4294967295, null: false
+      EOS
+      .and migrate_down(<<~EOS.strip)
+        change_column :adverts, :description, :text
+      EOS
+    )
     ::DeclareSchema::Model::FieldSpec::instance_variable_set(:@mysql_text_limits, false)
 
     Advert.field_specs.clear
