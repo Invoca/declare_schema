@@ -315,15 +315,18 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       belongs_to :category
     end
 
-    up, down = Generators::DeclareSchema::Migration::Migrator.run
-    expect(up.gsub(/\n+/, "\n")).to eq(<<~EOS.strip)
-      add_column :adverts, :category_id, :integer, limit: 8, null: false
-      add_index :adverts, [:category_id], name: 'on_category_id'
-    EOS
-    expect(down.sub(/\n+/, "\n")).to eq(<<~EOS.strip)
-      remove_column :adverts, :category_id
-      remove_index :adverts, name: :on_category_id rescue ActiveRecord::StatementInvalid
-    EOS
+    expect(Generators::DeclareSchema::Migration::Migrator.run).to(
+      migrate_up(<<~EOS.strip)
+        add_column :adverts, :category_id, :integer, limit: 8, null: false
+
+        add_index :adverts, [:category_id], name: 'on_category_id'
+      EOS
+      .and migrate_down(<<~EOS.strip)
+        remove_column :adverts, :category_id
+
+        remove_index :adverts, name: :on_category_id rescue ActiveRecord::StatementInvalid
+      EOS
+    )
 
     Advert.field_specs.delete(:category_id)
     Advert.index_specs.delete_if {|spec| spec.fields==["category_id"]}
@@ -335,11 +338,14 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       fields { }
       belongs_to :category, foreign_key: "c_id", class_name: 'Category'
     end
-    up = Generators::DeclareSchema::Migration::Migrator.run.first
-    expect(up.gsub(/\n+/, "\n")).to eq(<<~EOS.strip)
-      add_column :adverts, :c_id, :integer, limit: 8, null: false
-      add_index :adverts, [:c_id], name: 'on_c_id'
-    EOS
+
+    expect(Generators::DeclareSchema::Migration::Migrator.run).to(
+      migrate_up(<<~EOS.strip)
+        add_column :adverts, :c_id, :integer, limit: 8, null: false
+
+        add_index :adverts, [:c_id], name: 'on_c_id'
+      EOS
+    )
 
     Advert.field_specs.delete(:c_id)
     Advert.index_specs.delete_if { |spec| spec.fields == ["c_id"] }
@@ -351,8 +357,12 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       fields { }
       belongs_to :category, index: false
     end
-    up = Generators::DeclareSchema::Migration::Migrator.run.first
-    expect(up.gsub(/\n+/, "\n")).to eq("add_column :adverts, :category_id, :integer, limit: 8, null: false")
+
+    expect(Generators::DeclareSchema::Migration::Migrator.run).to(
+      migrate_up(<<~EOS.strip)
+        add_column :adverts, :category_id, :integer, limit: 8, null: false
+      EOS
+    )
 
     Advert.field_specs.delete(:category_id)
     Advert.index_specs.delete_if { |spec| spec.fields == ["category_id"] }
@@ -364,11 +374,14 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       fields { }
       belongs_to :category, index: 'my_index'
     end
-    up = Generators::DeclareSchema::Migration::Migrator.run.first
-    expect(up.gsub(/\n+/, "\n")).to eq(<<~EOS.strip)
-      add_column :adverts, :category_id, :integer, limit: 8, null: false
-      add_index :adverts, [:category_id], name: 'my_index'
-    EOS
+
+    expect(Generators::DeclareSchema::Migration::Migrator.run).to(
+      migrate_up(<<~EOS.strip)
+        add_column :adverts, :category_id, :integer, limit: 8, null: false
+
+        add_index :adverts, [:category_id], name: 'my_index'
+      EOS
+    )
 
     Advert.field_specs.delete(:category_id)
     Advert.index_specs.delete_if { |spec| spec.fields == ["category_id"] }
@@ -384,17 +397,19 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         optimistic_lock
       end
     end
-    up, down = Generators::DeclareSchema::Migration::Migrator.run
-    expect(up.gsub(/\n+/, "\n")).to eq(<<~EOS.strip)
-      add_column :adverts, :created_at, :datetime
-      add_column :adverts, :updated_at, :datetime
-      add_column :adverts, :lock_version, :integer, null: false, default: 1
-    EOS
-    expect(down.gsub(/\n+/, "\n")).to eq(<<~EOS.strip)
-      remove_column :adverts, :created_at
-      remove_column :adverts, :updated_at
-      remove_column :adverts, :lock_version
-    EOS
+
+    expect(Generators::DeclareSchema::Migration::Migrator.run).to(
+      migrate_up(<<~EOS.strip)
+        add_column :adverts, :created_at, :datetime
+        add_column :adverts, :updated_at, :datetime
+        add_column :adverts, :lock_version, :integer, null: false, default: 1
+      EOS
+      .and migrate_down(<<~EOS.strip)
+        remove_column :adverts, :created_at
+        remove_column :adverts, :updated_at
+        remove_column :adverts, :lock_version
+      EOS
+    )
 
     Advert.field_specs.delete(:updated_at)
     Advert.field_specs.delete(:created_at)
@@ -409,11 +424,14 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         title :string, index: true, limit: 255, null: true
       end
     end
-    up = Generators::DeclareSchema::Migration::Migrator.run.first
-    expect(up.gsub(/\n+/, "\n")).to eq(<<~EOS.strip)
-      add_column :adverts, :title, :string, limit: 255
-      add_index :adverts, [:title], name: 'on_title'
-    EOS
+
+    expect(Generators::DeclareSchema::Migration::Migrator.run).to(
+      migrate_up(<<~EOS.strip)
+        add_column :adverts, :title, :string, limit: 255
+
+        add_index :adverts, [:title], name: 'on_title'
+      EOS
+    )
 
     Advert.index_specs.delete_if { |spec| spec.fields==["title"] }
 
@@ -424,11 +442,14 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         title :string, index: true, unique: true, null: true, limit: 255
       end
     end
-    up = Generators::DeclareSchema::Migration::Migrator.run.first
-    expect(up.gsub(/\n+/, "\n")).to eq(<<~EOS.strip)
-      add_column :adverts, :title, :string, limit: 255
-      add_index :adverts, [:title], unique: true, name: 'on_title'
-    EOS
+
+    expect(Generators::DeclareSchema::Migration::Migrator.run).to(
+      migrate_up(<<~EOS.strip)
+        add_column :adverts, :title, :string, limit: 255
+
+        add_index :adverts, [:title], unique: true, name: 'on_title'
+      EOS
+    )
 
     Advert.index_specs.delete_if { |spec| spec.fields == ["title"] }
 
@@ -439,11 +460,14 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         title :string, index: 'my_index', limit: 255, null: true
       end
     end
-    up = Generators::DeclareSchema::Migration::Migrator.run.first
-    expect(up.gsub(/\n+/, "\n")).to eq(<<~EOS.strip)
-      add_column :adverts, :title, :string, limit: 255
-      add_index :adverts, [:title], name: 'my_index'
-    EOS
+
+    expect(Generators::DeclareSchema::Migration::Migrator.run).to(
+      migrate_up(<<~EOS.strip)
+        add_column :adverts, :title, :string, limit: 255
+
+        add_index :adverts, [:title], name: 'my_index'
+      EOS
+    )
 
     Advert.index_specs.delete_if { |spec| spec.fields==["title"] }
 
@@ -452,11 +476,14 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     class Advert < ActiveRecord::Base
       index :title
     end
-    up = Generators::DeclareSchema::Migration::Migrator.run.first
-    expect(up.gsub(/\n+/, "\n")).to eq(<<~EOS.strip)
-      add_column :adverts, :title, :string, limit: 255
-      add_index :adverts, [:title], name: 'on_title'
-    EOS
+
+    expect(Generators::DeclareSchema::Migration::Migrator.run).to(
+      migrate_up(<<~EOS.strip)
+        add_column :adverts, :title, :string, limit: 255
+
+        add_index :adverts, [:title], name: 'on_title'
+      EOS
+    )
 
     Advert.index_specs.delete_if { |spec| spec.fields == ["title"] }
 
@@ -465,11 +492,14 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     class Advert < ActiveRecord::Base
       index :title, unique: true, name: 'my_index'
     end
-    up = Generators::DeclareSchema::Migration::Migrator.run.first
-    expect(up.gsub(/\n+/, "\n")).to eq(<<~EOS.strip)
-      add_column :adverts, :title, :string, limit: 255
-      add_index :adverts, [:title], unique: true, name: 'my_index'
-    EOS
+
+    expect(Generators::DeclareSchema::Migration::Migrator.run).to(
+      migrate_up(<<~EOS.strip)
+        add_column :adverts, :title, :string, limit: 255
+
+        add_index :adverts, [:title], unique: true, name: 'my_index'
+      EOS
+    )
 
     Advert.index_specs.delete_if { |spec| spec.fields == ["title"] }
 
@@ -478,11 +508,14 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     class Advert < ActiveRecord::Base
       index [:title, :category_id]
     end
-    up = Generators::DeclareSchema::Migration::Migrator.run.first
-    expect(up.gsub(/\n+/, "\n")).to eq(<<~EOS.strip)
-      add_column :adverts, :title, :string, limit: 255
-      add_index :adverts, [:title, :category_id], name: 'on_title_and_category_id'
-    EOS
+
+    expect(Generators::DeclareSchema::Migration::Migrator.run).to(
+      migrate_up(<<~EOS.strip)
+        add_column :adverts, :title, :string, limit: 255
+
+        add_index :adverts, [:title, :category_id], name: 'on_title_and_category_id'
+      EOS
+    )
 
     Advert.index_specs.delete_if { |spec| spec.fields==["title", "category_id"] }
 
@@ -505,19 +538,24 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     Advert.connection.schema_cache.clear!
     Advert.reset_column_information
 
-    up, down = Generators::DeclareSchema::Migration::Migrator.run("adverts" => "ads")
-    expect(up.gsub(/\n+/, "\n")).to eq(<<~EOS.strip)
-      rename_table :adverts, :ads
-      add_column :ads, :title, :string, limit: 255
-      add_column :ads, :body, :text
-      add_index :ads, [:id], unique: true, name: 'PRIMARY_KEY'
-    EOS
-    expect(down.gsub(/\n+/, "\n")).to eq(<<~EOS.strip)
-      remove_column :ads, :title
-      remove_column :ads, :body
-      rename_table :ads, :adverts
-      add_index :adverts, [:id], unique: true, name: 'PRIMARY_KEY'
-    EOS
+    expect(Generators::DeclareSchema::Migration::Migrator.run("adverts" => "ads")).to(
+      migrate_up(<<~EOS.strip)
+        rename_table :adverts, :ads
+
+        add_column :ads, :title, :string, limit: 255
+        add_column :ads, :body, :text
+
+        add_index :ads, [:id], unique: true, name: 'PRIMARY_KEY'
+      EOS
+      .and migrate_down(<<~EOS.strip)
+        remove_column :ads, :title
+        remove_column :ads, :body
+
+        rename_table :ads, :adverts
+
+        add_index :adverts, [:id], unique: true, name: 'PRIMARY_KEY'
+      EOS
+    )
 
     # Set the table name back to what it should be and confirm we're in sync:
 
@@ -541,21 +579,27 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         body :text, null: true
       end
     end
-    up, down = Generators::DeclareSchema::Migration::Migrator.run("adverts" => "advertisements")
-    expect(up.gsub(/\n+/, "\n")).to eq(<<~EOS.strip)
-      rename_table :adverts, :advertisements
-      add_column :advertisements, :title, :string, limit: 255
-      add_column :advertisements, :body, :text
-      remove_column :advertisements, :name
-      add_index :advertisements, [:id], unique: true, name: 'PRIMARY_KEY'
-    EOS
-    expect(down.gsub(/\n+/, "\n")).to eq(<<~EOS.strip)
-      remove_column :advertisements, :title
-      remove_column :advertisements, :body
-      add_column :adverts, :name, :string, limit: 255
-      rename_table :advertisements, :adverts
-      add_index :adverts, [:id], unique: true, name: 'PRIMARY_KEY'
-    EOS
+
+    expect(Generators::DeclareSchema::Migration::Migrator.run("adverts" => "advertisements")).to(
+      migrate_up(<<~EOS.strip)
+        rename_table :adverts, :advertisements
+
+        add_column :advertisements, :title, :string, limit: 255
+        add_column :advertisements, :body, :text
+        remove_column :advertisements, :name
+
+        add_index :advertisements, [:id], unique: true, name: 'PRIMARY_KEY'
+      EOS
+      .and migrate_down(<<~EOS.strip)
+        remove_column :advertisements, :title
+        remove_column :advertisements, :body
+        add_column :adverts, :name, :string, limit: 255
+
+        rename_table :advertisements, :adverts
+
+        add_index :adverts, [:id], unique: true, name: 'PRIMARY_KEY'
+      EOS
+    )
 
     ### Drop a table
 
@@ -565,9 +609,17 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     # Dropping tables is where the automatic down-migration really comes in handy:
 
-    up, down = Generators::DeclareSchema::Migration::Migrator.run
-    expect(up).to eq("drop_table :adverts")
-    expect(down.gsub(/,.*/m, '')).to eq("create_table \"adverts\"")
+    expect(Generators::DeclareSchema::Migration::Migrator.run).to(
+      migrate_up(<<~EOS.strip)
+        drop_table :adverts
+      EOS
+      .and migrate_down(<<~EOS.strip)
+        create_table "adverts", id: :integer, force: :cascade do |t|
+          t.string "name", limit: 255
+          t.index ["id"], name: "PRIMARY_KEY", unique: true
+        end
+      EOS
+    )
 
     ## STI
 
@@ -588,15 +640,21 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     end
     class SuperFancyAdvert < FancyAdvert
     end
-    up, down = Generators::DeclareSchema::Migration::Migrator.run
-    expect(up.gsub(/\n+/, "\n")).to eq(<<~EOS.strip)
-      add_column :adverts, :type, :string, limit: 255
-      add_index :adverts, [:type], name: 'on_type'
-    EOS
-    expect(down.gsub(/\n+/, "\n")).to eq(<<~EOS.strip)
-      remove_column :adverts, :type
-      remove_index :adverts, name: :on_type rescue ActiveRecord::StatementInvalid
-    EOS
+
+    up, _ = Generators::DeclareSchema::Migration::Migrator.run do |migrations|
+      expect(migrations).to(
+        migrate_up(<<~EOS.strip)
+          add_column :adverts, :type, :string, limit: 255
+
+          add_index :adverts, [:type], name: 'on_type'
+        EOS
+        .and migrate_down(<<~EOS.strip)
+          remove_column :adverts, :type
+
+          remove_index :adverts, name: :on_type rescue ActiveRecord::StatementInvalid
+        EOS
+      )
+    end
 
     Advert.field_specs.delete(:type)
     nuke_model_class(SuperFancyAdvert)
@@ -629,16 +687,17 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         body :text, null: true
       end
     end
-    up, down = Generators::DeclareSchema::Migration::Migrator.run(adverts: { title: :name })
-    expect(up).to eq(<<~EOS.strip)
-      rename_column :adverts, :title, :name
-      change_column :adverts, :name, :string, limit: 255, default: \"No Name\"
-    EOS
 
-    expect(down).to eq(<<~EOS.strip)
-      rename_column :adverts, :name, :title
-      change_column :adverts, :title, :string, limit: 255, default: \"Untitled\"
-    EOS
+    expect(Generators::DeclareSchema::Migration::Migrator.run(adverts: { title: :name })).to(
+      migrate_up(<<~EOS.strip)
+        rename_column :adverts, :title, :name
+        change_column :adverts, :name, :string, limit: 255, default: "No Name"
+      EOS
+      .and migrate_down(<<~EOS.strip)
+        rename_column :adverts, :name, :title
+        change_column :adverts, :title, :string, limit: 255, default: "Untitled"
+      EOS
+    )
 
     ### Rename a table and add a column
 
@@ -650,13 +709,17 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         created_at :datetime
       end
     end
-    up = Generators::DeclareSchema::Migration::Migrator.run(adverts: :ads).first
-    expect(up.gsub(/\n+/, "\n")).to eq(<<~EOS.strip)
-      rename_table :adverts, :ads
-      add_column :ads, :created_at, :datetime, null: false
-      change_column :ads, :title, :string, limit: 255, null: false, default: \"Untitled\"
-      add_index :ads, [:id], unique: true, name: 'PRIMARY_KEY'
-    EOS
+
+    expect(Generators::DeclareSchema::Migration::Migrator.run(adverts: :ads)).to(
+      migrate_up(<<~EOS.strip)
+        rename_table :adverts, :ads
+
+        add_column :ads, :created_at, :datetime, null: false
+        change_column :ads, :title, :string, limit: 255, null: false, default: \"Untitled\"
+
+        add_index :ads, [:id], unique: true, name: 'PRIMARY_KEY'
+      EOS
+    )
 
     class Advert < ActiveRecord::Base
       fields do
@@ -677,11 +740,14 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
       self.primary_key = "advert_id"
     end
-    up, _down = Generators::DeclareSchema::Migration::Migrator.run(adverts: { id: :advert_id })
-    expect(up.gsub(/\n+/, "\n")).to eq(<<~EOS.strip)
-      rename_column :adverts, :id, :advert_id
-      add_index :adverts, [:advert_id], unique: true, name: 'PRIMARY_KEY'
-    EOS
+
+    expect(Generators::DeclareSchema::Migration::Migrator.run(adverts: { id: :advert_id })).to(
+      migrate_up(<<~EOS.strip)
+        rename_column :adverts, :id, :advert_id
+
+        add_index :adverts, [:advert_id], unique: true, name: 'PRIMARY_KEY'
+      EOS
+    )
 
     nuke_model_class(Advert)
     ActiveRecord::Base.connection.execute("drop table `adverts`;")
