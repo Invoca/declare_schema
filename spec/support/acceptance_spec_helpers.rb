@@ -10,24 +10,20 @@ module AcceptanceSpecHelpers
   end
 
   def expect_model_definition_to_eq(model, expectation)
-    model_file_path = "#{TESTAPP_PATH}/app/models/#{model}.rb"
-
-    expect(File.exist?(model_file_path)).to be_truthy
-    expect(File.read(model_file_path)).to eq(expectation)
+    expect_file_to_eq("#{TESTAPP_PATH}/app/models/#{model}.rb", expectation)
   end
 
   def expect_test_definition_to_eq(model, expectation)
-    test_file_path = "#{TESTAPP_PATH}/test/models/#{model}_test.rb"
-
-    expect(File.exist?(test_file_path)).to be_truthy
-    expect(File.read(test_file_path)).to eq(expectation)
+    expect_file_to_eq("#{TESTAPP_PATH}/test/models/#{model}_test.rb", expectation)
   end
 
   def expect_test_fixture_to_eq(model, expectation)
-    fixture_file_path = "#{TESTAPP_PATH}/test/fixtures/#{model}.yml"
+    expect_file_to_eq("#{TESTAPP_PATH}/test/fixtures/#{model}.yml", expectation)
+  end
 
-    expect(File.exist?(fixture_file_path)).to be_truthy
-    expect(File.read(fixture_file_path)).to eq(expectation)
+  def expect_file_to_eq(file_path, expectation)
+    expect(File.exist?(file_path)).to be_truthy
+    expect(File.read(file_path)).to eq(expectation)
   end
 
   def clean_up_model(model)
