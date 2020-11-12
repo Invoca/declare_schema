@@ -614,10 +614,12 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         drop_table :adverts
       EOS
       .and migrate_down(<<~EOS.strip)
-        create_table "adverts", id: :integer, force: :cascade do |t|
-          t.string "name", limit: 255
-          t.index ["id"], name: "PRIMARY_KEY", unique: true
+        create_table "adverts", id: false, force: :cascade do |t|
+          t.integer "id",   limit: 8
+          t.string  "name", limit: 255
         end
+
+        add_index "adverts", ["id"], name: "PRIMARY_KEY", unique: true
       EOS
     )
 
