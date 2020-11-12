@@ -37,19 +37,35 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
     EOS
 
-    expect_test_fixture_to_eq('alpha/beta', <<~EOS)
-      # Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+    if Rails::VERSION::MAJOR >= 5
+      expect_test_fixture_to_eq('alpha/beta', <<~EOS)
+        # Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
-      # This model initially had no columns defined.  If you add columns to the
-      # model remove the '{}' from the fixture names and add the columns immediately
-      # below each fixture, per the syntax in the comments below
-      #
-      one: {}
-      # column: value
-      #
-      two: {}
-      #  column: value
-    EOS
+        # This model initially had no columns defined. If you add columns to the
+        # model remove the '{}' from the fixture names and add the columns immediately
+        # below each fixture, per the syntax in the comments below
+        #
+        one: {}
+        # column: value
+        #
+        two: {}
+        # column: value
+      EOS
+    else
+      expect_test_fixture_to_eq('alpha/beta', <<~EOS)
+        # Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+        # This model initially had no columns defined.  If you add columns to the
+        # model remove the '{}' from the fixture names and add the columns immediately
+        # below each fixture, per the syntax in the comments below
+        #
+        one: {}
+        # column: value
+        #
+        two: {}
+        #  column: value
+      EOS
+    end
 
     $LOAD_PATH << "#{TESTAPP_PATH}/app/models"
 

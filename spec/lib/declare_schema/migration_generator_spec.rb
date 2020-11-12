@@ -609,18 +609,27 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     # Dropping tables is where the automatic down-migration really comes in handy:
 
+    rails4_table_create = <<~EOS.strip
+      create_table "adverts", id: false, force: :cascade do |t|
+        t.integer "id",   limit: 8
+        t.string  "name", limit: 255
+      end
+
+      add_index "adverts", ["id"], name: "PRIMARY_KEY", unique: true
+    EOS
+
+    rails5_table_create = <<~EOS.strip
+      create_table "adverts", id: :integer, force: :cascade do |t|
+        t.string "name", limit: 255
+        t.index ["id"], name: "PRIMARY_KEY", unique: true
+      end
+    EOS
+
     expect(Generators::DeclareSchema::Migration::Migrator.run).to(
       migrate_up(<<~EOS.strip)
         drop_table :adverts
       EOS
-      .and migrate_down(<<~EOS.strip)
-        create_table "adverts", id: false, force: :cascade do |t|
-          t.integer "id",   limit: 8
-          t.string  "name", limit: 255
-        end
-
-        add_index "adverts", ["id"], name: "PRIMARY_KEY", unique: true
-      EOS
+      .and migrate_down(Rails::VERSION::MAJOR >= 5 ? rails5_table_create : rails4_table_create)
     )
 
     ## STI
