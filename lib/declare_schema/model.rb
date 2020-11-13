@@ -149,7 +149,6 @@ module DeclareSchema
           index([foreign_type, fkey], index_options) if index_options[:name] != false
         else
           index(fkey, index_options) if index_options[:name] != false
-          # options[:constraint_name] = options
           constraint(fkey, fk_options) if fk_options[:constraint_name] != false
         end
       end
