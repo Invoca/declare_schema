@@ -329,7 +329,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     )
 
     Advert.field_specs.delete(:category_id)
-    Advert.index_specs.delete_if {|spec| spec.fields==["category_id"]}
+    Advert.index_specs.delete_if { |spec| spec.fields==["category_id"] }
 
     # If you specify a custom foreign key, the migration generator observes that:
 
@@ -797,7 +797,16 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     expect(Ad.field_specs['company'].options[:validates].inspect).to eq("{:presence=>true, :uniqueness=>{:case_sensitive=>false}}")
   end
 
-  if Rails::VERSION::MAJOR >= 5
+  context "for Rails #{Rails::VERSION::MAJOR}" do
+    if Rails::VERSION::MAJOR >= 5
+      let(:optional_true) { { optional: true } }
+      let(:optional_false) { { optional: false } }
+    else
+      let(:optional_true) { {} }
+      let(:optional_false) { {} }
+    end
+    let(:optional_flag) { { false => optional_false, true => optional_true } }
+
     describe 'belongs_to' do
       before do
         unless defined?(AdCategory)
@@ -824,10 +833,10 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           reset_column_information
           belongs_to :ad_category, optional: true
         end
-        expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional: true)
+        expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_true)
       end
 
-      describe 'contradictory settings' do # contradictory settings are ok during migration
+      describe 'contradictory settings' do # contradictory settings are ok--for example, during migration
         it 'passes through optional: true, null: false' do
           class AdvertBelongsTo < ActiveRecord::Base
             self.table_name = 'adverts'
@@ -835,7 +844,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
             reset_column_information
             belongs_to :ad_category, optional: true, null: false
           end
-          expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional: true)
+          expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_true)
           expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(false)
         end
 
@@ -846,7 +855,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
             reset_column_information
             belongs_to :ad_category, optional: false, null: true
           end
-          expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional: false)
+          expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_false)
           expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(true)
         end
       end
@@ -860,7 +869,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
                 belongs_to :ad_category, null: #{nullable}
               end
             EOS
-            expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional: nullable)
+            expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_flag[nullable])
             expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(nullable)
           end
 
@@ -871,7 +880,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
                 belongs_to :ad_category, optional: #{nullable}
               end
             EOS
-            expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional: nullable)
+            expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_flag[nullable])
             expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(nullable)
           end
         end

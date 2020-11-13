@@ -128,13 +128,17 @@ module DeclareSchema
 
         fk = options[:foreign_key]&.to_s || "#{name}_id"
 
-        if !options.has_key?(:optional) && Rails::VERSION::MAJOR >= 5
+        if !options.has_key?(:optional)
           options[:optional] = column_options[:null] # infer :optional from :null
         end
 
         fk_options[:dependent] = options.delete(:far_end_dependent) if options.has_key?(:far_end_dependent)
 
-        super(name, scope, options)
+        if Rails::VERSION::MAJOR >= 5
+          super(name, scope, options)
+        else
+          super(name, scope, options.except(:optional))
+        end
 
         refl = reflections[name.to_s] or raise "Couldn't find reflection #{name} in #{reflections.keys}"
         fkey = refl.foreign_key or raise "Couldn't find foreign_key for #{name} in #{refl.inspect}"
