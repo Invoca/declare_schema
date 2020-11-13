@@ -6,7 +6,7 @@ Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0
 
 ## [0.3.1] - 2020-11-13
 ### Fixed
-- When passing `belongs_to` to Rails, suppress `optional:` option in Rails 4, since it predates the introduction of that option.  
+- When passing `belongs_to` to Rails, suppress the `optional:` option in Rails 4, since that option was added in Rails 5.
 
 ## [0.3.0] - 2020-11-02
 ### Added
