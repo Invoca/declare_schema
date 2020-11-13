@@ -33,7 +33,7 @@ RSpec.describe 'DeclareSchema API' do
       # The migration generator uses this information to create a migration.
       # The following creates and runs the migration:
 
-      generate_migrations '-n', '-m'
+      expect(system("bundle exec rails generate declare_schema:migration -n -m")).to be_truthy
 
       # We're now ready to start demonstrating the API
 
