@@ -4,6 +4,10 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2020-11-13
+### Fixed
+- When passing `belongs_to` to Rails, suppress `optional:` option in Rails 4, since it predates the introduction of that option.  
+
 ## [0.3.0] - 2020-11-02
 ### Added
 - Added support for `belongs_to optional:`.
@@ -43,6 +47,7 @@ using the appropriate Rails configuration attributes.
 ### Added
 - Initial version from https://github.com/Invoca/hobo_fields v4.1.0.
 
+[0.3.1]: https://github.com/Invoca/declare_schema/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Invoca/declare_schema/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Invoca/declare_schema/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/Invoca/declare_schema/compare/v0.1.2...v0.1.3
