@@ -10,14 +10,14 @@ RSpec.describe 'DeclareSchema API' do
 
   describe 'example models' do
     it 'generates a model' do
-      expect(system("bundle exec rails generate declare_schema:model advert title:string body:text")).to be_truthy
+      generate_model 'advert', 'title:string', 'body:text'
 
       # The above will generate the test, fixture and a model file like this:
       # model_declaration = Rails::Generators.invoke('declare_schema:model', ['advert2', 'title:string', 'body:text'])
       # expect(model_declaration.first).to eq([["Advert"], nil, "app/models/advert.rb", nil,
       #                                       [["AdvertTest"], "test/models/advert_test.rb", nil, "test/fixtures/adverts.yml"]])
 
-      expect(File.read("#{TESTAPP_PATH}/app/models/advert.rb")).to eq(<<~EOS)
+      expect_model_definition_to_eq('advert', <<~EOS)
         class Advert < #{active_record_base_class}
 
           fields do
@@ -27,7 +27,8 @@ RSpec.describe 'DeclareSchema API' do
 
         end
       EOS
-      system("rm -rf #{TESTAPP_PATH}/app/models/advert2.rb #{TESTAPP_PATH}/test/models/advert2.rb #{TESTAPP_PATH}/test/fixtures/advert2.rb")
+
+      clean_up_model('advert2')
 
       # The migration generator uses this information to create a migration.
       # The following creates and runs the migration:
@@ -36,13 +37,11 @@ RSpec.describe 'DeclareSchema API' do
 
       # We're now ready to start demonstrating the API
 
-      Rails.application.config.autoload_paths += ["#{TESTAPP_PATH}/app/models"]
-
-      $LOAD_PATH << "#{TESTAPP_PATH}/app/models"
+      load_models
 
       unless Rails::VERSION::MAJOR >= 6
         # TODO: get this to work on Travis for Rails 6
-        Rails::Generators.invoke('declare_schema:migration', %w[-n -m])
+        generate_migrations '-n', '-m'
       end
 
       require 'advert'
