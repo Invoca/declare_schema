@@ -63,7 +63,7 @@ module DeclareSchema
       def constraint(fkey, options = {})
         fkey_s = fkey.to_s
         unless constraint_specs.any? { |constraint_spec| constraint_spec.foreign_key == fkey_s }
-          constraint_specs << DeclareSchema::Model::ForeignKeySpec.new(self, fkey, options)
+          constraint_specs << DeclareSchema::Model::ForeignKeySettings.new(self, fkey, options)
         end
       end
 

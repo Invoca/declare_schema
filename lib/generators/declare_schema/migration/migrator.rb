@@ -60,8 +60,8 @@ module Generators
 
         def constraint_specs
           [
-            ::DeclareSchema::Model::ForeignKeySpec.new(self, foreign_keys.first, parent_table: foreign_key_classes.first.table_name, constraint_name: "#{join_table}_FK1", dependent: :delete),
-            ::DeclareSchema::Model::ForeignKeySpec.new(self, foreign_keys.last,  parent_table: foreign_key_classes.last.table_name,  constraint_name: "#{join_table}_FK2", dependent: :delete)
+            ::DeclareSchema::Model::ForeignKeySettings.new(self, foreign_keys.first, parent_table: foreign_key_classes.first.table_name, constraint_name: "#{join_table}_FK1", dependent: :delete),
+            ::DeclareSchema::Model::ForeignKeySettings.new(self, foreign_keys.last, parent_table: foreign_key_classes.last.table_name, constraint_name: "#{join_table}_FK2", dependent: :delete)
           ]
         end
       end
@@ -489,7 +489,7 @@ module Generators
           return [[], []] if Migrator.disable_indexing
 
           new_table_name = model.table_name
-          existing_fks = ::DeclareSchema::Model::ForeignKeySpec.for_model(model, old_table_name)
+          existing_fks = ::DeclareSchema::Model::ForeignKeySettings.for_model(model, old_table_name)
           model_fks = model.constraint_specs
           add_fks = model_fks - existing_fks
           drop_fks = existing_fks - model_fks
