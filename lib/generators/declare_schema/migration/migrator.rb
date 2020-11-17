@@ -47,8 +47,8 @@ module Generators
 
         def index_specs_with_primary_key
           [
-            ::DeclareSchema::Model::IndexSpec.new(self, foreign_keys, unique: true, name: "PRIMARY_KEY"),
-            ::DeclareSchema::Model::IndexSpec.new(self, foreign_keys.last) # not unique by itself; combines with primary key to be unique
+            ::DeclareSchema::Model::IndexSettings.new(self, foreign_keys, unique: true, name: "PRIMARY_KEY"),
+            ::DeclareSchema::Model::IndexSettings.new(self, foreign_keys.last) # not unique by itself; combines with primary key to be unique
           ]
         end
 
@@ -449,7 +449,7 @@ module Generators
           return [[], []] if Migrator.disable_constraints
 
           new_table_name = model.table_name
-          existing_indexes = ::DeclareSchema::Model::IndexSpec.for_model(model, old_table_name)
+          existing_indexes = ::DeclareSchema::Model::IndexSettings.for_model(model, old_table_name)
           model_indexes_with_equivalents = model.index_specs_with_primary_key
           model_indexes = model_indexes_with_equivalents.map do |i|
             if i.explicit_name.nil?

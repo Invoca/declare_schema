@@ -52,7 +52,7 @@ module DeclareSchema
         # don't double-index fields
         index_fields_s = Array.wrap(fields).map(&:to_s)
         unless index_specs.any? { |index_spec| index_spec.fields == index_fields_s }
-          index_specs << ::DeclareSchema::Model::IndexSpec.new(self, fields, options)
+          index_specs << ::DeclareSchema::Model::IndexSettings.new(self, fields, options)
         end
       end
 
@@ -102,7 +102,7 @@ module DeclareSchema
       private
 
       def rails_default_primary_key
-        ::DeclareSchema::Model::IndexSpec.new(self, [primary_key.to_sym], unique: true, name: DeclareSchema::Model::IndexSpec::PRIMARY_KEY_NAME)
+        ::DeclareSchema::Model::IndexSettings.new(self, [primary_key.to_sym], unique: true, name: DeclareSchema::Model::IndexSettings::PRIMARY_KEY_NAME)
       end
 
       # Extend belongs_to so that it creates a FieldSpec for the foreign key

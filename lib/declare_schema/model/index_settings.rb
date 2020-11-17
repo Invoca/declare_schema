@@ -2,7 +2,7 @@
 
 module DeclareSchema
   module Model
-    class IndexSpec
+    class IndexSettings
       include Comparable
 
       attr_reader :table, :fields, :explicit_name, :name, :unique, :where
