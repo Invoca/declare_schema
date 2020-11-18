@@ -2,11 +2,12 @@
 
 require_relative '../../../../lib/declare_schema/model/index_definition'
 
-# Beware: It looks out that Rails' sqlite3 driver has bugs in retrieving indexes.
+# Beware: It looks out that Rails' sqlite3 driver has a bug in retrieving indexes.
 # In sqlite3/schema_statements, it skips over any index that starts with sqlite_:
 #    next if row["name"].starts_with?("sqlite_")
 # but this will skip over any indexes created to support "unique" column constraints.
-# Fortunately this gem provides an explicit name for all indexes so it shouldn't be affected by that.
+# This gem provides an explicit name for all indexes so it shouldn't be affected by the bug...
+# unless you manually create any Sqlite tables with UNIQUE constraints.
 
 RSpec.describe DeclareSchema::Model::IndexDefinition do
   before do
