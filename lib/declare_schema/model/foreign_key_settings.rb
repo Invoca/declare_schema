@@ -42,14 +42,10 @@ module DeclareSchema
 
       def parent_table_name
         @parent_table_name ||=
-          options[:class_name]&.is_a?(Class) &&
-          options[:class_name].respond_to?(:table_name) &&
-          options[:class_name]&.table_name
-        @parent_table_name ||=
-          options[:class_name]&.constantize &&
-          options[:class_name].constantize.respond_to?(:table_name) &&
-          options[:class_name].constantize.table_name ||
-          foreign_key.gsub(/_id/, '').camelize.constantize.table_name
+          if (klass = options[:class_name])
+            klass = klass.to_s.constantize unless klass.is_a?(Class)
+            klass.try(:table_name)
+          end || foreign_key.sub(/_id\z/, '').camelize.constantize.table_name
       end
 
       attr_writer :parent_table_name

@@ -39,6 +39,7 @@ require 'declare_schema/extensions/active_record/fields_declaration'
 require 'declare_schema/field_declaration_dsl'
 require 'declare_schema/model'
 require 'declare_schema/model/field_spec'
-require 'declare_schema/model/index_spec'
+require 'declare_schema/model/index_settings'
+require 'declare_schema/model/foreign_key_settings'
 
 require 'declare_schema/railtie' if defined?(Rails)

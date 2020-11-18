@@ -5,11 +5,13 @@ module DeclareSchema
     class IndexSettings
       include Comparable
 
+      # TODO: replace `fields` with `columns` and remove alias. -Colin
       attr_reader :table, :fields, :explicit_name, :name, :unique, :where
+      alias columns fields
 
       class IndexNameTooLongError < RuntimeError; end
 
-      PRIMARY_KEY_NAME = "PRIMARY_KEY"
+      PRIMARY_KEY_NAME = "PRIMARY"
       MYSQL_INDEX_NAME_MAX_LENGTH = 64
 
       def initialize(model, fields, options = {})
@@ -31,23 +33,28 @@ module DeclareSchema
 
       class << self
         # extract IndexSpecs from an existing table
+        # always includes the PRIMARY_KEY index
         def for_model(model, old_table_name = nil)
           t = old_table_name || model.table_name
-          connection = model.connection.dup
-          # TODO: Change below to use prepend
-          class << connection              # defeat Rails code that skips the primary keys by changing their name to PRIMARY_KEY_NAME
-            def each_hash(result)
-              super do |hash|
-                if hash[:Key_name] == "PRIMARY"
-                  hash[:Key_name] = PRIMARY_KEY_NAME
-                end
-                yield hash
-              end
+
+          primary_key_columns = Array(model.connection.primary_key(t)) or raise "couldn't find primary key for table #{t}"
+          primary_key_found = false
+          index_specs = model.connection.indexes(t).map do |i|
+            model.ignore_indexes.include?(i.name) and next
+            if i.name == PRIMARY_KEY_NAME
+              i.columns == primary_key_columns && i.unique or
+                raise "primary key on #{t} was not unique on #{primary_key_columns} (was unique=#{i.unique} on #{i.columns})"
+              primary_key_found = true
+            elsif i.columns == primary_key_columns && i.unique
+              raise "found primary key index on #{t}.#{primary_key_columns} but it was called #{i.name}"
             end
-          end
-          connection.indexes(t).map do |i|
-            new(model, i.columns, name: i.name, unique: i.unique, where: i.where, table_name: old_table_name) unless model.ignore_indexes.include?(i.name)
+            new(model, i.columns, name: i.name, unique: i.unique, where: i.where, table_name: old_table_name)
           end.compact
+
+          if !primary_key_found
+            index_specs << new(model, primary_key_columns, name: PRIMARY_KEY_NAME, unique: true, where: nil, table_name: old_table_name)
+          end
+          index_specs
         end
       end
 
@@ -60,9 +67,9 @@ module DeclareSchema
           to_add_primary_key_statement(new_table_name, existing_primary_key)
         else
           r = +"add_index #{new_table_name.to_sym.inspect}, #{fields.map(&:to_sym).inspect}"
-          r += ", unique: true"      if unique
-          r += ", where: '#{where}'" if where.present?
-          r += ", name: '#{name}'"
+          r << ", unique: true"      if unique
+          r << ", where: '#{where}'" if where.present?
+          r << ", name: '#{name}'"
           r
         end
       end
