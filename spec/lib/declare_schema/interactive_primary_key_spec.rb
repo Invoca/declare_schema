@@ -31,21 +31,23 @@ RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
 
     ### migrate to
 
-    # rename to custom primary_key
-    class Foo < ActiveRecord::Base
-      fields do
+    if Rails::VERSION::MAJOR >= 5
+      # rename to custom primary_key
+      class Foo < ActiveRecord::Base
+        fields do
+        end
+        self.primary_key = "foo_id"
       end
-      self.primary_key = "foo_id"
+
+      puts "\n\e[45m Please enter 'drop id' (no quotes) at the next prompt \e[0m"
+      generate_migrations '-n', '-m'
+      expect(Foo.primary_key).to eq('foo_id')
+
+      ### ensure it doesn't cause further migrations
+
+      # check no further migrations
+      up = Generators::DeclareSchema::Migration::Migrator.run.first
+      expect(up).to eq("")
     end
-
-    puts "\n\e[45m Please enter 'drop id' (no quotes) at the next prompt \e[0m"
-    generate_migrations '-n', '-m'
-    expect(Foo.primary_key).to eq('foo_id')
-
-    ### ensure it doesn't cause further migrations
-
-    # check no further migrations
-    up, down = Generators::DeclareSchema::Migration::Migrator.run
-    expect(up).to eq("")
   end
 end
