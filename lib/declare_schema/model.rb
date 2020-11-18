@@ -84,7 +84,7 @@ module DeclareSchema
         add_validations_for_field(name, type, args, options)
         add_index_for_field(name, args, options)
         field_specs[name] = ::DeclareSchema::Model::FieldSpec.new(self, name, type, options)
-        attr_order << name unless name.in?(attr_order)
+        attr_order << name unless attr_order.include?(name)
       end
 
       def index_definitions_with_primary_key
