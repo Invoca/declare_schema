@@ -614,8 +614,6 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         t.integer "id",   limit: 8
         t.string  "name", limit: 255
       end
-
-      add_index "adverts", ["id"], name: "PRIMARY", unique: true
     EOS
 
     rails5_table_create = <<~EOS.strip
