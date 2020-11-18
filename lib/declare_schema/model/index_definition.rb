@@ -75,6 +75,7 @@ module DeclareSchema
         if primary_key? && !ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
           to_add_primary_key_statement(new_table_name, existing_primary_key)
         else
+          # Note: + below keeps that interpolated string from being frozen, so we can << into it.
           r = +"add_index #{new_table_name.to_sym.inspect}, #{fields.map(&:to_sym).inspect}"
           r << ", unique: true"      if unique
           r << ", where: '#{where}'" if where.present?
