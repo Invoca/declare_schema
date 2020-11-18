@@ -79,7 +79,7 @@ module DeclareSchema
       # declarations.
       def declare_field(name, type, *args)
         options = args.extract_options!
-        field_added(name, type, args, options) if respond_to?(:field_added)
+        try(:field_added, name, type, args, options)
         add_formatting_for_field(name, type, args)
         add_validations_for_field(name, type, args, options)
         add_index_for_field(name, args, options)
@@ -166,9 +166,8 @@ module DeclareSchema
       # does not effect the attribute in any way - it just records the
       # metadata.
       def declare_attr_type(name, type, options = {})
-        klass = DeclareSchema.to_class(type)
-        attr_types[name] = DeclareSchema.to_class(type)
-        klass.declared(self, name, options) if klass.respond_to?(:declared)
+        attr_types[name] = klass = DeclareSchema.to_class(type)
+        klass.try(:declared, self, name, options)
       end
 
       # Add field validations according to arguments in the
