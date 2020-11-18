@@ -45,14 +45,14 @@ module Generators
           false # no single-column primary key
         end
 
-        def index_specs_with_primary_key
+        def index_definitions_with_primary_key
           [
-            ::DeclareSchema::Model::IndexSettings.new(self, foreign_keys, unique: true, name: "PRIMARY_KEY"),
-            ::DeclareSchema::Model::IndexSettings.new(self, foreign_keys.last) # not unique by itself; combines with primary key to be unique
+            ::DeclareSchema::Model::IndexDefinition.new(self, foreign_keys, unique: true, name: ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME),
+            ::DeclareSchema::Model::IndexDefinition.new(self, foreign_keys.last) # not unique by itself; combines with primary key to be unique
           ]
         end
 
-        alias_method :index_specs, :index_specs_with_primary_key
+        alias_method :index_definitions, :index_definitions_with_primary_key
 
         def ignore_indexes
           []
@@ -60,8 +60,8 @@ module Generators
 
         def constraint_specs
           [
-            ::DeclareSchema::Model::ForeignKeySettings.new(self, foreign_keys.first, parent_table: foreign_key_classes.first.table_name, constraint_name: "#{join_table}_FK1", dependent: :delete),
-            ::DeclareSchema::Model::ForeignKeySettings.new(self, foreign_keys.last, parent_table: foreign_key_classes.last.table_name, constraint_name: "#{join_table}_FK2", dependent: :delete)
+            ::DeclareSchema::Model::ForeignKeyDefinition.new(self, foreign_keys.first, parent_table: foreign_key_classes.first.table_name, constraint_name: "#{join_table}_FK1", dependent: :delete),
+            ::DeclareSchema::Model::ForeignKeyDefinition.new(self, foreign_keys.last, parent_table: foreign_key_classes.last.table_name, constraint_name: "#{join_table}_FK2", dependent: :delete)
           ]
         end
       end
@@ -341,7 +341,7 @@ module Generators
         end
 
         def create_indexes(model)
-          model.index_specs.map { |i| i.to_add_statement(model.table_name) }
+          model.index_definitions.map { |i| i.to_add_statement(model.table_name) }
         end
 
         def create_constraints(model)
@@ -449,8 +449,8 @@ module Generators
           return [[], []] if Migrator.disable_constraints
 
           new_table_name = model.table_name
-          existing_indexes = ::DeclareSchema::Model::IndexSettings.for_model(model, old_table_name)
-          model_indexes_with_equivalents = model.index_specs_with_primary_key
+          existing_indexes = ::DeclareSchema::Model::IndexDefinition.for_model(model, old_table_name)
+          model_indexes_with_equivalents = model.index_definitions_with_primary_key
           model_indexes = model_indexes_with_equivalents.map do |i|
             if i.explicit_name.nil?
               if ex = existing_indexes.find { |e| i != e && e.equivalent?(i) }
@@ -458,20 +458,20 @@ module Generators
               end
             end || i
           end
-          existing_has_primary_key = existing_indexes.any? { |i| i.name == 'PRIMARY_KEY' }
-          model_has_primary_key    = model_indexes.any?    { |i| i.name == 'PRIMARY_KEY' }
+          existing_has_primary_key = existing_indexes.any? { |i| i.name == ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME }
+          model_has_primary_key    = model_indexes.any?    { |i| i.name == ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME }
 
           add_indexes_init = model_indexes - existing_indexes
           drop_indexes_init = existing_indexes - model_indexes
           undo_add_indexes = []
           undo_drop_indexes = []
           add_indexes = add_indexes_init.map do |i|
-            undo_add_indexes << drop_index(old_table_name, i.name) unless i.name == "PRIMARY_KEY"
+            undo_add_indexes << drop_index(old_table_name, i.name) unless i.name == ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME
             i.to_add_statement(new_table_name, existing_has_primary_key)
           end
           drop_indexes = drop_indexes_init.map do |i|
             undo_drop_indexes << i.to_add_statement(old_table_name, model_has_primary_key)
-            drop_index(new_table_name, i.name) unless i.name == "PRIMARY_KEY"
+            drop_index(new_table_name, i.name) unless i.name == ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME
           end.compact
 
           # the order is important here - adding a :unique, for instance needs to remove then add
@@ -489,7 +489,7 @@ module Generators
           return [[], []] if Migrator.disable_indexing
 
           new_table_name = model.table_name
-          existing_fks = ::DeclareSchema::Model::ForeignKeySettings.for_model(model, old_table_name)
+          existing_fks = ::DeclareSchema::Model::ForeignKeyDefinition.for_model(model, old_table_name)
           model_fks = model.constraint_specs
           add_fks = model_fks - existing_fks
           drop_fks = existing_fks - model_fks

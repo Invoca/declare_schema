@@ -25,8 +25,8 @@ module DeclareSchema
           # and speeds things up a little.
           inheriting_cattr_reader field_specs: HashWithIndifferentAccess.new
 
-          # index_specs holds IndexSpec objects for all the declared indexes.
-          inheriting_cattr_reader index_specs: []
+          # index_definitions holds IndexDefinition objects for all the declared indexes.
+          inheriting_cattr_reader index_definitions: []
           inheriting_cattr_reader ignore_indexes: []
           inheriting_cattr_reader constraint_specs: []
 
@@ -51,19 +51,19 @@ module DeclareSchema
       def index(fields, options = {})
         # don't double-index fields
         index_fields_s = Array.wrap(fields).map(&:to_s)
-        unless index_specs.any? { |index_spec| index_spec.fields == index_fields_s }
-          index_specs << ::DeclareSchema::Model::IndexSettings.new(self, fields, options)
+        unless index_definitions.any? { |index_spec| index_spec.fields == index_fields_s }
+          index_definitions << ::DeclareSchema::Model::IndexDefinition.new(self, fields, options)
         end
       end
 
       def primary_key_index(*fields)
-        index(fields.flatten, unique: true, name: "PRIMARY_KEY")
+        index(fields.flatten, unique: true, name: ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME)
       end
 
       def constraint(fkey, options = {})
         fkey_s = fkey.to_s
         unless constraint_specs.any? { |constraint_spec| constraint_spec.foreign_key == fkey_s }
-          constraint_specs << DeclareSchema::Model::ForeignKeySettings.new(self, fkey, options)
+          constraint_specs << DeclareSchema::Model::ForeignKeyDefinition.new(self, fkey, options)
         end
       end
 
@@ -87,11 +87,11 @@ module DeclareSchema
         attr_order << name unless name.in?(attr_order)
       end
 
-      def index_specs_with_primary_key
-        if index_specs.any?(&:primary_key?)
-          index_specs
+      def index_definitions_with_primary_key
+        if index_definitions.any?(&:primary_key?)
+          index_definitions
         else
-          index_specs + [rails_default_primary_key]
+          index_definitions + [rails_default_primary_key]
         end
       end
 
@@ -102,7 +102,7 @@ module DeclareSchema
       private
 
       def rails_default_primary_key
-        ::DeclareSchema::Model::IndexSettings.new(self, [primary_key.to_sym], unique: true, name: DeclareSchema::Model::IndexSettings::PRIMARY_KEY_NAME)
+        ::DeclareSchema::Model::IndexDefinition.new(self, [primary_key.to_sym], unique: true, name: DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME)
       end
 
       # Extend belongs_to so that it creates a FieldSpec for the foreign key

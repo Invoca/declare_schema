@@ -2,7 +2,7 @@
 
 module DeclareSchema
   module Model
-    class IndexSettings
+    class IndexDefinition
       include Comparable
 
       # TODO: replace `fields` with `columns` and remove alias. -Colin
@@ -33,13 +33,22 @@ module DeclareSchema
 
       class << self
         # extract IndexSpecs from an existing table
-        # always includes the PRIMARY_KEY index
+        # always includes the PRIMARY KEY index
         def for_model(model, old_table_name = nil)
           t = old_table_name || model.table_name
 
-          primary_key_columns = Array(model.connection.primary_key(t)) or raise "couldn't find primary key for table #{t}"
+          primary_key_columns = Array(model.connection.primary_key(t)).presence || begin
+            cols = model.connection.columns(t)
+            Array(
+              if cols.any? { |col| col.name == 'id' }
+                'id'
+              else
+                cols.find { |col| col.type.to_s.include?('int') }&.name or raise "could not guess primary key for #{t} in #{cols.inspect}"
+              end
+            )
+          end
           primary_key_found = false
-          index_specs = model.connection.indexes(t).map do |i|
+          index_definitions = model.connection.indexes(t).map do |i|
             model.ignore_indexes.include?(i.name) and next
             if i.name == PRIMARY_KEY_NAME
               i.columns == primary_key_columns && i.unique or
@@ -52,9 +61,9 @@ module DeclareSchema
           end.compact
 
           if !primary_key_found
-            index_specs << new(model, primary_key_columns, name: PRIMARY_KEY_NAME, unique: true, where: nil, table_name: old_table_name)
+            index_definitions << new(model, primary_key_columns, name: PRIMARY_KEY_NAME, unique: true, where: nil, table_name: old_table_name)
           end
-          index_specs
+          index_definitions
         end
       end
 

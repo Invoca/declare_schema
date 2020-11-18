@@ -2,7 +2,7 @@
 
 module DeclareSchema
   module Model
-    class ForeignKeySettings
+    class ForeignKeyDefinition
       include Comparable
 
       attr_reader :constraint_name, :model, :foreign_key, :options, :on_delete_cascade

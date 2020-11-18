@@ -51,19 +51,19 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
     end
 
+    Advert.connection.schema_cache.clear!
+    Advert.reset_column_information
+
     expect(migrate).to(
       migrate_up(<<~EOS.strip)
         add_column :adverts, :body, :text
         add_column :adverts, :published_at, :datetime
-
-        add_index :adverts, [:id], unique: true, name: 'PRIMARY_KEY'
       EOS
       .and migrate_down(<<~EOS.strip)
         remove_column :adverts, :body
         remove_column :adverts, :published_at
       EOS
     )
-    # TODO: ^ TECH-4975 add_index should not be there
 
     Advert.field_specs.clear # not normally needed
     class Advert < ActiveRecord::Base
@@ -329,7 +329,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     )
 
     Advert.field_specs.delete(:category_id)
-    Advert.index_specs.delete_if { |spec| spec.fields==["category_id"] }
+    Advert.index_definitions.delete_if { |spec| spec.fields==["category_id"] }
 
     # If you specify a custom foreign key, the migration generator observes that:
 
@@ -348,7 +348,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     )
 
     Advert.field_specs.delete(:c_id)
-    Advert.index_specs.delete_if { |spec| spec.fields == ["c_id"] }
+    Advert.index_definitions.delete_if { |spec| spec.fields == ["c_id"] }
 
     # You can avoid generating the index by specifying `index: false`
 
@@ -365,7 +365,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     )
 
     Advert.field_specs.delete(:category_id)
-    Advert.index_specs.delete_if { |spec| spec.fields == ["category_id"] }
+    Advert.index_definitions.delete_if { |spec| spec.fields == ["category_id"] }
 
     # You can specify the index name with :index
 
@@ -384,7 +384,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     )
 
     Advert.field_specs.delete(:category_id)
-    Advert.index_specs.delete_if { |spec| spec.fields == ["category_id"] }
+    Advert.index_definitions.delete_if { |spec| spec.fields == ["category_id"] }
 
     ### Timestamps and Optimimistic Locking
 
@@ -433,7 +433,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       EOS
     )
 
-    Advert.index_specs.delete_if { |spec| spec.fields==["title"] }
+    Advert.index_definitions.delete_if { |spec| spec.fields==["title"] }
 
     # You can ask for a unique index
 
@@ -451,7 +451,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       EOS
     )
 
-    Advert.index_specs.delete_if { |spec| spec.fields == ["title"] }
+    Advert.index_definitions.delete_if { |spec| spec.fields == ["title"] }
 
     # You can specify the name for the index
 
@@ -469,7 +469,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       EOS
     )
 
-    Advert.index_specs.delete_if { |spec| spec.fields==["title"] }
+    Advert.index_definitions.delete_if { |spec| spec.fields==["title"] }
 
     # You can ask for an index outside of the fields block
 
@@ -485,7 +485,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       EOS
     )
 
-    Advert.index_specs.delete_if { |spec| spec.fields == ["title"] }
+    Advert.index_definitions.delete_if { |spec| spec.fields == ["title"] }
 
     # The available options for the index function are `:unique` and `:name`
 
@@ -501,7 +501,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       EOS
     )
 
-    Advert.index_specs.delete_if { |spec| spec.fields == ["title"] }
+    Advert.index_definitions.delete_if { |spec| spec.fields == ["title"] }
 
     # You can create an index on more than one field
 
@@ -517,7 +517,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       EOS
     )
 
-    Advert.index_specs.delete_if { |spec| spec.fields==["title", "category_id"] }
+    Advert.index_definitions.delete_if { |spec| spec.fields==["title", "category_id"] }
 
     # Finally, you can specify that the migration generator should completely ignore an
     # index by passing its name to ignore_index in the model.
@@ -545,7 +545,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         add_column :ads, :title, :string, limit: 255
         add_column :ads, :body, :text
 
-        add_index :ads, [:id], unique: true, name: 'PRIMARY_KEY'
+        add_index :ads, [:id], unique: true, name: 'PRIMARY'
       EOS
       .and migrate_down(<<~EOS.strip)
         remove_column :ads, :title
@@ -553,7 +553,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
         rename_table :ads, :adverts
 
-        add_index :adverts, [:id], unique: true, name: 'PRIMARY_KEY'
+        add_index :adverts, [:id], unique: true, name: 'PRIMARY'
       EOS
     )
 
@@ -588,7 +588,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         add_column :advertisements, :body, :text
         remove_column :advertisements, :name
 
-        add_index :advertisements, [:id], unique: true, name: 'PRIMARY_KEY'
+        add_index :advertisements, [:id], unique: true, name: 'PRIMARY'
       EOS
       .and migrate_down(<<~EOS.strip)
         remove_column :advertisements, :title
@@ -597,7 +597,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
         rename_table :advertisements, :adverts
 
-        add_index :adverts, [:id], unique: true, name: 'PRIMARY_KEY'
+        add_index :adverts, [:id], unique: true, name: 'PRIMARY'
       EOS
     )
 
@@ -615,13 +615,12 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         t.string  "name", limit: 255
       end
 
-      add_index "adverts", ["id"], name: "PRIMARY_KEY", unique: true
+      add_index "adverts", ["id"], name: "PRIMARY", unique: true
     EOS
 
     rails5_table_create = <<~EOS.strip
       create_table "adverts", id: :integer, force: :cascade do |t|
         t.string "name", limit: 255
-        t.index ["id"], name: "PRIMARY_KEY", unique: true
       end
     EOS
 
@@ -670,7 +669,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     Advert.field_specs.delete(:type)
     nuke_model_class(SuperFancyAdvert)
     nuke_model_class(FancyAdvert)
-    Advert.index_specs.delete_if { |spec| spec.fields==["type"] }
+    Advert.index_definitions.delete_if { |spec| spec.fields==["type"] }
 
     ## Coping with multiple changes
 
@@ -728,7 +727,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         add_column :ads, :created_at, :datetime, null: false
         change_column :ads, :title, :string, limit: 255, null: false, default: \"Untitled\"
 
-        add_index :ads, [:id], unique: true, name: 'PRIMARY_KEY'
+        add_index :ads, [:id], unique: true, name: 'PRIMARY'
       EOS
     )
 
@@ -756,7 +755,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       migrate_up(<<~EOS.strip)
         rename_column :adverts, :id, :advert_id
 
-        add_index :adverts, [:advert_id], unique: true, name: 'PRIMARY_KEY'
+        add_index :adverts, [:advert_id], unique: true, name: 'PRIMARY'
       EOS
     )
 
