@@ -80,7 +80,8 @@ module DeclareSchema
       def declare_field(name, type, *args)
         options = args.extract_options!
         try(:field_added, name, type, args, options)
-        add_formatting_for_field(name, type, args)
+        add_serializa_for_field(name, type, options)
+        add_formatting_for_field(name, type)
         add_validations_for_field(name, type, args, options)
         add_index_for_field(name, args, options)
         field_specs[name] = ::DeclareSchema::Model::FieldSpec.new(self, name, type, options)
@@ -191,7 +192,18 @@ module DeclareSchema
         end
       end
 
-      def add_formatting_for_field(name, type, _args)
+      def add_serializa_for_field(name, type, options)
+        if (serialize_value = options.delete(:serialize))
+          type == :string || type == :text or raise ArgumentError, "serialize type must be :string or :text"
+          serialize_args = Array((serialize_value unless serialize_value == true))
+          serialize(name, *serialize_args)
+          if options.has_key?(:default) && !options[:default].is_a?(String)
+            options[:default] = options[:default].to_yaml # ActiveRecord serialization is always stored as YAML
+          end
+        end
+      end
+
+      def add_formatting_for_field(name, type)
         if (type_class = DeclareSchema.to_class(type))
           if "format".in?(type_class.instance_methods)
             before_validation do |record|

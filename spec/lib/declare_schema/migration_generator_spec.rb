@@ -794,6 +794,84 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     expect(Ad.field_specs['company'].options[:validates].inspect).to eq("{:presence=>true, :uniqueness=>{:case_sensitive=>false}}")
   end
 
+  context 'serialize' do
+    before do
+      class Ad < ActiveRecord::Base
+        @serialize_args = []
+
+        class << self
+          attr_reader :serialize_args
+
+          def serialize(*args)
+            @serialize_args << args
+          end
+        end
+      end
+    end
+
+    it 'allows serialize: true' do
+      class Ad < ActiveRecord::Base
+        fields do
+          allow_list :text, limit: 0xFFFF, serialize: true
+        end
+      end
+
+      expect(Ad.serialize_args).to eq([[:allow_list]])
+    end
+
+    it 'allows serialize: Array' do
+      class Ad < ActiveRecord::Base
+        fields do
+          allow_list :string, limit: 1024, serialize: Array
+        end
+      end
+
+      expect(Ad.serialize_args).to eq([[:allow_list, Array]])
+    end
+
+    it 'allows serialize: Hash' do
+      class Ad < ActiveRecord::Base
+        fields do
+          allow_list :string, limit: 1024, serialize: Hash
+        end
+      end
+
+      expect(Ad.serialize_args).to eq([[:allow_list, Hash]])
+    end
+
+    it 'allows a String default' do
+      class Ad < ActiveRecord::Base
+        fields do
+          allow_list :string, limit: 1024, serialize: Array, default: "--- []\n"
+        end
+      end
+
+      expect(Ad.serialize_args).to eq([[:allow_list, Array]])
+      expect(Ad.field_specs['allow_list']&.default).to eq("--- []\n")
+    end
+
+    it 'allows a literal default' do
+      class Ad < ActiveRecord::Base
+        fields do
+          allow_list :string, limit: 1024, serialize: Array, default: []
+        end
+      end
+
+      expect(Ad.serialize_args).to eq([[:allow_list, Array]])
+      expect(Ad.field_specs['allow_list']&.default).to eq("--- []\n")
+    end
+
+    it 'disallows serialize: with a non-string type' do
+      expect do
+        class Ad < ActiveRecord::Base
+          fields do
+            allow_list :integer, limit: 1024, serialize: true
+          end
+        end
+      end.to raise_exception(ArgumentError, /must be :string or :text/)
+    end
+  end
+
   context "for Rails #{Rails::VERSION::MAJOR}" do
     if Rails::VERSION::MAJOR >= 5
       let(:optional_true) { { optional: true } }
