@@ -80,7 +80,7 @@ module DeclareSchema
       def declare_field(name, type, *args)
         options = args.extract_options!
         try(:field_added, name, type, args, options)
-        add_serializa_for_field(name, type, options)
+        add_serialize_for_field(name, type, options)
         add_formatting_for_field(name, type)
         add_validations_for_field(name, type, args, options)
         add_index_for_field(name, args, options)
@@ -192,12 +192,12 @@ module DeclareSchema
         end
       end
 
-      def add_serializa_for_field(name, type, options)
+      def add_serialize_for_field(name, type, options)
         if (serialize_value = options.delete(:serialize))
           type == :string || type == :text or raise ArgumentError, "serialize type must be :string or :text"
           serialize_args = Array((serialize_value unless serialize_value == true))
           serialize(name, *serialize_args)
-          if options.has_key?(:default) && !options[:default].is_a?(String)
+          if options.has_key?(:default) && !options[:default].is_a?(String) && !options[:default].nil?
             options[:default] = options[:default].to_yaml # ActiveRecord serialization is always stored as YAML
           end
         end

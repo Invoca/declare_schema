@@ -839,6 +839,17 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       expect(Ad.serialize_args).to eq([[:allow_list, Hash]])
     end
 
+    it 'allows a nil default' do
+      class Ad < ActiveRecord::Base
+        fields do
+          allow_list :string, limit: 1024, serialize: Array, null: true, default: nil
+        end
+      end
+
+      expect(Ad.serialize_args).to eq([[:allow_list, Array]])
+      expect(Ad.field_specs['allow_list'].default).to eq(nil)
+    end
+
     it 'allows a String default' do
       class Ad < ActiveRecord::Base
         fields do
@@ -847,7 +858,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
 
       expect(Ad.serialize_args).to eq([[:allow_list, Array]])
-      expect(Ad.field_specs['allow_list']&.default).to eq("--- []\n")
+      expect(Ad.field_specs['allow_list'].default).to eq("--- []\n")
     end
 
     it 'allows a literal default' do
