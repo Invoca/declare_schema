@@ -4,7 +4,13 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.2] - Unreleased
+## [0.4.0] - Unreleased
+### Added
+- Fields may be declared with `serialize: true` or `serialize: Array`, `serialize: Hash` etc.
+This invokes the `ActiveSupport::Base#serialize` macro for that field, passing the coder type like `Array` or `Hash`, if given.
+Also, defaults may be given in their matching Ruby type--for example, `[]` or `{}`--in which case they will be transformed with `.to_yaml`
+before being set as the SQL default.
+
 ### Fixed
 - Sqlite now correctly infers the PRIMARY KEY so it won't attempt to add that index again.
 
@@ -51,7 +57,7 @@ using the appropriate Rails configuration attributes.
 ### Added
 - Initial version from https://github.com/Invoca/hobo_fields v4.1.0.
 
-[0.3.2]: https://github.com/Invoca/declare_schema/compare/v0.3.1...v0.3.2
+[0.4.0]: https://github.com/Invoca/declare_schema/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/Invoca/declare_schema/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Invoca/declare_schema/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Invoca/declare_schema/compare/v0.1.3...v0.2.0
