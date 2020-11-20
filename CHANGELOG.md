@@ -6,10 +6,13 @@ Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0
 
 ## [0.4.0] - Unreleased
 ### Added
-- Fields may be declared with `serialize: true` or `serialize: Array`, `serialize: Hash` etc.
-This invokes the `ActiveSupport::Base#serialize` macro for that field, passing the coder type like `Array` or `Hash`, if given.
-Also, defaults may be given in their matching Ruby type--for example, `[]` or `{}`--in which case they will be transformed with `.to_yaml`
-before being set as the SQL default.
+- Fields may be declared with `serialize: true` or `serialize: <serializeable-class>`, where `<serializeable-class>` 
+may be `Array` (`Array` stored as YAML) or `Hash` (`Hash` stored as YAML), (`Array` or `Hash` or any scalar value stored as JSON)
+or any custom serializable class.
+This invokes `ActiveSupport`'s `serialize` macro for that field, passing the serializable class, if given.
+
+  Note: when `serialize:` is used, any `default:` should be given in a matching Ruby type--for example, `[]` or `{}` or `{ 'currency' => 'USD' }`--in
+which case the serializeable class will be used to determine the serialized default value and that will be set as the SQL default.
 
 ### Fixed
 - Sqlite now correctly infers the PRIMARY KEY so it won't attempt to add that index again.
