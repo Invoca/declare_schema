@@ -919,6 +919,54 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
     end
 
+    class ValueClass
+      delegate :present?, :inspect, to: :@value
+
+      def initialize(value)
+        @value = value
+      end
+
+      class << self
+        def dump(object)
+          if object&.present?
+            object.inspect
+          end
+        end
+
+        def load(serialized)
+          if serialized
+            raise 'not used ???'
+          end
+        end
+      end
+    end
+
+    describe 'custom coder' do
+      it 'allows serialize: ValueClass' do
+        class Ad < ActiveRecord::Base
+          fields do
+            allow_list :string, limit: 255, serialize: ValueClass
+          end
+        end
+
+        expect(Ad.serialize_args).to eq([[:allow_list, ValueClass]])
+      end
+
+      it 'allows ValueClass defaults' do
+        class Ad < ActiveRecord::Base
+          fields do
+            allow_hash :string, limit: 255, serialize: ValueClass, null: true, default: ValueClass.new([2])
+            allow_empty_array :string, limit: 255, serialize: ValueClass, null: true, default: ValueClass.new([])
+            allow_null :string, limit: 255, serialize: ValueClass, null: true, default: nil
+          end
+        end
+
+        expect(Ad.field_specs['allow_hash'].default).to eq("[2]")
+        expect(Ad.field_specs['allow_empty_array'].default).to eq(nil)
+        expect(Ad.field_specs['allow_null'].default).to eq(nil)
+      end
+    end
+
     it 'disallows serialize: with a non-string column type' do
       expect do
         class Ad < ActiveRecord::Base

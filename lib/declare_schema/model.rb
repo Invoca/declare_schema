@@ -193,12 +193,12 @@ module DeclareSchema
       end
 
       def add_serialize_for_field(name, type, options)
-        if (serialize_value = options.delete(:serialize))
+        if (serialize_class = options.delete(:serialize))
           type == :string || type == :text or raise ArgumentError, "serialize field type must be :string or :text"
-          serialize_args = Array((serialize_value unless serialize_value == true))
+          serialize_args = Array((serialize_class unless serialize_class == true))
           serialize(name, *serialize_args)
           if options.has_key?(:default)
-            options[:default] = serialized_default(name, serialize_value == true ? Object : serialize_value, options[:default])
+            options[:default] = serialized_default(name, serialize_class == true ? Object : serialize_class, options[:default])
           end
         end
       end
@@ -209,8 +209,10 @@ module DeclareSchema
                   ActiveRecord::Coders::JSON
                 elsif [:load, :dump].all? { |x| class_name_or_coder.respond_to?(x) }
                   class_name_or_coder
-                else
+                elsif Rails::VERSION::MAJOR >= 5
                   ActiveRecord::Coders::YAMLColumn.new(attr_name, class_name_or_coder)
+                else
+                  ActiveRecord::Coders::YAMLColumn.new(class_name_or_coder)
                 end
 
         if default == coder.load(nil)
