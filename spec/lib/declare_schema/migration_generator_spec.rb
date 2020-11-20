@@ -825,14 +825,14 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           fields do
             allow_list :string, limit: 255, serialize: true, null: true, default: []
             allow_hash :string, limit: 255, serialize: true, null: true, default: {}
-            allow_string :string, limit: 255, serialize: true, null: true, default: 'abc'
+            allow_string :string, limit: 255, serialize: true, null: true, default: ['abc']
             allow_null :string, limit: 255, serialize: true, null: true, default: nil
           end
         end
 
         expect(Ad.field_specs['allow_list'].default).to eq("--- []\n")
         expect(Ad.field_specs['allow_hash'].default).to eq("--- {}\n")
-        expect(Ad.field_specs['allow_string'].default).to eq("--- abc\n")
+        expect(Ad.field_specs['allow_string'].default).to eq("---\n- abc\n")
         expect(Ad.field_specs['allow_null'].default).to eq(nil)
       end
     end
