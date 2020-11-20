@@ -794,6 +794,190 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     expect(Ad.field_specs['company'].options[:validates].inspect).to eq("{:presence=>true, :uniqueness=>{:case_sensitive=>false}}")
   end
 
+  describe 'serialize' do
+    before do
+      class Ad < ActiveRecord::Base
+        @serialize_args = []
+
+        class << self
+          attr_reader :serialize_args
+
+          def serialize(*args)
+            @serialize_args << args
+          end
+        end
+      end
+    end
+
+    describe 'untyped' do
+      it 'allows serialize: true' do
+        class Ad < ActiveRecord::Base
+          fields do
+            allow_list :text, limit: 0xFFFF, serialize: true
+          end
+        end
+
+        expect(Ad.serialize_args).to eq([[:allow_list]])
+      end
+
+      it 'converts defaults with .to_yaml' do
+        class Ad < ActiveRecord::Base
+          fields do
+            allow_list :string, limit: 255, serialize: true, null: true, default: []
+            allow_hash :string, limit: 255, serialize: true, null: true, default: {}
+            allow_string :string, limit: 255, serialize: true, null: true, default: ['abc']
+            allow_null :string, limit: 255, serialize: true, null: true, default: nil
+          end
+        end
+
+        expect(Ad.field_specs['allow_list'].default).to eq("--- []\n")
+        expect(Ad.field_specs['allow_hash'].default).to eq("--- {}\n")
+        expect(Ad.field_specs['allow_string'].default).to eq("---\n- abc\n")
+        expect(Ad.field_specs['allow_null'].default).to eq(nil)
+      end
+    end
+
+    describe 'Array' do
+      it 'allows serialize: Array' do
+        class Ad < ActiveRecord::Base
+          fields do
+            allow_list :string, limit: 255, serialize: Array, null: true
+          end
+        end
+
+        expect(Ad.serialize_args).to eq([[:allow_list, Array]])
+      end
+
+      it 'allows Array defaults' do
+        class Ad < ActiveRecord::Base
+          fields do
+            allow_list :string, limit: 255, serialize: Array, null: true, default: [2]
+            allow_string :string, limit: 255, serialize: Array, null: true, default: ['abc']
+            allow_empty :string, limit: 255, serialize: Array, null: true, default: []
+            allow_null :string, limit: 255, serialize: Array, null: true, default: nil
+          end
+        end
+
+        expect(Ad.field_specs['allow_list'].default).to eq("---\n- 2\n")
+        expect(Ad.field_specs['allow_string'].default).to eq("---\n- abc\n")
+        expect(Ad.field_specs['allow_empty'].default).to eq(nil)
+        expect(Ad.field_specs['allow_null'].default).to eq(nil)
+      end
+    end
+
+    describe 'Hash' do
+      it 'allows serialize: Hash' do
+        class Ad < ActiveRecord::Base
+          fields do
+            allow_list :string, limit: 255, serialize: Hash, null: true
+          end
+        end
+
+        expect(Ad.serialize_args).to eq([[:allow_list, Hash]])
+      end
+
+      it 'allows Hash defaults' do
+        class Ad < ActiveRecord::Base
+          fields do
+            allow_loc :string, limit: 255, serialize: Hash, null: true, default: { 'state' => 'CA' }
+            allow_hash :string, limit: 255, serialize: Hash, null: true, default: {}
+            allow_null :string, limit: 255, serialize: Hash, null: true, default: nil
+          end
+        end
+
+        expect(Ad.field_specs['allow_loc'].default).to eq("---\nstate: CA\n")
+        expect(Ad.field_specs['allow_hash'].default).to eq(nil)
+        expect(Ad.field_specs['allow_null'].default).to eq(nil)
+      end
+    end
+
+    describe 'JSON' do
+      it 'allows serialize: JSON' do
+        class Ad < ActiveRecord::Base
+          fields do
+            allow_list :string, limit: 255, serialize: JSON
+          end
+        end
+
+        expect(Ad.serialize_args).to eq([[:allow_list, JSON]])
+      end
+
+      it 'allows JSON defaults' do
+        class Ad < ActiveRecord::Base
+          fields do
+            allow_hash :string, limit: 255, serialize: JSON, null: true, default: { 'state' => 'CA' }
+            allow_empty_array :string, limit: 255, serialize: JSON, null: true, default: []
+            allow_empty_hash :string, limit: 255, serialize: JSON, null: true, default: {}
+            allow_null :string, limit: 255, serialize: JSON, null: true, default: nil
+          end
+        end
+
+        expect(Ad.field_specs['allow_hash'].default).to eq("{\"state\":\"CA\"}")
+        expect(Ad.field_specs['allow_empty_array'].default).to eq("[]")
+        expect(Ad.field_specs['allow_empty_hash'].default).to eq("{}")
+        expect(Ad.field_specs['allow_null'].default).to eq(nil)
+      end
+    end
+
+    class ValueClass
+      delegate :present?, :inspect, to: :@value
+
+      def initialize(value)
+        @value = value
+      end
+
+      class << self
+        def dump(object)
+          if object&.present?
+            object.inspect
+          end
+        end
+
+        def load(serialized)
+          if serialized
+            raise 'not used ???'
+          end
+        end
+      end
+    end
+
+    describe 'custom coder' do
+      it 'allows serialize: ValueClass' do
+        class Ad < ActiveRecord::Base
+          fields do
+            allow_list :string, limit: 255, serialize: ValueClass
+          end
+        end
+
+        expect(Ad.serialize_args).to eq([[:allow_list, ValueClass]])
+      end
+
+      it 'allows ValueClass defaults' do
+        class Ad < ActiveRecord::Base
+          fields do
+            allow_hash :string, limit: 255, serialize: ValueClass, null: true, default: ValueClass.new([2])
+            allow_empty_array :string, limit: 255, serialize: ValueClass, null: true, default: ValueClass.new([])
+            allow_null :string, limit: 255, serialize: ValueClass, null: true, default: nil
+          end
+        end
+
+        expect(Ad.field_specs['allow_hash'].default).to eq("[2]")
+        expect(Ad.field_specs['allow_empty_array'].default).to eq(nil)
+        expect(Ad.field_specs['allow_null'].default).to eq(nil)
+      end
+    end
+
+    it 'disallows serialize: with a non-string column type' do
+      expect do
+        class Ad < ActiveRecord::Base
+          fields do
+            allow_list :integer, limit: 8, serialize: true
+          end
+        end
+      end.to raise_exception(ArgumentError, /must be :string or :text/)
+    end
+  end
+
   context "for Rails #{Rails::VERSION::MAJOR}" do
     if Rails::VERSION::MAJOR >= 5
       let(:optional_true) { { optional: true } }

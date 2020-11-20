@@ -79,12 +79,13 @@ module DeclareSchema
       # declarations.
       def declare_field(name, type, *args)
         options = args.extract_options!
-        field_added(name, type, args, options) if respond_to?(:field_added)
-        add_formatting_for_field(name, type, args)
+        try(:field_added, name, type, args, options)
+        add_serialize_for_field(name, type, options)
+        add_formatting_for_field(name, type)
         add_validations_for_field(name, type, args, options)
         add_index_for_field(name, args, options)
         field_specs[name] = ::DeclareSchema::Model::FieldSpec.new(self, name, type, options)
-        attr_order << name unless name.in?(attr_order)
+        attr_order << name unless attr_order.include?(name)
       end
 
       def index_definitions_with_primary_key
@@ -166,9 +167,8 @@ module DeclareSchema
       # does not effect the attribute in any way - it just records the
       # metadata.
       def declare_attr_type(name, type, options = {})
-        klass = DeclareSchema.to_class(type)
-        attr_types[name] = DeclareSchema.to_class(type)
-        klass.declared(self, name, options) if klass.respond_to?(:declared)
+        attr_types[name] = klass = DeclareSchema.to_class(type)
+        klass.try(:declared, self, name, options)
       end
 
       # Add field validations according to arguments in the
@@ -192,7 +192,37 @@ module DeclareSchema
         end
       end
 
-      def add_formatting_for_field(name, type, _args)
+      def add_serialize_for_field(name, type, options)
+        if (serialize_class = options.delete(:serialize))
+          type == :string || type == :text or raise ArgumentError, "serialize field type must be :string or :text"
+          serialize_args = Array((serialize_class unless serialize_class == true))
+          serialize(name, *serialize_args)
+          if options.has_key?(:default)
+            options[:default] = serialized_default(name, serialize_class == true ? Object : serialize_class, options[:default])
+          end
+        end
+      end
+
+      def serialized_default(attr_name, class_name_or_coder, default)
+        # copied from https://github.com/rails/rails/blob/7d6cb950e7c0e31c2faaed08c81743439156c9f5/activerecord/lib/active_record/attribute_methods/serialization.rb#L70-L76
+        coder = if class_name_or_coder == ::JSON
+                  ActiveRecord::Coders::JSON
+                elsif [:load, :dump].all? { |x| class_name_or_coder.respond_to?(x) }
+                  class_name_or_coder
+                elsif Rails::VERSION::MAJOR >= 5
+                  ActiveRecord::Coders::YAMLColumn.new(attr_name, class_name_or_coder)
+                else
+                  ActiveRecord::Coders::YAMLColumn.new(class_name_or_coder)
+                end
+
+        if default == coder.load(nil)
+          nil # handle Array default: [] or Hash default: {}
+        else
+          coder.dump(default)
+        end
+      end
+
+      def add_formatting_for_field(name, type)
         if (type_class = DeclareSchema.to_class(type))
           if "format".in?(type_class.instance_methods)
             before_validation do |record|
