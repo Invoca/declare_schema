@@ -194,12 +194,29 @@ module DeclareSchema
 
       def add_serialize_for_field(name, type, options)
         if (serialize_value = options.delete(:serialize))
-          type == :string || type == :text or raise ArgumentError, "serialize type must be :string or :text"
+          type == :string || type == :text or raise ArgumentError, "serialize field type must be :string or :text"
           serialize_args = Array((serialize_value unless serialize_value == true))
           serialize(name, *serialize_args)
-          if options.has_key?(:default) && !options[:default].is_a?(String) && !options[:default].nil?
-            options[:default] = options[:default].to_yaml # ActiveRecord serialization is always stored as YAML
+          if options.has_key?(:default)
+            options[:default] = serialized_default(name, serialize_value == true ? Object : serialize_value, options[:default])
           end
+        end
+      end
+
+      def serialized_default(attr_name, class_name_or_coder, default)
+        # copied from https://github.com/rails/rails/blob/7d6cb950e7c0e31c2faaed08c81743439156c9f5/activerecord/lib/active_record/attribute_methods/serialization.rb#L70-L76
+        coder = if class_name_or_coder == ::JSON
+                  ActiveRecord::Coders::JSON
+                elsif [:load, :dump].all? { |x| class_name_or_coder.respond_to?(x) }
+                  class_name_or_coder
+                else
+                  ActiveRecord::Coders::YAMLColumn.new(attr_name, class_name_or_coder)
+                end
+
+        if default == coder.load(nil)
+          nil # handle Array default: [] or Hash default: {}
+        else
+          coder.dump(default)
         end
       end
 
