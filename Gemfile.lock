@@ -54,7 +54,7 @@ GEM
       thor (>= 0.14.0)
     arel (9.0.0)
     ast (2.4.1)
-    bootsnap (1.5.0)
+    bootsnap (1.5.1)
       msgpack (~> 1.0)
     builder (3.2.4)
     byebug (11.1.3)
