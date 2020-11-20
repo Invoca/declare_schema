@@ -6,8 +6,9 @@ Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0
 
 ## [0.4.0] - 2020-11-20
 ### Added
-- Fields may be declared with `serialize: true` or `serialize: <serializeable-class>`, where `<serializeable-class>` 
-may be `Array` (`Array` stored as YAML) or `Hash` (`Hash` stored as YAML), (`Array` or `Hash` or any scalar value stored as JSON)
+- Fields may be declared with `serialize: true` (any value with a valid `.to_yaml` stored as YAML),
+or `serialize: <serializeable-class>`, where `<serializeable-class>` 
+may be `Array` (`Array` stored as YAML) or `Hash` (`Hash` stored as YAML) or `JSON` (any value with a valid `.to_json`, stored as JSON)
 or any custom serializable class.
 This invokes `ActiveSupport`'s `serialize` macro for that field, passing the serializable class, if given.
 
