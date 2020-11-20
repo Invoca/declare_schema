@@ -4,7 +4,7 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.0] - Unreleased
+## [0.4.0] - 2020-11-20
 ### Added
 - Fields may be declared with `serialize: true` or `serialize: <serializeable-class>`, where `<serializeable-class>` 
 may be `Array` (`Array` stored as YAML) or `Hash` (`Hash` stored as YAML), (`Array` or `Hash` or any scalar value stored as JSON)
