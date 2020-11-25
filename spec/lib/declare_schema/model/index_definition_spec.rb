@@ -13,16 +13,25 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
   before do
     load File.expand_path('../prepare_testapp.rb', __dir__)
 
-    class IndexSettingsTestModel < ActiveRecord::Base
+    class IndexDefinitionTestModel < ActiveRecord::Base
       fields do
         name :string, limit: 127, index: true
 
         timestamps
       end
     end
+
+    class IndexDefinitionCompoundIndexModel < ActiveRecord::Base
+      fields do
+        fk1_id :integer
+        fk2_id :integer
+
+        timestamps
+      end
+    end
   end
 
-  let(:model_class) { IndexSettingsTestModel }
+  let(:model_class) { IndexDefinitionTestModel }
 
   describe 'instance methods' do
     let(:model) { model_class.new }
@@ -53,13 +62,20 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
     context 'with a migrated database' do
       before do
         ActiveRecord::Base.connection.execute <<~EOS
-            CREATE TABLE index_settings_test_models (
+            CREATE TABLE index_definition_test_models (
               id INTEGER NOT NULL PRIMARY KEY,
               name TEXT NOT NULL
             )
         EOS
         ActiveRecord::Base.connection.execute <<~EOS
-          CREATE UNIQUE INDEX index_settings_test_models_on_name ON index_settings_test_models(name)
+          CREATE UNIQUE INDEX index_definition_test_models_on_name ON index_definition_test_models(name)
+        EOS
+        ActiveRecord::Base.connection.execute <<~EOS
+            CREATE TABLE index_definition_compound_index_models (
+              fk1_id INTEGER NULL,
+              fk2_id INTEGER NULL,
+              PRIMARY KEY (fk1_id, fk2_id)
+            )
         EOS
         ActiveRecord::Base.connection.schema_cache.clear!
       end
@@ -67,14 +83,38 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
       describe 'for_model' do
         subject { described_class.for_model(model_class) }
 
-        it 'returns the indexes for the model' do
-          expect(subject.size).to eq(2), subject.inspect
-          expect([:name, :columns, :unique].map { |attr| subject[0].send(attr) }).to eq(
-            ['index_settings_test_models_on_name', ['name'], true]
-          )
-          expect([:name, :columns, :unique].map { |attr| subject[1].send(attr) }).to eq(
-            ['PRIMARY', ['id'], true]
-          )
+        context 'with single-column PK' do
+          it 'returns the indexes for the model' do
+            expect(subject.size).to eq(2), subject.inspect
+            expect([:name, :columns, :unique].map { |attr| subject[0].send(attr) }).to eq(
+              ['index_definition_test_models_on_name', ['name'], true]
+            )
+            expect([:name, :columns, :unique].map { |attr| subject[1].send(attr) }).to eq(
+              ['PRIMARY', ['id'], true]
+            )
+          end
+        end
+
+        context 'with compound-column PK' do
+          let(:model_class) { IndexDefinitionCompoundIndexModel }
+
+          it 'returns the indexes for the model' do
+            # Simulate MySQL for Rails 4 work-around
+            if Rails::VERSION::MAJOR < 5
+              expect(model_class.connection).to receive(:primary_key).with('index_definition_compound_index_models').and_return(nil)
+              connection_stub = instance_double(ActiveRecord::ConnectionAdapters::SQLite3Adapter, "connection")
+              expect(connection_stub).to receive(:indexes).
+                with('index_definition_compound_index_models').
+                and_return([DeclareSchema::Model::IndexDefinition.new(model_class, ['fk1_id', 'fk2_id'], name: 'PRIMARY')])
+
+              expect(model_class.connection).to receive(:dup).and_return(connection_stub)
+            end
+
+            expect(subject.size).to eq(1), subject.inspect
+            expect([:name, :columns, :unique].map { |attr| subject[0].send(attr) }).to eq(
+              ['PRIMARY', ['fk1_id', 'fk2_id'], true]
+            )
+          end
         end
       end
     end
