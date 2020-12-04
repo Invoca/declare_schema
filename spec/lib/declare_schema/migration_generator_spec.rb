@@ -43,6 +43,12 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     ActiveRecord::Migration.class_eval(up)
     expect(Advert.columns.map(&:name)).to eq(["id", "name"])
 
+    if Rails::VERSION::MAJOR < 5
+      # Rails 4 sqlite driver doesn't create PK properly. Fix that by dropping and recreating.
+      ActiveRecord::Base.connection.execute("drop table adverts")
+      ActiveRecord::Base.connection.execute('CREATE TABLE "adverts" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar(255))')
+    end
+
     class Advert < ActiveRecord::Base
       fields do
         name :string, limit: 255, null: true
@@ -610,9 +616,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     # Dropping tables is where the automatic down-migration really comes in handy:
 
     rails4_table_create = <<~EOS.strip
-      create_table "adverts", id: false, force: :cascade do |t|
-        t.integer "id",   limit: 8
-        t.string  "name", limit: 255
+      create_table "adverts", force: :cascade do |t|
+        t.string "name", limit: 255
       end
     EOS
 
