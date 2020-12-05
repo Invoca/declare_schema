@@ -62,9 +62,9 @@ module DeclareSchema
 
         private
 
-        # This is the old approach which is still needed for SQLite
+        # This is the old approach which is still needed for MySQL in Rails 4 and SQLite
         def sqlite_compound_primary_key(model, table)
-          ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/) or return nil
+          ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/) || Rails::VERSION::MAJOR < 5 or return nil
 
           connection = model.connection.dup
 
