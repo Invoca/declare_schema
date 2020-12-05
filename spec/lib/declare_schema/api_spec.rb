@@ -39,7 +39,7 @@ RSpec.describe 'DeclareSchema API' do
 
       load_models
 
-      unless Rails::VERSION::MAJOR >= 6
+      if Rails::VERSION::MAJOR == 5
         # TODO: get this to work on Travis for Rails 6
         generate_migrations '-n', '-m'
       end

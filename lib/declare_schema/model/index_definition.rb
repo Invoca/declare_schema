@@ -37,16 +37,9 @@ module DeclareSchema
         def for_model(model, old_table_name = nil)
           t = old_table_name || model.table_name
 
-          primary_key_columns = Array(model.connection.primary_key(t)).presence || begin
-            cols = model.connection.columns(t)
-            Array(
-              if cols.any? { |col| col.name == 'id' }
-                'id'
-              else
-                cols.find { |col| col.type.to_s.include?('int') }&.name or raise "could not guess primary key for #{t} in #{cols.inspect}"
-              end
-            )
-          end
+          primary_key_columns = Array(model.connection.primary_key(t)).presence || sqlite_compound_primary_key(model, t) or
+            raise "could not find primary key for table #{t} in #{model.connection.columns(t).inspect}"
+
           primary_key_found = false
           index_definitions = model.connection.indexes(t).map do |i|
             model.ignore_indexes.include?(i.name) and next
@@ -55,7 +48,8 @@ module DeclareSchema
                 raise "primary key on #{t} was not unique on #{primary_key_columns} (was unique=#{i.unique} on #{i.columns})"
               primary_key_found = true
             elsif i.columns == primary_key_columns && i.unique
-              raise "found primary key index on #{t}.#{primary_key_columns} but it was called #{i.name}"
+              # skip this primary key index since we'll create it below, with PRIMARY_KEY_NAME
+              next
             end
             new(model, i.columns, name: i.name, unique: i.unique, where: i.where, table_name: old_table_name)
           end.compact
@@ -64,6 +58,30 @@ module DeclareSchema
             index_definitions << new(model, primary_key_columns, name: PRIMARY_KEY_NAME, unique: true, where: nil, table_name: old_table_name)
           end
           index_definitions
+        end
+
+        private
+
+        # This is the old approach which is still needed for SQLite
+        def sqlite_compound_primary_key(model, table)
+          ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/) or return nil
+
+          connection = model.connection.dup
+
+          class << connection   # defeat Rails MySQL driver code that skips the primary key by changing its name to a symbol
+            def each_hash(result)
+              super do |hash|
+                if hash[:Key_name] == PRIMARY_KEY_NAME
+                  hash[:Key_name] = PRIMARY_KEY_NAME.to_sym
+                end
+                yield hash
+              end
+            end
+          end
+
+          pk_index = connection.indexes(table).find { |index| index.name.to_s == PRIMARY_KEY_NAME } or return nil
+
+          Array(pk_index.columns)
         end
       end
 

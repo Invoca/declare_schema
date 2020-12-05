@@ -4,6 +4,10 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - Unreleased
+### Fixed
+- Fixed a bug detecting compound primary keys in Rails 4.
+
 ## [0.4.0] - 2020-11-20
 ### Added
 - Fields may be declared with `serialize: true` (any value with a valid `.to_yaml` stored as YAML),
@@ -61,6 +65,7 @@ using the appropriate Rails configuration attributes.
 ### Added
 - Initial version from https://github.com/Invoca/hobo_fields v4.1.0.
 
+[0.4.1]: https://github.com/Invoca/declare_schema/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/Invoca/declare_schema/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/Invoca/declare_schema/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Invoca/declare_schema/compare/v0.2.0...v0.3.0
