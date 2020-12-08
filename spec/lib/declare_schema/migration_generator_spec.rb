@@ -5,7 +5,12 @@ require 'rails'
 RSpec.describe 'DeclareSchema Migration Generator' do
   before do
     load File.expand_path('prepare_testapp.rb', __dir__)
+
+    # Currently tests are run against sqlite which only has support for binary, nocase, and rtrim collation
+    Generators::DeclareSchema::Migration::Migrator.default_collation = :binary
   end
+
+  after { Generators::DeclareSchema::Migration::Migrator.default_collation = Generators::DeclareSchema::Migration::Migrator::DEFAULT_COLLATION }
 
   # DeclareSchema - Migration Generator
   it 'generates migrations' do
@@ -32,7 +37,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     up, _ = Generators::DeclareSchema::Migration::Migrator.run.tap do |migrations|
       expect(migrations).to(
         migrate_up(<<~EOS.strip)
-          create_table :adverts, id: :bigint do |t|
+          create_table :adverts, character_set: :utf8mb4, collation: :binary, id: :bigint do |t|
             t.string :name, limit: 255
           end
         EOS

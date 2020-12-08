@@ -340,7 +340,10 @@ module Generators
         end
 
         def create_table_options(model, disable_auto_increment)
-          create_table_options_array = []
+          create_table_options_array = [
+            "character_set: :#{Migrator.default_character_set}",
+            "collation: :#{Migrator.default_collation}"
+          ]
 
           create_table_options_array <<
             if model.primary_key.blank? || disable_auto_increment

@@ -37,6 +37,8 @@ namespace "test" do
            echo \"gem 'therubyracer'\";
            echo \"gem 'kramdown'\") > Gemfile"
       sh "echo '' > app/models/.gitignore" # because git reset --hard would rm the dir
+      # Currently tests are run against sqlite which only has support for binary, nocase, and rtrim collation
+      sh "echo 'Generators::DeclareSchema::Migration::Migrator.default_collation = :binary' > config/initializers/declare_schema.rb"
       rm ".gitignore" # we need to reset everything in a testapp
       sh "git init && git add . && git commit -m \"initial commit\""
       puts "The testapp has been created in '#{TESTAPP_PATH}'"
