@@ -327,15 +327,8 @@ module Generators
         def create_table(model)
           longest_field_name = model.field_specs.values.map { |f| f.sql_type.to_s.length }.max
           disable_auto_increment = model.respond_to?(:disable_auto_increment) && model.disable_auto_increment
-          primary_key_option =
-            if model.primary_key.blank? || disable_auto_increment
-              ", id: false"
-            elsif model.primary_key == "id"
-              ", id: :bigint"
-            else
-              ", primary_key: :#{model.primary_key}"
-            end
-          (["create_table :#{model.table_name}#{primary_key_option} do |t|"] +
+
+          (["create_table :#{model.table_name}, #{create_table_options(model, disable_auto_increment)} do |t|"] +
           [(disable_auto_increment ? "  t.integer :id, limit: 8, auto_increment: false, primary_key: true" : nil)] +
            model.field_specs.values.sort_by(&:position).map { |f| create_field(f, longest_field_name) } +
            ["end"] + (if Migrator.disable_indexing
@@ -344,6 +337,21 @@ module Generators
                         create_indexes(model) +
                            create_constraints(model)
                       end)).compact * "\n"
+        end
+
+        def create_table_options(model, disable_auto_increment)
+          create_table_options_array = []
+
+          create_table_options_array <<
+            if model.primary_key.blank? || disable_auto_increment
+              "id: false"
+            elsif model.primary_key == "id"
+              "id: :bigint"
+            else
+              "primary_key: :#{model.primary_key}"
+            end
+
+          create_table_options_array.join(", ")
         end
 
         def create_indexes(model)
