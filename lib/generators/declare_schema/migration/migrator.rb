@@ -69,13 +69,19 @@ module Generators
       class Migrator
         class Error < RuntimeError; end
 
-        @ignore_models                    = []
-        @ignore_tables                    = []
+        DEFAULT_CHARACTER_SET = :utf8mb4
+        DEFAULT_COLLATION     = :utf8mb4_general
+
+        @ignore_models                        = []
+        @ignore_tables                        = []
         @before_generating_migration_callback = nil
-        @active_record_class              = ActiveRecord::Base
+        @active_record_class                  = ActiveRecord::Base
+        @default_character_set                = DEFAULT_CHARACTER_SET
+        @default_collation                    = DEFAULT_COLLATION
 
         class << self
-          attr_accessor :ignore_models, :ignore_tables, :disable_indexing, :disable_constraints, :active_record_class
+          attr_accessor :ignore_models, :ignore_tables, :disable_indexing, :disable_constraints,
+                        :active_record_class, :default_character_set, :default_collation
           attr_reader :before_generating_migration_callback
 
           def active_record_class
