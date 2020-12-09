@@ -340,10 +340,9 @@ module Generators
         end
 
         def create_table_options(model, disable_auto_increment)
-          create_table_options_array = [
-            "character_set: :#{Migrator.default_character_set}",
-            "collation: :#{Migrator.default_collation}"
-          ]
+          create_table_options_array = table_options_for_model(model).map do |option, value|
+            "#{option}: :#{value}"
+          end
 
           create_table_options_array <<
             if model.primary_key.blank? || disable_auto_increment
@@ -355,6 +354,17 @@ module Generators
             end
 
           create_table_options_array.join(", ")
+        end
+
+        def table_options_for_model(_model)
+          if ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
+            {}
+          else
+            {
+              character_set: Migrator.default_character_set,
+              collation:     Migrator.default_collation
+            }
+          end
         end
 
         def create_indexes(model)
@@ -453,13 +463,16 @@ module Generators
                                         else
                                           change_foreign_key_constraints(model, current_table_name)
                                         end
+          table_options_changes, undo_table_options_changes = change_table_options(model, current_table_name)
 
           [(renames + adds + removes + changes) * "\n",
            (undo_renames + undo_adds + undo_removes + undo_changes) * "\n",
            index_changes * "\n",
            undo_index_changes * "\n",
            fk_changes * "\n",
-           undo_fk_changes * "\n"]
+           undo_fk_changes * "\n",
+           table_options_changes * "\n",
+           undo_table_options_changes * "\n"]
         end
 
         def change_indexes(model, old_table_name)
@@ -566,6 +579,20 @@ module Generators
             { limit: pk_limit }
           else
             {}
+          end
+        end
+
+        def change_table_options(model, current_table_name)
+          old_options_definition = ::DeclareSchema::Model::TableOptionsDefinition.for_model(model, current_table_name)
+          new_options_definition = ::DeclareSchema::Model::TableOptionsDefinition.new(model.table_name, table_options_for_model(model))
+
+          if old_options_definition.equivalent?(new_options_definition)
+            [[], []]
+          else
+            [
+              [new_options_definition.alter_table_statement],
+              [old_options_definition.alter_table_statement]
+            ]
           end
         end
 

@@ -3,12 +3,7 @@
 RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
   before do
     load File.expand_path('prepare_testapp.rb', __dir__)
-
-    # Currently tests are run against sqlite which only has support for binary, nocase, and rtrim collation
-    Generators::DeclareSchema::Migration::Migrator.default_collation = :binary
   end
-
-  after { Generators::DeclareSchema::Migration::Migrator.default_collation = Generators::DeclareSchema::Migration::Migrator::DEFAULT_COLLATION }
 
   it "allows alternate primary keys" do
     class Foo < ActiveRecord::Base
