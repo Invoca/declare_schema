@@ -51,7 +51,7 @@ module DeclareSchema
       end
 
       def settings
-        @settings ||= table_options.to_s
+        @settings ||= table_options.map { |name, value| "#{TABLE_OPTIONS_TO_SQL_MAPPINGS[name]} #{value}" if value }.compact.join(" ")
       end
 
       def hash
@@ -69,11 +69,12 @@ module DeclareSchema
       alias eql? ==
 
       def to_s
-        table_options.map { |name, value| "#{TABLE_OPTIONS_TO_SQL_MAPPINGS[name]} #{value}" }.join(" ")
+        settings
       end
 
       def alter_table_statement
-        "ALTER TABLE `#{table_name}` #{to_s};"
+        statement = "ALTER TABLE `#{table_name}` #{to_s};"
+        "execute #{statement.inspect}"
       end
     end
   end

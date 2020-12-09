@@ -298,28 +298,33 @@ module Generators
             "drop_table :#{t}"
           end * "\n"
 
-          changes = []
-          undo_changes = []
-          index_changes = []
-          undo_index_changes = []
-          fk_changes = []
-          undo_fk_changes = []
+          changes                    = []
+          undo_changes               = []
+          index_changes              = []
+          undo_index_changes         = []
+          fk_changes                 = []
+          undo_fk_changes            = []
+          table_options_changes      = []
+          undo_table_options_changes = []
+
           to_change.each do |t|
             model = models_by_table_name[t]
             table = to_rename.key(t) || model.table_name
             if table.in?(db_tables)
-              change, undo, index_change, undo_index, fk_change, undo_fk = change_table(model, table)
+              change, undo, index_change, undo_index, fk_change, undo_fk, table_options_change, undo_table_options_change = change_table(model, table)
               changes << change
               undo_changes << undo
               index_changes << index_change
               undo_index_changes << undo_index
               fk_changes << fk_change
               undo_fk_changes << undo_fk
+              table_options_changes << table_options_change
+              undo_table_options_changes << undo_table_options_change
             end
           end
 
-          up = [renames, drops, creates, changes, index_changes, fk_changes].flatten.reject(&:blank?) * "\n\n"
-          down = [undo_changes, undo_renames, undo_drops, undo_creates, undo_index_changes, undo_fk_changes].flatten.reject(&:blank?) * "\n\n"
+          up = [renames, drops, creates, changes, index_changes, fk_changes, table_options_changes].flatten.reject(&:blank?) * "\n\n"
+          down = [undo_changes, undo_renames, undo_drops, undo_creates, undo_index_changes, undo_fk_changes, undo_table_options_changes].flatten.reject(&:blank?) * "\n\n"
 
           [up, down]
         end
@@ -341,8 +346,8 @@ module Generators
 
         def create_table_options(model, disable_auto_increment)
           create_table_options_array = table_options_for_model(model).map do |option, value|
-            "#{option}: :#{value}"
-          end
+            "#{option}: :#{value}" if value
+          end.compact
 
           create_table_options_array <<
             if model.primary_key.blank? || disable_auto_increment
