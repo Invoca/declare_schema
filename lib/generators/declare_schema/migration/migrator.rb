@@ -361,13 +361,13 @@ module Generators
           create_table_options_array.join(", ")
         end
 
-        def table_options_for_model(_model)
+        def table_options_for_model(model)
           if ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
             {}
           else
             {
-              character_set: Migrator.default_character_set,
-              collation:     Migrator.default_collation
+              character_set: model.table_options[:character_set] || Migrator.default_character_set,
+              collation:     model.table_options[:collation] || Migrator.default_collation
             }
           end
         end
