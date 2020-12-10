@@ -330,18 +330,21 @@ module Generators
         end
 
         def create_table(model)
-          longest_field_name = model.field_specs.values.map { |f| f.sql_type.to_s.length }.max
+          longest_field_name     = model.field_specs.values.map { |f| f.sql_type.to_s.length }.max
           disable_auto_increment = model.respond_to?(:disable_auto_increment) && model.disable_auto_increment
+          field_definitions      = [
+            disable_auto_increment ? "t.integer :id, limit: 8, auto_increment: false, primary_key: true" : nil,
+            *(model.field_specs.values.sort_by(&:position).map { |f| create_field(f, longest_field_name) })
+          ].compact
 
-          (["create_table :#{model.table_name}, #{create_table_options(model, disable_auto_increment)} do |t|"] +
-          [(disable_auto_increment ? "  t.integer :id, limit: 8, auto_increment: false, primary_key: true" : nil)] +
-           model.field_specs.values.sort_by(&:position).map { |f| create_field(f, longest_field_name) } +
-           ["end"] + (if Migrator.disable_indexing
-                        []
-                      else
-                        create_indexes(model) +
-                           create_constraints(model)
-                      end)).compact * "\n"
+          <<~EOS.strip
+            create_table :#{model.table_name}, #{create_table_options(model, disable_auto_increment)} do |t|
+              #{field_definitions.join("\n")}
+            end
+
+            #{create_indexes(model).join("\n")     unless Migrator.disable_indexing}
+            #{create_constraints(model).join("\n") unless Migrator.disable_indexing}
+          EOS
         end
 
         def create_table_options(model, disable_auto_increment)
@@ -386,7 +389,7 @@ module Generators
         def create_field(field_spec, field_name_width)
           options = fk_field_options(field_spec.model, field_spec.name).merge(field_spec.sql_options)
           args = [field_spec.name.inspect] + format_options(options, field_spec.sql_type)
-          format("  t.%-*s %s", field_name_width, field_spec.sql_type, args.join(', '))
+          format("t.%-*s %s", field_name_width, field_spec.sql_type, args.join(', '))
         end
 
         def change_table(model, current_table_name)
