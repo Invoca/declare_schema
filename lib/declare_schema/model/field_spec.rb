@@ -45,7 +45,6 @@ module DeclareSchema
         @type = type
         position_option = options.delete(:position)
         @options = options
-
         case type
         when :text
           @options[:default] and raise "default may not be given for :text field #{model}##{@name}"
@@ -54,6 +53,9 @@ module DeclareSchema
           end
         when :string
           @options[:limit] or raise "limit must be given for :string field #{model}##{@name}: #{@options.inspect}; do you want `limit: 255`?"
+        when :bigint
+          @type = :integer
+          @options[:limit] = 8
         end
         @position = position_option || model.field_specs.length
       end
