@@ -453,10 +453,11 @@ module Generators
               change_spec[:limit]     ||= spec.limit   if (spec.sql_type != :text ||
                                                          ::DeclareSchema::Model::FieldSpec.mysql_text_limits?) &&
                                                           (spec.limit || col.limit)
-              change_spec[:precision] = spec.precision unless spec.precision.nil?
-              change_spec[:scale]     = spec.scale     unless spec.scale.nil?
-              change_spec[:null]      = spec.null      unless spec.null && col.null
-              change_spec[:default]   = spec.default   unless spec.default.nil? && col.default.nil?
+              change_spec[:precision]     = spec.precision     unless spec.precision.nil?
+              change_spec[:scale]         = spec.scale         unless spec.scale.nil?
+              change_spec[:null]          = spec.null          unless spec.null && col.null
+              change_spec[:default]       = spec.default       unless spec.default.nil? && col.default.nil?
+              change_spec[:collation]     = spec.collation     if spec.collation_changed?(col)
 
               changes << "change_column :#{new_table_name}, :#{c}, " +
                          ([":#{spec.sql_type}"] + format_options(change_spec, spec.sql_type, changing: true)).join(", ")

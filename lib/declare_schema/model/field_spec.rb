@@ -54,6 +54,9 @@ module DeclareSchema
           end
         when :string
           @options[:limit] or raise "limit must be given for :string field #{model}##{@name}: #{@options.inspect}; do you want `limit: 255`?"
+        else
+          @options[:collation]     and raise "collation can only given for :string and :text fields"
+          @options[:character_set] and raise "character_set can only given for :string and :text fields"
         end
         @position = position_option || model.field_specs.length
       end
@@ -102,6 +105,16 @@ module DeclareSchema
         @options[:default]
       end
 
+      def collation
+        if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
+          (@options[:collation] || model.table_options[:collation] || Generators::DeclareSchema::Migration::Migrator.default_collation).to_s
+        end
+      end
+
+      def collation_changed?(col_spec)
+        collation != collation_and_character_set_for_column(col_spec)[:collation]
+      end
+
       def same_type?(col_spec)
         type = sql_type
         normalized_type           = TYPE_SYNONYMS[type] || type
@@ -110,7 +123,13 @@ module DeclareSchema
       end
 
       def different_to?(col_spec)
-        !(same_type?(col_spec) && same_attributes?(col_spec))
+        !same_as(col_spec)
+      end
+
+      def same_as(col_spec)
+        same_type?(col_spec) &&
+          same_attributes?(col_spec) &&
+          same_character_set_and_collation?(col_spec)
       end
 
       private
@@ -138,6 +157,37 @@ module DeclareSchema
             end
             col_value == send(k)
           end
+        end
+      end
+
+      def same_character_set_and_collation?(col_spec)
+        if type.in?([:text, :string])
+          current_settings = collation_and_character_set_for_column(col_spec)
+          current_settings[:collation] == collation
+        else
+          true
+        end
+      end
+
+      def collation_and_character_set_for_column(col_spec)
+        column_name   = col_spec.name
+        table_name    = col_spec.table_name
+
+        if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
+          database_name = ActiveRecord::Base.connection.current_database
+
+          query = <<~EOS
+            SELECT C.character_set_name, C.collation_name
+            FROM information_schema.`COLUMNS` C
+            WHERE C.table_schema = "#{database_name}" AND C.table_name = "#{table_name}" AND C.column_name = "#{column_name}";
+          EOS
+          defaults = ActiveRecord::Base.connection.select_one(query)
+          {
+            character_set: defaults["character_set_name"],
+            collation:     defaults["collation_name"]
+          }
+        else
+          {}
         end
       end
 
