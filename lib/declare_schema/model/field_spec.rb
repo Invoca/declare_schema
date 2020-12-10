@@ -110,35 +110,36 @@ module DeclareSchema
       end
 
       def different_to?(col_spec)
-        !same_type?(col_spec) ||
-          begin
-            native_type = native_types[type]
-            check_attributes = [:null, :default]
-            check_attributes += [:precision, :scale] if sql_type == :decimal && !col_spec.is_a?(SQLITE_COLUMN_CLASS)  # remove when rails fixes https://rails.lighthouseapp.com/projects/8994-ruby-on-rails/tickets/2872
-            check_attributes -= [:default] if sql_type == :text && col_spec.class.name =~ /mysql/i
-            check_attributes << :limit if sql_type.in?([:string, :binary, :varbinary, :integer, :enum]) ||
-                                          (sql_type == :text && self.class.mysql_text_limits?)
-            check_attributes.any? do |k|
-              if k == :default
-                case Rails::VERSION::MAJOR
-                when 4
-                  col_spec.type_cast_from_database(col_spec.default) != col_spec.type_cast_from_database(default)
-                else
-                  cast_type = ActiveRecord::Base.connection.lookup_cast_type_from_column(col_spec) or raise "cast_type not found for #{col_spec.inspect}"
-                  cast_type.deserialize(col_spec.default) != cast_type.deserialize(default)
-                end
-              else
-                col_value = col_spec.send(k)
-                if col_value.nil? && native_type
-                  col_value = native_type[k]
-                end
-                col_value != send(k)
-              end
-            end
-          end
+        !(same_type?(col_spec) && same_attributes?(col_spec))
       end
 
       private
+
+      def same_attributes?(col_spec)
+        native_type = native_types[type]
+        check_attributes = [:null, :default]
+        check_attributes += [:precision, :scale] if sql_type == :decimal && !col_spec.is_a?(SQLITE_COLUMN_CLASS)  # remove when rails fixes https://rails.lighthouseapp.com/projects/8994-ruby-on-rails/tickets/2872
+        check_attributes -= [:default] if sql_type == :text && col_spec.class.name =~ /mysql/i
+        check_attributes << :limit if sql_type.in?([:string, :binary, :varbinary, :integer, :enum]) ||
+                                      (sql_type == :text && self.class.mysql_text_limits?)
+        check_attributes.all? do |k|
+          if k == :default
+            case Rails::VERSION::MAJOR
+            when 4
+              col_spec.type_cast_from_database(col_spec.default) == col_spec.type_cast_from_database(default)
+            else
+              cast_type = ActiveRecord::Base.connection.lookup_cast_type_from_column(col_spec) or raise "cast_type not found for #{col_spec.inspect}"
+              cast_type.deserialize(col_spec.default) == cast_type.deserialize(default)
+            end
+          else
+            col_value = col_spec.send(k)
+            if col_value.nil? && native_type
+              col_value = native_type[k]
+            end
+            col_value == send(k)
+          end
+        end
+      end
 
       def native_type?(type)
         type.to_sym != :primary_key && native_types.has_key?(type)
