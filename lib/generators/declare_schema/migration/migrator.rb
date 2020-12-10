@@ -346,7 +346,10 @@ module Generators
 
         def create_table_options(model, disable_auto_increment)
           create_table_options_array = table_options_for_model(model).map do |option, value|
-            "#{option}: :#{value}" if value
+            if value
+              create_table_option = ::DeclareSchema::Model::TableOptionsDefinition::TABLE_OPTIONS_TO_CREATE_TABLE_MAPPINGS[option] or raise "Unknown create_table option encountered #{option}"
+              "#{create_table_option}: :#{value}"
+            end
           end.compact
 
           create_table_options_array <<
@@ -468,7 +471,11 @@ module Generators
                                         else
                                           change_foreign_key_constraints(model, current_table_name)
                                         end
-          table_options_changes, undo_table_options_changes = change_table_options(model, current_table_name)
+          table_options_changes, undo_table_options_changes = if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
+                                                                change_table_options(model, current_table_name)
+                                                              else
+                                                                [[], []]
+                                                              end
 
           [(renames + adds + removes + changes) * "\n",
            (undo_renames + undo_adds + undo_removes + undo_changes) * "\n",

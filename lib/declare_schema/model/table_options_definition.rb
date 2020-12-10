@@ -10,11 +10,16 @@ module DeclareSchema
         collation:     'COLLATE'
       }.freeze
 
+      TABLE_OPTIONS_TO_CREATE_TABLE_MAPPINGS = {
+        character_set: 'charset',
+        collation:     'collation'
+      }.freeze
+
       class << self
         def for_model(model, old_table_name = nil)
           table_name    = old_table_name || model.table_name
           table_options = if model.connection.class.name.match?(/mysql/i)
-            mysql_table_options(model.connection, table_name)
+                            mysql_table_options(model.connection, table_name)
                           else
                             {}
                           end
