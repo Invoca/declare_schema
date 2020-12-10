@@ -55,8 +55,8 @@ module DeclareSchema
         when :string
           @options[:limit] or raise "limit must be given for :string field #{model}##{@name}: #{@options.inspect}; do you want `limit: 255`?"
         else
-          @options[:collation]     and raise "collation can only given for :string and :text fields"
-          @options[:character_set] and raise "character_set can only given for :string and :text fields"
+          @options[:collation] and raise "collation can only given for :string and :text fields"
+          @options[:charset]   and raise "charset can only given for :string and :text fields"
         end
         @position = position_option || model.field_specs.length
       end
@@ -112,7 +112,7 @@ module DeclareSchema
       end
 
       def collation_changed?(col_spec)
-        collation != collation_and_character_set_for_column(col_spec)[:collation]
+        collation != collation_and_charset_for_column(col_spec)[:collation]
       end
 
       def same_type?(col_spec)
@@ -129,7 +129,7 @@ module DeclareSchema
       def same_as(col_spec)
         same_type?(col_spec) &&
           same_attributes?(col_spec) &&
-          same_character_set_and_collation?(col_spec)
+          same_charset_and_collation?(col_spec)
       end
 
       private
@@ -160,16 +160,16 @@ module DeclareSchema
         end
       end
 
-      def same_character_set_and_collation?(col_spec)
+      def same_charset_and_collation?(col_spec)
         if type.in?([:text, :string])
-          current_settings = collation_and_character_set_for_column(col_spec)
+          current_settings = collation_and_charset_for_column(col_spec)
           current_settings[:collation] == collation
         else
           true
         end
       end
 
-      def collation_and_character_set_for_column(col_spec)
+      def collation_and_charset_for_column(col_spec)
         column_name   = col_spec.name
         table_name    = col_spec.table_name
 
@@ -183,8 +183,8 @@ module DeclareSchema
           EOS
           defaults = ActiveRecord::Base.connection.select_one(query)
           {
-            character_set: defaults["character_set_name"],
-            collation:     defaults["collation_name"]
+            charset:   defaults["character_set_name"],
+            collation: defaults["collation_name"]
           }
         else
           {}

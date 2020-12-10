@@ -43,16 +43,16 @@ module Generators
           end
         end
 
-        describe '#default_character_set' do
-          subject { described_class.default_character_set }
+        describe '#default_charset' do
+          subject { described_class.default_charset }
 
           context 'when not explicitly set' do
             it { should eq(:utf8mb4) }
           end
 
           context 'when explicitly set' do
-            before { described_class.default_character_set = :utf8 }
-            after  { described_class.default_character_set = described_class::DEFAULT_CHARACTER_SET }
+            before { described_class.default_charset = :utf8 }
+            after  { described_class.default_charset = described_class::DEFAULT_CHARSET }
             it     { should eq(:utf8) }
           end
         end

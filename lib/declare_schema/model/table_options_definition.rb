@@ -6,13 +6,8 @@ module DeclareSchema
       include Comparable
 
       TABLE_OPTIONS_TO_SQL_MAPPINGS = {
-        character_set: 'CHARACTER SET',
-        collation:     'COLLATE'
-      }.freeze
-
-      TABLE_OPTIONS_TO_CREATE_TABLE_MAPPINGS = {
-        character_set: 'charset',
-        collation:     'collation'
+        charset:   'CHARACTER SET',
+        collation: 'COLLATE'
       }.freeze
 
       class << self
@@ -38,8 +33,8 @@ module DeclareSchema
           defaults = connection.select_one(query)
 
           {
-            character_set: defaults["character_set_name"].to_sym,
-            collation:     defaults["collation_name"].to_sym
+            charset:   defaults["character_set_name"].to_sym,
+            collation: defaults["collation_name"].to_sym
           }
         end
       end

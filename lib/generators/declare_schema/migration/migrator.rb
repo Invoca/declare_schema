@@ -69,19 +69,19 @@ module Generators
       class Migrator
         class Error < RuntimeError; end
 
-        DEFAULT_CHARACTER_SET = :utf8mb4
-        DEFAULT_COLLATION     = :utf8mb4_general
+        DEFAULT_CHARSET   = :utf8mb4
+        DEFAULT_COLLATION = :utf8mb4_general
 
         @ignore_models                        = []
         @ignore_tables                        = []
         @before_generating_migration_callback = nil
         @active_record_class                  = ActiveRecord::Base
-        @default_character_set                = DEFAULT_CHARACTER_SET
+        @default_charset                      = DEFAULT_CHARSET
         @default_collation                    = DEFAULT_COLLATION
 
         class << self
           attr_accessor :ignore_models, :ignore_tables, :disable_indexing, :disable_constraints,
-                        :active_record_class, :default_character_set, :default_collation
+                        :active_record_class, :default_charset, :default_collation
           attr_reader :before_generating_migration_callback
 
           def active_record_class
@@ -364,8 +364,8 @@ module Generators
             {}
           else
             {
-              character_set: model.table_options[:character_set] || Migrator.default_character_set,
-              collation:     model.table_options[:collation] || Migrator.default_collation
+              charset:   model.table_options[:charset] || Migrator.default_charset,
+              collation: model.table_options[:collation] || Migrator.default_collation
             }
           end
         end
