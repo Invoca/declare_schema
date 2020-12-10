@@ -111,6 +111,12 @@ module DeclareSchema
         end
       end
 
+      def charset
+        if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
+          (@options[:charset] || model.table_options[:charset] || Generators::DeclareSchema::Migration::Migrator.default_charset).to_s
+        end
+      end
+
       def collation_changed?(col_spec)
         collation != collation_and_charset_for_column(col_spec)[:collation]
       end

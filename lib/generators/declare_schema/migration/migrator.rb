@@ -452,7 +452,8 @@ module Generators
               change_spec[:scale]         = spec.scale         unless spec.scale.nil?
               change_spec[:null]          = spec.null          unless spec.null && col.null
               change_spec[:default]       = spec.default       unless spec.default.nil? && col.default.nil?
-              change_spec[:collation]     = spec.collation     if spec.collation_changed?(col)
+              change_spec[:collation]     = spec.collation     unless spec.collation.nil?
+              change_spec[:charset]       = spec.charset       unless spec.charset.nil?
 
               changes << "change_column :#{new_table_name}, :#{c}, " +
                          ([":#{spec.sql_type}"] + format_options(change_spec, spec.sql_type, changing: true)).join(", ")
