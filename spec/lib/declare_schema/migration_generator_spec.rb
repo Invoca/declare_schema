@@ -1093,4 +1093,29 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       expect(base_class).to eq("(Rails::VERSION::MAJOR >= 5 ? ActiveRecord::Migration[4.2] : ActiveRecord::Migration)")
     end
   end
+
+  context 'Does not generate migrations' do
+    it 'for aliased fields bigint -> integer limit 8' do
+      class Advert < ActiveRecord::Base
+        fields do
+          price :bigint
+        end
+      end
+
+      # run migration generator and run migration
+      generate_migrations '-n', '-m'
+
+      # show migration is generated with one field
+      migrations = Dir.glob('db/migrate/*declare_schema_migration*.rb')
+      expect(migrations.size).to eq(1), migrations.inspect
+
+      class Advert < ActiveRecord::Base
+        fields do
+          price :integer, limit: 8
+        end
+      end
+
+      expect { generate_migrations '-n', '-g' }.to output("Database and models match -- nothing to change\n").to_stdout
+    end
+  end
 end
