@@ -330,9 +330,10 @@ module Generators
         end
 
         def create_table(model)
-          longest_field_name     = model.field_specs.values.map { |f| f.sql_type.to_s.length }.max
-          disable_auto_increment = model.respond_to?(:disable_auto_increment) && model.disable_auto_increment
-          field_definitions      = [
+          longest_field_name       = model.field_specs.values.map { |f| f.sql_type.to_s.length }.max
+          disable_auto_increment   = model.respond_to?(:disable_auto_increment) && model.disable_auto_increment
+          table_options_definition = ::DeclareSchema::Model::TableOptionsDefinition.new(model.table_name, table_options_for_model(model))
+          field_definitions        = [
             disable_auto_increment ? "t.integer :id, limit: 8, auto_increment: false, primary_key: true" : nil,
             *(model.field_specs.values.sort_by(&:position).map { |f| create_field(f, longest_field_name) })
           ].compact
@@ -342,29 +343,20 @@ module Generators
               #{field_definitions.join("\n")}
             end
 
-            #{create_indexes(model).join("\n")     unless Migrator.disable_indexing}
-            #{create_constraints(model).join("\n") unless Migrator.disable_indexing}
+            #{table_options_definition.alter_table_statement unless ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)}
+            #{create_indexes(model).join("\n")               unless Migrator.disable_indexing}
+            #{create_constraints(model).join("\n")           unless Migrator.disable_indexing}
           EOS
         end
 
         def create_table_options(model, disable_auto_increment)
-          create_table_options_array = table_options_for_model(model).map do |option, value|
-            if value
-              create_table_option = ::DeclareSchema::Model::TableOptionsDefinition::TABLE_OPTIONS_TO_CREATE_TABLE_MAPPINGS[option] or raise "Unknown create_table option encountered #{option}"
-              "#{create_table_option}: :#{value}"
-            end
-          end.compact
-
-          create_table_options_array <<
-            if model.primary_key.blank? || disable_auto_increment
-              "id: false"
-            elsif model.primary_key == "id"
-              "id: :bigint"
-            else
-              "primary_key: :#{model.primary_key}"
-            end
-
-          create_table_options_array.join(", ")
+          if model.primary_key.blank? || disable_auto_increment
+            "id: false"
+          elsif model.primary_key == "id"
+            "id: :bigint"
+          else
+            "primary_key: :#{model.primary_key}"
+          end
         end
 
         def table_options_for_model(model)
