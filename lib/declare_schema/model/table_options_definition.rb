@@ -5,13 +5,6 @@ module DeclareSchema
     class TableOptionsDefinition
       include Comparable
 
-      # Example ActiveRecord Table Options String
-      # "ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci"
-      ACTIVE_RECORD_TO_TABLE_OPTIONS_MAPPINGS = {
-        'CHARSET' => :character_set,
-        'COLLATE' => :collation
-      }.freeze
-
       TABLE_OPTIONS_TO_SQL_MAPPINGS = {
         character_set: 'CHARACTER SET',
         collation:     'COLLATE'
@@ -20,22 +13,29 @@ module DeclareSchema
       class << self
         def for_model(model, old_table_name = nil)
           table_name    = old_table_name || model.table_name
-          table_options = parse_table_options(model.connection.table_options(table_name))
+          table_options = if model.connection.class.name.match?(/mysql/i)
+            mysql_table_options(model.connection, table_name)
+                          else
+                            {}
+                          end
 
           new(table_name, table_options)
         end
 
         private
 
-        def parse_table_options(table_options)
-          table_option_string = table_options&.dig(:options) || ""
-          table_option_string.split(' ').reduce({}) do |options_hash, option|
-            name, value = option.split('=', 2)
-            if value && (standardized_name = ACTIVE_RECORD_TO_TABLE_OPTIONS_MAPPINGS[name])
-              options_hash[standardized_name] = value
-            end
-            options_hash
-          end
+        def mysql_table_options(connection, table_name)
+          query = <<~EOS
+            SELECT CCSA.character_set_name, CCSA.collation_name
+            FROM information_schema.`TABLES` T, information_schema.`COLLATION_CHARACTER_SET_APPLICABILITY` CCSA
+            WHERE CCSA.collation_name = T.table_collation AND T.table_schema = "#{connection.current_database}" AND T.table_name = "#{table_name}";
+          EOS
+          defaults = connection.select_one(query)
+
+          {
+            character_set: defaults["character_set_name"].to_sym,
+            collation:     defaults["collation_name"].to_sym
+          }
         end
       end
 
