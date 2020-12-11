@@ -33,8 +33,8 @@ module DeclareSchema
           defaults = connection.select_one(query)
 
           {
-            charset:   defaults["character_set_name"].to_sym,
-            collation: defaults["collation_name"].to_sym
+            charset:   defaults["character_set_name"],
+            collation: defaults["collation_name"]
           }
         end
       end
@@ -67,10 +67,7 @@ module DeclareSchema
       end
 
       alias eql? ==
-
-      def to_s
-        settings
-      end
+      alias to_s settings
 
       def alter_table_statement
         statement = "ALTER TABLE `#{table_name}` #{to_s};"
