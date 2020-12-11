@@ -55,7 +55,7 @@ module DeclareSchema
           @options[:limit] or raise "limit must be given for :string field #{model}##{@name}: #{@options.inspect}; do you want `limit: 255`?"
         when :bigint
           @type = :integer
-          @options[:limit] = 8
+          @options = options.merge(limit: 8)
         end
         @position = position_option || model.field_specs.length
       end
