@@ -70,6 +70,68 @@ DeclareSchema::Migration::Migrator.before_generating_migration do
 end
 ```
 
+## Declaring Character Set and Collation
+_Note: This feature currently only works for MySQL database configurations._
+
+With the addition of emojis, there has come a need to dynamically define the
+character set and collation for individual tables and columns in the database.
+With `declare_schema` this can be configured at three separate levels
+
+### Global Configuration
+The character set and collation for all tables and fields can be set at the global level
+using the `Generators::DeclareSchema::Migrator.default_charset=` and
+`Generators::DeclareSchema::Migrator.default_collation=` configuration methods.
+
+For example, adding the following to your `config/initializers` directory will
+turn all tables into emoji supporting tables:
+
+**declare_schema.rb**
+```ruby
+# frozen_string_literal: true
+
+Generators::DeclareSchema::Migrator.default_charset   = "utf8mb4"
+Generators::DeclareSchema::Migrator.default_collation = "utf8mb4_general"
+```
+
+### Table Configuration
+In order to configure a table's default character set and collation, the `charset` and
+`collation` arguments can be added to the `fields` block.
+
+For example, if you have a comments model that needs emoji support, it would look
+like the following:
+
+**app/models/comment.rb**
+```ruby
+# frozen_string_literal: true
+
+class Comment < ActiveRecord::Base
+  fields charset: "utf8mb4", collation: "utf8mb4_general" do
+    subject :string, limit: 255
+    content :text,   limit: 0xffff_ffff
+  end
+end
+```
+
+### Field Configuration
+An if you're looking to only change the character set and collation for a single field
+in the table, simply set the `charset` and `collation` configuration options on the
+field definition itself.
+
+For example, if you only want to support emojis for the content of a comment, it would
+look like the following:
+
+**app/models/comment.rb**
+```ruby
+# frozen_string_literal: true
+
+class Comment < ActiveRecord::Base
+  fields do
+    subject :string, limit: 255
+    context :text,   limit: 0xffff_ffff, charset: "utf8mb4", collation: "utf8mb4_general"
+  end
+end
+```
+
 ## Installing
 
 Install the `DeclareSchema` gem directly:
