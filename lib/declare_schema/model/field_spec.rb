@@ -55,8 +55,8 @@ module DeclareSchema
         when :string
           @options[:limit] or raise "limit must be given for :string field #{model}##{@name}: #{@options.inspect}; do you want `limit: 255`?"
         else
-          @options[:collation] and raise "collation can only given for :string and :text fields"
-          @options[:charset]   and raise "charset can only given for :string and :text fields"
+          @options[:collation] and raise "collation may only given for :string and :text fields"
+          @options[:charset]   and raise "charset may only given for :string and :text fields"
         end
         @position = position_option || model.field_specs.length
       end
