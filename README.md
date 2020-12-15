@@ -73,9 +73,13 @@ end
 ## Declaring Character Set and Collation
 _Note: This feature currently only works for MySQL database configurations._
 
-With the addition of emojis, there has come a need to dynamically define the
-character set and collation for individual tables and columns in the database.
-With `declare_schema` this can be configured at three separate levels
+MySQL originally supported UTF-8 in the range of 1-3 bytes (`mb3` or "multi-byte 3")
+which covered the full set of Unicode code points at the time: U+0000 - U+FFFF.
+But later, Unicode was extended beyond U+FFFF to make room for emojis, and with that
+UTF-8 require 1-4 bytes (`mb4` or "multi-byte 4"). With this addition, there has
+come a need to dynamically define the character set and collation for individual
+tables and columns in the database. With `declare_schema` this can be configured
+at three separate levels
 
 ### Global Configuration
 The character set and collation for all tables and fields can be set at the global level
@@ -83,7 +87,7 @@ using the `Generators::DeclareSchema::Migrator.default_charset=` and
 `Generators::DeclareSchema::Migrator.default_collation=` configuration methods.
 
 For example, adding the following to your `config/initializers` directory will
-turn all tables into emoji supporting tables:
+turn all tables into `utf8mb4` supporting tables:
 
 **declare_schema.rb**
 ```ruby
@@ -97,7 +101,7 @@ Generators::DeclareSchema::Migrator.default_collation = "utf8mb4_general"
 In order to configure a table's default character set and collation, the `charset` and
 `collation` arguments can be added to the `fields` block.
 
-For example, if you have a comments model that needs emoji support, it would look
+For example, if you have a comments model that needs `utf8mb4` support, it would look
 like the following:
 
 **app/models/comment.rb**
@@ -113,11 +117,11 @@ end
 ```
 
 ### Field Configuration
-An if you're looking to only change the character set and collation for a single field
+If you're looking to only change the character set and collation for a single field
 in the table, simply set the `charset` and `collation` configuration options on the
 field definition itself.
 
-For example, if you only want to support emojis for the content of a comment, it would
+For example, if you only want to support `utf8mb4` for the content of a comment, it would
 look like the following:
 
 **app/models/comment.rb**
