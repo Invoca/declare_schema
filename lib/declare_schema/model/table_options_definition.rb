@@ -34,9 +34,12 @@ module DeclareSchema
                   T.table_name = #{connection.quote_string(table_name)};
           EOS
 
+          defaults["character_set_name"] or raise "character_set_name missing from #{defaults.inspect}"
+          defaults["collation_name"]     or raise "collation_name missing from #{defaults.inspect}"
+
           {
-            charset:   defaults["character_set_name"] or raise "character_set_name missing from #{defaults.inspect}",
-            collation: defaults["collation_name"] or raise "collation_name missing from #{defaults.inspect}"
+            charset:   defaults["character_set_name"],
+            collation: defaults["collation_name"]
           }
         end
       end

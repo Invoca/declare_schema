@@ -117,10 +117,6 @@ module DeclareSchema
         end
       end
 
-      def collation_changed?(col_spec)
-        collation != collation_and_charset_for_column(col_spec)[:collation]
-      end
-
       def same_type?(col_spec)
         type = sql_type
         normalized_type           = TYPE_SYNONYMS[type] || type
@@ -128,14 +124,14 @@ module DeclareSchema
         normalized_type == normalized_col_spec_type
       end
 
-      def different_to?(col_spec)
-        !same_as(col_spec)
+      def different_to?(table_name, col_spec)
+        !same_as(table_name, col_spec)
       end
 
-      def same_as(col_spec)
+      def same_as(table_name, col_spec)
         same_type?(col_spec) &&
           same_attributes?(col_spec) &&
-          same_charset_and_collation?(col_spec)
+          same_charset_and_collation?(table_name, col_spec)
       end
 
       private
@@ -166,13 +162,17 @@ module DeclareSchema
         end
       end
 
-      def same_charset_and_collation?(col_spec)
-        !type.in?([:text, :string]) || collation == collation_and_charset_for_column(col_spec)
+      def same_charset_and_collation?(table_name, col_spec)
+        current_collation_and_charset = collation_and_charset_for_column(table_name, col_spec)
+
+        !type.in?([:text, :string]) || (
+          collation == current_collation_and_charset[:collation] &&
+          charset == current_collation_and_charset[:charset]
+        )
       end
 
-      def collation_and_charset_for_column(col_spec)
+      def collation_and_charset_for_column(table_name, col_spec)
         column_name   = col_spec.name
-        table_name    = col_spec.table_name
         connection    = ActiveRecord::Base.connection
 
         if connection.class.name.match?(/mysql/i)
@@ -186,9 +186,12 @@ module DeclareSchema
                   C.column_name = #{connection.quote_string(column_name)};
           EOS
 
+          defaults["character_set_name"] or raise "character_set_name missing from #{defaults.inspect}"
+          defaults["collation_name"]     or raise "collation_name missing from #{defaults.inspect}"
+
           {
-            charset:   defaults["character_set_name"] or raise "character_set_name missing from #{defaults.inspect}",
-            collation: defaults["collation_name"] or raise "collation_name missing from #{defaults.inspect}"
+            charset:   defaults["character_set_name"],
+            collation: defaults["collation_name"]
           }
         else
           {}
