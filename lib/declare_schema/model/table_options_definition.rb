@@ -25,16 +25,18 @@ module DeclareSchema
         private
 
         def mysql_table_options(connection, table_name)
-          query = <<~EOS
+          database = connection.current_database
+          defaults = connection.select_one(<<~EOS)
             SELECT CCSA.character_set_name, CCSA.collation_name
             FROM information_schema.`TABLES` T, information_schema.`COLLATION_CHARACTER_SET_APPLICABILITY` CCSA
-            WHERE CCSA.collation_name = T.table_collation AND T.table_schema = "#{connection.current_database}" AND T.table_name = "#{table_name}";
+            WHERE CCSA.collation_name = T.table_collation AND
+                  T.table_schema = #{connection.quote_string(database)} AND
+                  T.table_name = #{connection.quote_string(table_name)};
           EOS
-          defaults = connection.select_one(query)
 
           {
-            charset:   defaults["character_set_name"],
-            collation: defaults["collation_name"]
+            charset:   defaults["character_set_name"] or raise "character_set_name missing from #{defaults.inspect}",
+            collation: defaults["collation_name"] or raise "collation_name missing from #{defaults.inspect}"
           }
         end
       end
@@ -70,7 +72,7 @@ module DeclareSchema
       alias to_s settings
 
       def alter_table_statement
-        statement = "ALTER TABLE `#{table_name}` #{to_s};"
+        statement = "ALTER TABLE #{ActiveRecord::Base.connection.quote_table_name(table_name)} #{to_s};"
         "execute #{statement.inspect}"
       end
     end

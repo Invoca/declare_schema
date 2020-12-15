@@ -167,30 +167,28 @@ module DeclareSchema
       end
 
       def same_charset_and_collation?(col_spec)
-        if type.in?([:text, :string])
-          current_settings = collation_and_charset_for_column(col_spec)
-          current_settings[:collation] == collation
-        else
-          true
-        end
+        !type.in?([:text, :string]) || collation == collation_and_charset_for_column(col_spec)
       end
 
       def collation_and_charset_for_column(col_spec)
         column_name   = col_spec.name
         table_name    = col_spec.table_name
+        connection    = ActiveRecord::Base.connection
 
-        if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
-          database_name = ActiveRecord::Base.connection.current_database
+        if connection.class.name.match?(/mysql/i)
+          database_name = connection.current_database
 
-          query = <<~EOS
+          defaults = connection.select_one(<<~EOS)
             SELECT C.character_set_name, C.collation_name
             FROM information_schema.`COLUMNS` C
-            WHERE C.table_schema = "#{database_name}" AND C.table_name = "#{table_name}" AND C.column_name = "#{column_name}";
+            WHERE C.table_schema = #{connection.quote_string(database_name)} AND
+                  C.table_name = #{connection.quote_string(table_name)} AND
+                  C.column_name = #{connection.quote_string(column_name)};
           EOS
-          defaults = ActiveRecord::Base.connection.select_one(query)
+
           {
-            charset:   defaults["character_set_name"],
-            collation: defaults["collation_name"]
+            charset:   defaults["character_set_name"] or raise "character_set_name missing from #{defaults.inspect}",
+            collation: defaults["collation_name"] or raise "collation_name missing from #{defaults.inspect}"
           }
         else
           {}
