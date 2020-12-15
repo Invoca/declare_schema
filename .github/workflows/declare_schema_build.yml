@@ -8,13 +8,6 @@ jobs:
     name: DeclareSchema Build
     runs-on: ubuntu-latest
     steps:
-      - name: Before Install
-        id: before_install
-        shell: bash
-        run: |
-          echo y | rvm @global do gem install bundler -v 1.17.3 --force --default
-          gem install bundler -v 1.17.3 --force --default
-          gem install bundler -v 1.17.3
       - name: Checkout Branch
         id: checkout_branch
         uses: actions/checkout@v2
