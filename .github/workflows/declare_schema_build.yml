@@ -11,7 +11,10 @@ jobs:
       - name: Before Install
         id: before_install
         shell: bash
-        run: gem install bundler -v 1.17.3
+        run: |
+          echo y | rvm @global do gem install bundler -v 1.17.3 --force --default
+          gem install bundler -v 1.17.3 --force --default
+          gem install bundler -v 1.17.3
       - name: Checkout Branch
         id: checkout_branch
         uses: actions/checkout@v2
