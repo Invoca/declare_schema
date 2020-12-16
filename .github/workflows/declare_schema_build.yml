@@ -7,6 +7,9 @@ jobs:
   build:
     name: DeclareSchema Build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        gemfile: [ gemfiles/rails_4.gemfile, gemfiles/rails_5.gemfile, gemfiles/rails_6.gemfile ]
     steps:
       - name: Setup Ruby
         id: setup_ruby
@@ -16,9 +19,6 @@ jobs:
         uses: actions/checkout@v2
       - name: Appraisals
         id: appraisals
-        strategy:
-          matrix:
-            gemfile: [gemfiles/rails_4.gemfile, gemfiles/rails_5.gemfile, gemfiles/rails_6.gemfile]
         steps:
           run: |
             gem install bundler -v 1.17.3
