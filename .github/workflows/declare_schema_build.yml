@@ -21,7 +21,7 @@ jobs:
         id: appraisals
         run: |
           gem install bundler -v 1.17.3
-          bundle exec appraisal install
+          bundle install --gemfile=${{ matrix.gemfile }}
           git config --global user.email "example@example.com"
           git config --global user.name "example"
           bundle exec rake test:prepare_testapp[force]
