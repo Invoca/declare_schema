@@ -22,8 +22,8 @@ jobs:
       - name: Run Tests
         id: run_tests
         run: |
-          git config --global user.email "m.romero013@gmail.com"
-          git config --global user.name "madelynrr"
+          git config --global user.email "example@example.com"
+          git config --global user.name "example"
           bundle exec rake test:prepare_testapp[force]
           bundle exec rake test:all < test_responses.txt
 
