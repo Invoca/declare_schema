@@ -19,12 +19,11 @@ jobs:
         uses: actions/checkout@v2
       - name: Appraisals
         id: appraisals
-        steps:
-          run: |
-            gem install bundler -v 1.17.3
-            bundle install
-            git config --global user.email "example@example.com"
-            git config --global user.name "example"
-            bundle exec rake test:prepare_testapp[force]
-            bundle exec rake test:all < test_responses.txt
+        run: |
+          gem install bundler -v 1.17.3
+          bundle install
+          git config --global user.email "example@example.com"
+          git config --global user.name "example"
+          bundle exec rake test:prepare_testapp[force]
+          bundle exec rake test:all < test_responses.txt
 
