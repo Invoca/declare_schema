@@ -14,16 +14,17 @@ jobs:
       - name: Checkout Branch
         id: checkout_branch
         uses: actions/checkout@v2
-      - name: Install
-        id: install
-        run: |
-          gem install bundler -v 1.17.3
-          bundle install --jobs=3 --retry=3 --path=${BUNDLE_PATH:-vendor/bundle}
-      - name: Run Tests
-        id: run_tests
-        run: |
-          git config --global user.email "example@example.com"
-          git config --global user.name "example"
-          bundle exec rake test:prepare_testapp[force]
-          bundle exec rake test:all < test_responses.txt
+      - name: Appraisals
+        id: appraisals
+        strategy:
+          matrix:
+            gemfile: [gemfiles/rails_4.gemfile, gemfiles/rails_5.gemfile, gemfiles/rails_6.gemfile]
+        steps:
+          run: |
+            gem install bundler -v 1.17.3
+            bundle install
+            git config --global user.email "example@example.com"
+            git config --global user.name "example"
+            bundle exec rake test:prepare_testapp[force]
+            bundle exec rake test:all < test_responses.txt
 
