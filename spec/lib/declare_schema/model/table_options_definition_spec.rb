@@ -60,15 +60,15 @@ RSpec.describe DeclareSchema::Model::TableOptionsDefinition do
           double(ActiveRecord::ConnectionAdapters::Mysql2Adapter).tap do |stub_connection|
             expect(stub_connection).to receive(:class).and_return(ActiveRecord::ConnectionAdapters::Mysql2Adapter)
             expect(stub_connection).to receive(:current_database).and_return('test_database')
-            expect(stub_connection).to receive(:quote_string).with('test_database').and_return('"test_database"')
-            expect(stub_connection).to receive(:quote_string).with(model_class.table_name).and_return("\"#{model_class.table_name}\"")
+            expect(stub_connection).to receive(:quote_string).with('test_database').and_return('test_database')
+            expect(stub_connection).to receive(:quote_string).with(model_class.table_name).and_return(model_class.table_name)
             expect(stub_connection).to(
               receive(:select_one).with(<<~EOS)
                 SELECT CCSA.character_set_name, CCSA.collation_name
                 FROM information_schema.`TABLES` T, information_schema.`COLLATION_CHARACTER_SET_APPLICABILITY` CCSA
                 WHERE CCSA.collation_name = T.table_collation AND
-                      T.table_schema = "test_database" AND
-                      T.table_name = "#{model_class.table_name}";
+                      T.table_schema = 'test_database' AND
+                      T.table_name = '#{model_class.table_name}';
               EOS
               .and_return({ "character_set_name" => "utf8", "collation_name" => "utf8_general" })
             )

@@ -179,9 +179,9 @@ module DeclareSchema
           defaults = connection.select_one(<<~EOS)
             SELECT C.character_set_name, C.collation_name
             FROM information_schema.`COLUMNS` C
-            WHERE C.table_schema = #{connection.quote_string(database_name)} AND
-                  C.table_name = #{connection.quote_string(table_name)} AND
-                  C.column_name = #{connection.quote_string(column_name)};
+            WHERE C.table_schema = '#{connection.quote_string(database_name)}' AND
+                  C.table_name = '#{connection.quote_string(table_name)}' AND
+                  C.column_name = '#{connection.quote_string(column_name)}';
           EOS
 
           defaults["character_set_name"] or raise "character_set_name missing from #{defaults.inspect}"

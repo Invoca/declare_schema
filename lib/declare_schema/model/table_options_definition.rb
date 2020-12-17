@@ -30,8 +30,8 @@ module DeclareSchema
             SELECT CCSA.character_set_name, CCSA.collation_name
             FROM information_schema.`TABLES` T, information_schema.`COLLATION_CHARACTER_SET_APPLICABILITY` CCSA
             WHERE CCSA.collation_name = T.table_collation AND
-                  T.table_schema = #{connection.quote_string(database)} AND
-                  T.table_name = #{connection.quote_string(table_name)};
+                  T.table_schema = '#{connection.quote_string(database)}' AND
+                  T.table_name = '#{connection.quote_string(table_name)}';
           EOS
 
           defaults["character_set_name"] or raise "character_set_name missing from #{defaults.inspect}"
