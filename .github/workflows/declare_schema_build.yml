@@ -19,8 +19,9 @@ jobs:
       - name: Setup Ruby
         id: setup_ruby
         steps:
-          - uses: actions/checkout@v2
-          - uses: actions/setup-ruby@v1
+          uses: |
+            actions/checkout@v2
+            actions/setup-ruby@v1
             with:
               ruby-version: ${{ matrix.ruby }}
       - name: Appraisals
