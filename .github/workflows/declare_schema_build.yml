@@ -13,7 +13,9 @@ jobs:
     steps:
       - name: Setup Ruby
         id: setup_ruby
-        uses: actions/setup-ruby@v1
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler: 1.17.3
       - name: Check Ruby Version
         run: |
           ruby --version
@@ -24,7 +26,6 @@ jobs:
         id: install
         run: |
           ruby --version
-          gem install bundler -v 1.17.3
           bundle install
           git config --global user.email "example@example.com"
           git config --global user.name "example"
