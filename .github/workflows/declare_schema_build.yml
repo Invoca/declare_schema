@@ -20,7 +20,7 @@ jobs:
         id: setup_ruby
         uses: actions/setup-ruby@v1
         with:
-          - ruby-version: ${{ matrix.ruby }}
+          ruby-version: ${{ matrix.ruby }}
       - name: Checkout Branch
         id: checkout_branch
         uses: actions/checkout@v2
