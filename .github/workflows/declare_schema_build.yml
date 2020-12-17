@@ -21,8 +21,6 @@ jobs:
         uses: |
           actions/checkout@v2
           actions/setup-ruby@v1
-          with:
-            ruby-version: ${{ matrix.ruby }}
       - name: Appraisals
         id: appraisals
         run: |
