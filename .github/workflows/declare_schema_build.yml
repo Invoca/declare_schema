@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        gemfile: [ gemfiles/rails_4.gemfile, gemfiles/rails_5.gemfile, gemfiles/rails_6.gemfile ]
+        gemfile: [ Gemfile, gemfiles/rails_4.gemfile, gemfiles/rails_5.gemfile, gemfiles/rails_6.gemfile ]
     steps:
       - name: Checkout Branch
         id: checkout_branch
@@ -22,15 +22,6 @@ jobs:
       - name: Check Ruby Version
         run: |
           ruby --version
-      - name: DeclareSchema Build
-        id: declare_schema_build
-        run: |
-          ruby --version
-          bundle install
-          git config --global user.email "example@example.com"
-          git config --global user.name "example"
-          bundle exec rake test:prepare_testapp[force]
-          bundle exec rake test:all < test_responses.txt
       - name: Appraisals
         id: appraisals
         run: |
