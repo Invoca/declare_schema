@@ -1102,10 +1102,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         end
       end
 
-      # run migration generator and run migration
       generate_migrations '-n', '-m'
 
-      # show migration is generated with one field
       migrations = Dir.glob('db/migrate/*declare_schema_migration*.rb')
       expect(migrations.size).to eq(1), migrations.inspect
 
