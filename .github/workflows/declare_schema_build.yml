@@ -22,8 +22,15 @@ jobs:
       - name: Check Ruby Version
         run: |
           ruby --version
-      - name: Install
-        id: install
+      - name: DeclareSchema Build
+        id: declare_schema_build
+        run: |
+          ruby --version
+          bundle install
+          bundle exec rake test:prepare_testapp[force]
+          bundle exec rake test:all < test_responses.txt
+      - name: Appraisals
+        id: appraisals
         run: |
           ruby --version
           bundle install --gemfile=${{ matrix.gemfile }}
