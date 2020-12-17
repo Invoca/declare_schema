@@ -131,7 +131,7 @@ module DeclareSchema
       def same_as(table_name, col_spec)
         same_type?(col_spec) &&
           same_attributes?(col_spec) &&
-          same_charset_and_collation?(table_name, col_spec)
+          (!type.in?([:text, :string]) || same_charset_and_collation?(table_name, col_spec))
       end
 
       private
@@ -165,10 +165,8 @@ module DeclareSchema
       def same_charset_and_collation?(table_name, col_spec)
         current_collation_and_charset = collation_and_charset_for_column(table_name, col_spec)
 
-        !type.in?([:text, :string]) || (
-          collation == current_collation_and_charset[:collation] &&
+        collation == current_collation_and_charset[:collation] &&
           charset == current_collation_and_charset[:charset]
-        )
       end
 
       def collation_and_charset_for_column(table_name, col_spec)
