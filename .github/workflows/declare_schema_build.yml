@@ -20,6 +20,7 @@ jobs:
       - name: Setup Ruby
         id: setup_ruby
         uses: actions/setup-ruby@v1
+      - name: Check Ruby Version
         run: |
           ruby --version
       - name: Checkout Branch
