@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        ruby: [2.4.5, 2.5.8, 2.6.5, 2.7.1]
         gemfile: [ gemfiles/rails_4.gemfile, gemfiles/rails_5.gemfile, gemfiles/rails_6.gemfile ]
     steps:
       - name: Setup Ruby
