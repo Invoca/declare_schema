@@ -20,14 +20,18 @@ jobs:
       - name: Setup Ruby
         id: setup_ruby
         uses: actions/setup-ruby@v1
+        run: |
+          ruby --version
       - name: Checkout Branch
         id: checkout_branch
         uses: actions/checkout@v2
       - name: Appraisals
         id: appraisals
         run: |
+          ruby --version
           gem install bundler -v 1.17.3
           bundle install --gemfile=${{ matrix.gemfile }}
+          ruby --version
           git config --global user.email "example@example.com"
           git config --global user.name "example"
           bundle exec rake test:prepare_testapp[force]
