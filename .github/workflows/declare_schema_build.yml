@@ -20,8 +20,6 @@ jobs:
       - name: Checkout Branch
         id: checkout_branch
         uses: actions/checkout@v2
-      - name: Appraisals
-        id: appraisals
       - name: Install
         id: install
         run: |
