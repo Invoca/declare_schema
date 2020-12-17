@@ -27,6 +27,8 @@ jobs:
         run: |
           ruby --version
           bundle install
+          git config --global user.email "example@example.com"
+          git config --global user.name "example"
           bundle exec rake test:prepare_testapp[force]
           bundle exec rake test:all < test_responses.txt
       - name: Appraisals
