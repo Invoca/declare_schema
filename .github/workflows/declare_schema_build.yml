@@ -19,7 +19,7 @@ jobs:
     steps:
       - name: Setup Ruby
         id: setup_ruby
-        uses: actions/setup-ruby@v1
+        uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}
       - name: Check Ruby Version
