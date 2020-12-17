@@ -4,6 +4,7 @@ RSpec.describe 'DeclareSchema Model FieldSpec' do
   before do
     load File.expand_path('prepare_testapp.rb', __dir__)
   end
+
   context 'There are no model columns to change' do
     it '#different_to should return false for int8 == int8' do
       class Advert < ActiveRecord::Base
