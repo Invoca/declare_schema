@@ -11,6 +11,9 @@ jobs:
       matrix:
         gemfile: [ gemfiles/rails_4.gemfile, gemfiles/rails_5.gemfile, gemfiles/rails_6.gemfile ]
     steps:
+      - name: Checkout Branch
+        id: checkout_branch
+        uses: actions/checkout@v2
       - name: Setup Ruby
         id: setup_ruby
         uses: ruby/setup-ruby@v1
@@ -19,9 +22,6 @@ jobs:
       - name: Check Ruby Version
         run: |
           ruby --version
-      - name: Checkout Branch
-        id: checkout_branch
-        uses: actions/checkout@v2
       - name: Install
         id: install
         run: |
