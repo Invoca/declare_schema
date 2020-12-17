@@ -18,9 +18,10 @@ jobs:
     steps:
       - name: Setup Ruby
         id: setup_ruby
-        uses: |
-          actions/checkout@v2
-          actions/setup-ruby@v1
+        uses: actions/setup-ruby@v1
+      - name: Checkout Branch
+        id: checkout_branch
+        uses: actions/checkout@v2
       - name: Appraisals
         id: appraisals
         run: |
