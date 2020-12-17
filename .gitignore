@@ -12,3 +12,4 @@
 
 # appraisal
 gemfiles/*.lock
+.idea
