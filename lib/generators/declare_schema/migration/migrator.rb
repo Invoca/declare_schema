@@ -23,6 +23,10 @@ module Generators
           end
         end
 
+        def table_options
+          {}
+        end
+
         def table_name
           join_table
         end
