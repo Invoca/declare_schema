@@ -32,7 +32,6 @@ jobs:
         id: appraisals
         run: |
           ruby --version
-          gem install bundler -v 1.17.3
           bundle install --gemfile=${{ matrix.gemfile }}
           ruby --version
           git config --global user.email "example@example.com"
