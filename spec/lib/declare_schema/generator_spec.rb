@@ -27,15 +27,28 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
     EOS
 
-    expect_test_definition_to_eq('alpha/beta', <<~EOS)
-      require 'test_helper'
+    case Rails::VERSION::MAJOR
+    when 4, 5
+      expect_test_definition_to_eq('alpha/beta', <<~EOS)
+        require 'test_helper'
 
-      class Alpha::BetaTest < ActiveSupport::TestCase
-        # test "the truth" do
-        #   assert true
-        # end
-      end
-    EOS
+        class Alpha::BetaTest < ActiveSupport::TestCase
+          # test "the truth" do
+          #   assert true
+          # end
+        end
+      EOS
+    else
+      expect_test_definition_to_eq('alpha/beta', <<~EOS)
+        require "test_helper"
+
+        class Alpha::BetaTest < ActiveSupport::TestCase
+          # test "the truth" do
+          #   assert true
+          # end
+        end
+      EOS
+    end
 
     case Rails::VERSION::MAJOR
     when 4
