@@ -70,6 +70,72 @@ DeclareSchema::Migration::Migrator.before_generating_migration do
 end
 ```
 
+## Declaring Character Set and Collation
+_Note: This feature currently only works for MySQL database configurations._
+
+MySQL originally supported UTF-8 in the range of 1-3 bytes (`mb3` or "multi-byte 3")
+which covered the full set of Unicode code points at the time: U+0000 - U+FFFF.
+But later, Unicode was extended beyond U+FFFF to make room for emojis, and with that
+UTF-8 require 1-4 bytes (`mb4` or "multi-byte 4"). With this addition, there has
+come a need to dynamically define the character set and collation for individual
+tables and columns in the database. With `declare_schema` this can be configured
+at three separate levels
+
+### Global Configuration
+The character set and collation for all tables and fields can be set at the global level
+using the `Generators::DeclareSchema::Migrator.default_charset=` and
+`Generators::DeclareSchema::Migrator.default_collation=` configuration methods.
+
+For example, adding the following to your `config/initializers` directory will
+turn all tables into `utf8mb4` supporting tables:
+
+**declare_schema.rb**
+```ruby
+# frozen_string_literal: true
+
+Generators::DeclareSchema::Migration::Migrator.default_charset   = "utf8mb4"
+Generators::DeclareSchema::Migration::Migrator.default_collation = "utf8mb4_general"
+```
+
+### Table Configuration
+In order to configure a table's default character set and collation, the `charset` and
+`collation` arguments can be added to the `fields` block.
+
+For example, if you have a comments model that needs `utf8mb4` support, it would look
+like the following:
+
+**app/models/comment.rb**
+```ruby
+# frozen_string_literal: true
+
+class Comment < ActiveRecord::Base
+  fields charset: "utf8mb4", collation: "utf8mb4_general" do
+    subject :string, limit: 255
+    content :text,   limit: 0xffff_ffff
+  end
+end
+```
+
+### Field Configuration
+If you're looking to only change the character set and collation for a single field
+in the table, simply set the `charset` and `collation` configuration options on the
+field definition itself.
+
+For example, if you only want to support `utf8mb4` for the content of a comment, it would
+look like the following:
+
+**app/models/comment.rb**
+```ruby
+# frozen_string_literal: true
+
+class Comment < ActiveRecord::Base
+  fields do
+    subject :string, limit: 255
+    context :text,   limit: 0xffff_ffff, charset: "utf8mb4", collation: "utf8mb4_general"
+  end
+end
+```
+
 ## Installing
 
 Install the `DeclareSchema` gem directly:
