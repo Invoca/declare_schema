@@ -23,7 +23,6 @@ jobs:
         id: setup_ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: ${{ matrix.ruby }}
           bundler: 1.17.3
       - name: Check Ruby Version
         run: |
@@ -32,7 +31,7 @@ jobs:
         id: appraisals
         run: |
           ruby --version
-          bundle install --gemfile=${{ matrix.gemfile }} --jobs=3 --retry=3 --path=${BUNDLE_PATH:-vendor/bundle}
+          bundle install --gemfile=${{ matrix.gemfile }}
           ruby --version
           rails --version
           git config --global user.email "example@example.com"
