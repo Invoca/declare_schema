@@ -32,7 +32,6 @@ jobs:
         id: appraisals
         run: |
           ruby --version
-          rails --version
           bundle install --gemfile=${{ matrix.gemfile }} --jobs=3 --retry=3 --path=${BUNDLE_PATH:-vendor/bundle}
           ruby --version
           rails --version
