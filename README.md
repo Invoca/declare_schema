@@ -93,8 +93,8 @@ turn all tables into `utf8mb4` supporting tables:
 ```ruby
 # frozen_string_literal: true
 
-Generators::DeclareSchema::Migrator.default_charset   = "utf8mb4"
-Generators::DeclareSchema::Migrator.default_collation = "utf8mb4_general"
+Generators::DeclareSchema::Migration::Migrator.default_charset   = "utf8mb4"
+Generators::DeclareSchema::Migration::Migrator.default_collation = "utf8mb4_general"
 ```
 
 ### Table Configuration
