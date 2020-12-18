@@ -8,6 +8,7 @@ jobs:
     name: DeclareSchema Build
     runs-on: ubuntu-latest
     strategy:
+      max-parallel: 1
       matrix:
         ruby: [2.4.5, 2.5.8, 2.6.5, 2.7.1]
         gemfile: [ gemfiles/rails_4.gemfile, gemfiles/rails_5.gemfile, gemfiles/rails_6.gemfile ]
