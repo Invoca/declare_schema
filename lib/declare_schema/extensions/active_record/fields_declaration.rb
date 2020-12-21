@@ -6,12 +6,13 @@ require 'declare_schema/field_declaration_dsl'
 
 module DeclareSchema
   module FieldsDsl
-    def fields(&block)
+    def fields(table_options = {}, &block)
       # Any model that calls 'fields' gets DeclareSchema::Model behavior
       DeclareSchema::Model.mix_in(self)
 
       # @include_in_migration = false #||= options.fetch(:include_in_migration, true); options.delete(:include_in_migration)
       @include_in_migration = true
+      @table_options        = table_options
 
       if block
         dsl = DeclareSchema::FieldDeclarationDsl.new(self, null: false)

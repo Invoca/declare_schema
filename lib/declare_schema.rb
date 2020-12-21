@@ -41,5 +41,6 @@ require 'declare_schema/model'
 require 'declare_schema/model/field_spec'
 require 'declare_schema/model/index_definition'
 require 'declare_schema/model/foreign_key_definition'
+require 'declare_schema/model/table_options_definition'
 
 require 'declare_schema/railtie' if defined?(Rails)

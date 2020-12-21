@@ -30,6 +30,10 @@ module DeclareSchema
           inheriting_cattr_reader ignore_indexes: []
           inheriting_cattr_reader constraint_specs: []
 
+          # table_options holds optional configuration for the create_table statement
+          # supported options include :charset and :collation
+          inheriting_cattr_reader table_options: HashWithIndifferentAccess.new
+
           # eval avoids the ruby 1.9.2 "super from singleton method ..." error
 
           eval %(

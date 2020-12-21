@@ -1,0 +1,14 @@
+version: 2
+updates:
+- package-ecosystem: bundler
+  directory: "/"
+  schedule:
+    interval: weekly
+    day: friday
+    time: "22:00"
+    timezone: PST8PDT
+  open-pull-requests-limit: 99
+  versioning-strategy: lockfile-only
+  commit-message:
+    prefix: No-Jira
+    include: scope

@@ -57,6 +57,12 @@ module DeclareSchema
           @type = :integer
           @options = options.merge(limit: 8)
         end
+
+        unless type.in?([:text, :string])
+          @options[:collation] and raise "collation may only given for :string and :text fields"
+          @options[:charset]   and raise "charset may only given for :string and :text fields"
+        end
+
         @position = position_option || model.field_specs.length
       end
 
@@ -104,6 +110,18 @@ module DeclareSchema
         @options[:default]
       end
 
+      def collation
+        if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
+          (@options[:collation] || model.table_options[:collation] || Generators::DeclareSchema::Migration::Migrator.default_collation).to_s
+        end
+      end
+
+      def charset
+        if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
+          (@options[:charset] || model.table_options[:charset] || Generators::DeclareSchema::Migration::Migrator.default_charset).to_s
+        end
+      end
+
       def same_type?(col_spec)
         type = sql_type
         normalized_type           = TYPE_SYNONYMS[type] || type
@@ -111,37 +129,77 @@ module DeclareSchema
         normalized_type == normalized_col_spec_type
       end
 
-      def different_to?(col_spec)
-        !same_type?(col_spec) ||
-          begin
-            native_type = native_types[type]
-            check_attributes = [:null, :default]
-            check_attributes += [:precision, :scale] if sql_type == :decimal && !col_spec.is_a?(SQLITE_COLUMN_CLASS)  # remove when rails fixes https://rails.lighthouseapp.com/projects/8994-ruby-on-rails/tickets/2872
-            check_attributes -= [:default] if sql_type == :text && col_spec.class.name =~ /mysql/i
-            check_attributes << :limit if sql_type.in?([:string, :binary, :varbinary, :integer, :enum]) ||
-                                          (sql_type == :text && self.class.mysql_text_limits?)
-            check_attributes.any? do |k|
-              if k == :default
-                case Rails::VERSION::MAJOR
-                when 4
-                  col_spec.type_cast_from_database(col_spec.default) != col_spec.type_cast_from_database(default)
-                else
-                  cast_type = ActiveRecord::Base.connection.lookup_cast_type_from_column(col_spec) or raise "cast_type not found for #{col_spec.inspect}"
-                  cast_type.deserialize(col_spec.default) != cast_type.deserialize(default)
-                end
-              else
-                col_value = col_spec.send(k)
-                if col_value.nil? && native_type
-                  col_value = native_type[k]
-                end
+      def different_to?(table_name, col_spec)
+        !same_as(table_name, col_spec)
+      end
 
-                col_value != send(k)
-              end
-            end
-          end
+      def same_as(table_name, col_spec)
+        same_type?(col_spec) &&
+          same_attributes?(col_spec) &&
+          (!type.in?([:text, :string]) || same_charset_and_collation?(table_name, col_spec))
       end
 
       private
+
+      def same_attributes?(col_spec)
+        native_type = native_types[type]
+        check_attributes = [:null, :default]
+        check_attributes += [:precision, :scale] if sql_type == :decimal && !col_spec.is_a?(SQLITE_COLUMN_CLASS)  # remove when rails fixes https://rails.lighthouseapp.com/projects/8994-ruby-on-rails/tickets/2872
+        check_attributes -= [:default] if sql_type == :text && col_spec.class.name =~ /mysql/i
+        check_attributes << :limit if sql_type.in?([:string, :binary, :varbinary, :integer, :enum]) ||
+                                      (sql_type == :text && self.class.mysql_text_limits?)
+        check_attributes.all? do |k|
+          if k == :default
+            case Rails::VERSION::MAJOR
+            when 4
+              col_spec.type_cast_from_database(col_spec.default) == col_spec.type_cast_from_database(default)
+            else
+              cast_type = ActiveRecord::Base.connection.lookup_cast_type_from_column(col_spec) or raise "cast_type not found for #{col_spec.inspect}"
+              cast_type.deserialize(col_spec.default) == cast_type.deserialize(default)
+            end
+          else
+            col_value = col_spec.send(k)
+            if col_value.nil? && native_type
+              col_value = native_type[k]
+            end
+            col_value == send(k)
+          end
+        end
+      end
+
+      def same_charset_and_collation?(table_name, col_spec)
+        current_collation_and_charset = collation_and_charset_for_column(table_name, col_spec)
+
+        collation == current_collation_and_charset[:collation] &&
+          charset == current_collation_and_charset[:charset]
+      end
+
+      def collation_and_charset_for_column(table_name, col_spec)
+        column_name   = col_spec.name
+        connection    = ActiveRecord::Base.connection
+
+        if connection.class.name.match?(/mysql/i)
+          database_name = connection.current_database
+
+          defaults = connection.select_one(<<~EOS)
+            SELECT C.character_set_name, C.collation_name
+            FROM information_schema.`COLUMNS` C
+            WHERE C.table_schema = '#{connection.quote_string(database_name)}' AND
+                  C.table_name = '#{connection.quote_string(table_name)}' AND
+                  C.column_name = '#{connection.quote_string(column_name)}';
+          EOS
+
+          defaults["character_set_name"] or raise "character_set_name missing from #{defaults.inspect}"
+          defaults["collation_name"]     or raise "collation_name missing from #{defaults.inspect}"
+
+          {
+            charset:   defaults["character_set_name"],
+            collation: defaults["collation_name"]
+          }
+        else
+          {}
+        end
+      end
 
       def native_type?(type)
         type.to_sym != :primary_key && native_types.has_key?(type)

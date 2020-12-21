@@ -4,9 +4,14 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.0] - Unreleased
+## [0.6.0] - Unreleased
 ### Added
 - Fields may now be declared with `:bigint` type which is identical to `:integer, limit 8`
+
+## [0.5.0] - 2020-12-21
+### Added
+- Added support for configuring the character set and collation for MySQL databases
+  at the global, table, and field level
 
 ## [0.4.2] - 2020-12-05
 ### Fixed
@@ -19,7 +24,7 @@ Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0
 ## [0.4.0] - 2020-11-20
 ### Added
 - Fields may be declared with `serialize: true` (any value with a valid `.to_yaml` stored as YAML),
-or `serialize: <serializeable-class>`, where `<serializeable-class>` 
+or `serialize: <serializeable-class>`, where `<serializeable-class>`
 may be `Array` (`Array` stored as YAML) or `Hash` (`Hash` stored as YAML) or `JSON` (any value with a valid `.to_json`, stored as JSON)
 or any custom serializable class.
 This invokes `ActiveSupport`'s `serialize` macro for that field, passing the serializable class, if given.
@@ -72,6 +77,7 @@ using the appropriate Rails configuration attributes.
 ### Added
 - Initial version from https://github.com/Invoca/hobo_fields v4.1.0.
 
+[0.6.0]: https://github.com/Invoca/declare_schema/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Invoca/declare_schema/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/Invoca/declare_schema/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/Invoca/declare_schema/compare/v0.4.0...v0.4.1
