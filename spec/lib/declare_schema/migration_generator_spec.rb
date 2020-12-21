@@ -1096,24 +1096,26 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
   context 'Does not generate migrations' do
     it 'for aliased fields bigint -> integer limit 8' do
-      class Advert < ActiveRecord::Base
-        fields do
-          price :bigint
+      if Rails::VERSION::MAJOR > 4 || !ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
+        class Advert < active_record_base_class.constantize
+          fields do
+            price :bigint
+          end
         end
-      end
 
-      generate_migrations '-n', '-m'
+        generate_migrations '-n', '-m'
 
-      migrations = Dir.glob('db/migrate/*declare_schema_migration*.rb')
-      expect(migrations.size).to eq(1), migrations.inspect
+        migrations = Dir.glob('db/migrate/*declare_schema_migration*.rb')
+        expect(migrations.size).to eq(1), migrations.inspect
 
-      class Advert < ActiveRecord::Base
-        fields do
-          price :integer, limit: 8
+        class Advert < active_record_base_class.constantize
+          fields do
+            price :integer, limit: 8
+          end
         end
-      end
 
-      expect { generate_migrations '-n', '-g' }.to output("Database and models match -- nothing to change\n").to_stdout
+        expect { generate_migrations '-n', '-g' }.to output("Database and models match -- nothing to change\n").to_stdout
+      end
     end
   end
 end
