@@ -27,20 +27,21 @@ jobs:
           bundler: 1.17.3
       - name: Check Ruby Version
         run: |
-          ruby --version
+          bundle exec ruby --version
       - name: Bundle Install
         id: bundle_install
         run: |
           bundle install
-          bundle exec appraisal install
-          ruby --version
+          bundle exec ruby --version
           bundle exec rails --version
       - name: Appraisals
         id: appraisals
         run: |
-          ruby --version
-          rails --version
+          bundle exec ruby --version
+          bundle exec rails --version
           bundle install --gemfile=${{ matrix.gemfile }}
+          bundle exec ruby --version
+          bundle exec rails --version
           git config --global user.email "example@example.com"
           git config --global user.name "example"
           bundle exec rake test:prepare_testapp[force]
