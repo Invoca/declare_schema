@@ -61,7 +61,6 @@ module DeclareSchema
       end
 
       TYPE_SYNONYMS = { timestamp: :datetime }.freeze
-      FIELD_SYNONYMS = { bigint: [:integer, limit: 8] }.freeze
 
       SQLITE_COLUMN_CLASS =
         begin
@@ -109,9 +108,6 @@ module DeclareSchema
         type = sql_type
         normalized_type           = TYPE_SYNONYMS[type] || type
         normalized_col_spec_type  = TYPE_SYNONYMS[col_spec.type] || col_spec.type
-        if FIELD_SYNONYMS[col_spec.type]
-          normalized_col_spec_type = FIELD_SYNONYMS[col_spec.type].first
-        end
         normalized_type == normalized_col_spec_type
       end
 
@@ -137,9 +133,6 @@ module DeclareSchema
                 col_value = col_spec.send(k)
                 if col_value.nil? && native_type
                   col_value = native_type[k]
-                end
-                if FIELD_SYNONYMS[col_spec.type] && FIELD_SYNONYMS[col_spec.type].second[k]
-                  col_value = FIELD_SYNONYMS[col_spec.type].second[k]
                 end
 
                 col_value != send(k)
