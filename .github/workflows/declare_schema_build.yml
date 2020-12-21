@@ -28,6 +28,7 @@ jobs:
         run: |
           bundle exec ruby --version
           echo ${BUNDLE_GEMFILE}
+          echo ${BUNDLE_PATH}
       - name: Bundle Install
         id: bundle_install
         run: |
