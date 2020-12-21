@@ -32,6 +32,7 @@ before_install:
 install:
   - bundle --version
   - bundle install --jobs=3 --retry=3 --path=${BUNDLE_PATH:-vendor/bundle}
+  - echo ${BUNDLE_PATH}
 script:
   - bundle exec rake test:prepare_testapp[force]
   - bundle exec rake test:all < test_responses.txt
