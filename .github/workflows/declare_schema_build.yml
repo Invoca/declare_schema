@@ -25,6 +25,10 @@ jobs:
         with:
           ruby-version: ${{matrix.ruby}}
           bundler: 1.17.3
+      - name: Export Gemfile
+        id: export_gemfile
+        run: |
+          export BUNDLE_GEMFILE=${{ matrix.gemfile }}
       - name: Check Ruby Version
         run: |
           bundle exec ruby --version
@@ -35,7 +39,7 @@ jobs:
         run: |
           bundle install --jobs=3 --retry=3 --path=${BUNDLE_PATH:-vendor/bundle} --gemfile=${{ matrix.gemfile }}
           bundle exec ruby --version
-          BUNDLE_GEMFILE=${{ matrix.gemfile }} bundle exec rails --version
+          bundle exec rails --version
           git config --global user.email "example@example.com"
           git config --global user.name "example"
           bundle exec rake test:prepare_testapp[force]
