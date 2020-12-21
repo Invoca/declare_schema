@@ -1096,7 +1096,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
   context 'Does not generate migrations' do
     it 'for aliased fields bigint -> integer limit 8' do
-      if Rails::VERSION::MAJOR > 4 || !ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
+      if Rails::VERSION::MAJOR >= 5 || !ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
         class Advert < active_record_base_class.constantize
           fields do
             price :bigint
