@@ -39,8 +39,8 @@ jobs:
         run: |
           bundle install --jobs=3 --retry=3 --path=${BUNDLE_PATH:-vendor/bundle} --gemfile=${{ matrix.gemfile }}
           bundle exec ruby --version
-          bundle exec rails --version
+          BUNDLE_GEMFILE=${{ matrix.gemfile }} bundle exec rails --version
           git config --global user.email "example@example.com"
           git config --global user.name "example"
-          bundle exec rake test:prepare_testapp[force]
-          bundle exec rake test:all < test_responses.txt
+          BUNDLE_GEMFILE=${{ matrix.gemfile }} bundle exec rake test:prepare_testapp[force]
+          BUNDLE_GEMFILE=${{ matrix.gemfile }} bundle exec rake test:all < test_responses.txt
