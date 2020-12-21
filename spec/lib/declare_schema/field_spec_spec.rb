@@ -15,8 +15,14 @@ RSpec.describe 'DeclareSchema Model FieldSpec' do
 
       subject = DeclareSchema::Model::FieldSpec.new(Advert, :price, :integer, { limit: 8, null: false })
 
-      sql_type_metadata = ActiveRecord::ConnectionAdapters::SqlTypeMetadata.new(sql_type: "integer(8)", type: :integer, limit: 8)
-      col = ActiveRecord::ConnectionAdapters::Column.new("price", nil, sql_type_metadata, false, "adverts")
+      case Rails::VERSION::MAJOR
+      when 4
+        cast_type = ActiveRecord::Type::Integer.new(limit: 8)
+        col = ActiveRecord::ConnectionAdapters::Column.new("price", nil, cast_type, "integer(8)", false)
+      else
+        sql_type_metadata = ActiveRecord::ConnectionAdapters::SqlTypeMetadata.new(sql_type: "integer(8)", type: :integer, limit: 8)
+        col = ActiveRecord::ConnectionAdapters::Column.new("price", nil, sql_type_metadata, false, "adverts")
+      end
 
       expect(subject.different_to?(col)).to eq(false)
     end
@@ -30,8 +36,14 @@ RSpec.describe 'DeclareSchema Model FieldSpec' do
 
       subject = DeclareSchema::Model::FieldSpec.new(Advert, :price, :bigint, { null: false })
 
-      sql_type_metadata = ActiveRecord::ConnectionAdapters::SqlTypeMetadata.new(sql_type: "bigint(20)", type: :bigint)
-      col = ActiveRecord::ConnectionAdapters::Column.new("price", nil, sql_type_metadata, false, "adverts")
+      case Rails::VERSION::MAJOR
+      when 4
+        cast_type = ActiveRecord::Type::BigInteger.new(limit: 8)
+        col = ActiveRecord::ConnectionAdapters::Column.new("price", nil, cast_type, "bigint(20)", false)
+      else
+        sql_type_metadata = ActiveRecord::ConnectionAdapters::SqlTypeMetadata.new(sql_type: "bigint(20)", type: :integer, limit: 8)
+        col = ActiveRecord::ConnectionAdapters::Column.new("price", nil, sql_type_metadata, false, "adverts")
+      end
 
       expect(subject.different_to?(col)).to eq(false)
     end
@@ -45,8 +57,15 @@ RSpec.describe 'DeclareSchema Model FieldSpec' do
 
       subject = DeclareSchema::Model::FieldSpec.new(Advert, :price, :integer, { limit: 8, null: false })
 
-      sql_type_metadata = ActiveRecord::ConnectionAdapters::SqlTypeMetadata.new(sql_type: "bigint(20)", type: :bigint)
-      col = ActiveRecord::ConnectionAdapters::Column.new("price", nil, sql_type_metadata, false, "adverts")
+      case Rails::VERSION::MAJOR
+      when 4
+        cast_type = ActiveRecord::Type::BigInteger.new(limit: 8)
+        col = ActiveRecord::ConnectionAdapters::Column.new("price", nil, cast_type, "bigint(20)", false)
+      else
+        sql_type_metadata = ActiveRecord::ConnectionAdapters::SqlTypeMetadata.new(sql_type: "bigint(20)", type: :integer, limit: 8)
+        col = ActiveRecord::ConnectionAdapters::Column.new("price", nil, sql_type_metadata, false, "adverts")
+      end
+
       expect(subject.different_to?(col)).to eq(false)
     end
 
@@ -59,8 +78,14 @@ RSpec.describe 'DeclareSchema Model FieldSpec' do
 
       subject = DeclareSchema::Model::FieldSpec.new(Advert, :price, :bigint, { null: false })
 
-      sql_type_metadata = ActiveRecord::ConnectionAdapters::SqlTypeMetadata.new(sql_type: "integer(8)", type: :integer, limit: 8)
-      col = ActiveRecord::ConnectionAdapters::Column.new("price", nil, sql_type_metadata, false, "adverts")
+      case Rails::VERSION::MAJOR
+      when 4
+        cast_type = ActiveRecord::Type::Integer.new(limit: 8)
+        col = ActiveRecord::ConnectionAdapters::Column.new("price", nil, cast_type, "integer(8)", false)
+      else
+        sql_type_metadata = ActiveRecord::ConnectionAdapters::SqlTypeMetadata.new(sql_type: "integer(8)", type: :integer, limit: 8)
+        col = ActiveRecord::ConnectionAdapters::Column.new("price", nil, sql_type_metadata, false, "adverts")
+      end
 
       expect(subject.different_to?(col)).to eq(false)
     end
