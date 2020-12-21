@@ -23,23 +23,16 @@ jobs:
         id: setup_ruby
         uses: ruby/setup-ruby@v1
         with:
+          ruby-version: ${{matrix.ruby}}
           bundler: 1.17.3
       - name: Check Ruby Version
         run: |
           bundle exec ruby --version
           echo ${BUNDLE_GEMFILE}
           echo ${BUNDLE_PATH}
-      - name: Bundle Install
-        id: bundle_install
-        run: |
-          bundle install
-          bundle exec ruby --version
-          bundle exec rails --version
       - name: Appraisals
         id: appraisals
         run: |
-          bundle exec ruby --version
-          bundle exec rails --version
           bundle install --gemfile=${{ matrix.gemfile }}
           bundle exec ruby --version
           bundle exec rails --version
