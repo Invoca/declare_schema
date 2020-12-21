@@ -30,6 +30,14 @@ jobs:
           bundle exec ruby --version
           echo ${BUNDLE_GEMFILE}
           echo ${BUNDLE_PATH}
+      - name: Bundle Install
+        id: bundle_install
+        run: |
+          bundle install
+          echo ${BUNDLE_GEMFILE}
+          echo ${BUNDLE_PATH}
+          bundle exec ruby --version
+          bundle exec rails --version
       - name: Appraisals
         id: appraisals
         run: |
