@@ -15,11 +15,9 @@ jobs:
           - { gemfile: gemfiles/rails_4.gemfile, ruby: 2.7.1 }
           - { gemfile: gemfiles/rails_5.gemfile, ruby: 2.4.5 }
           - { gemfile: gemfiles/rails_6.gemfile, ruby: 2.4.5 }
+    env:
+      BUNDLE_GEMFILE: "${{ matrix.gemfile }}"
     steps:
-      - name: Export Gemfile
-        id: export_gemfile
-        run: |
-          export BUNDLE_GEMFILE=${{ matrix.gemfile }}
       - name: Checkout Branch
         id: checkout_branch
         uses: actions/checkout@v2
