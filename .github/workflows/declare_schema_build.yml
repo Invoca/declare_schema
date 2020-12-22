@@ -31,6 +31,9 @@ jobs:
         id: remove-bundler_2
         run: |
           echo $PWD
+          gem which bundler
+          bundle show bundler
+          bundle info bundler
           rm -f /home/runner/work/declare_schema/declare_schema/rubies/ruby-2.*/lib/ruby/gems/2.*/specifications/default/bundler-2.*.gemspec
           gem install bundler:1.17.3 --default
           bundle --version
