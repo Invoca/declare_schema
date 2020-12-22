@@ -25,6 +25,7 @@ jobs:
         id: setup_ruby
         uses: ruby/setup-ruby@v1
         with:
+          bundler: 1.17.3
           ruby-version: ${{matrix.ruby}}
       - name: Check Ruby Version
         run: |
