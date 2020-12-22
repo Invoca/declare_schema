@@ -32,7 +32,6 @@ jobs:
         run: |
           echo $PWD
           rm -f /home/runner/work/declare_schema/declare_schema/rubies/ruby-2.*/lib/ruby/gems/2.*/specifications/default/bundler-2.*.gemspec
-          echo y | rvm @global do gem install bundler -v 1.17.3 --force --default
           gem install bundler -v 1.17.3 --force --default
           gem install bundler -v 1.17.3
       - name: Check Ruby Version
