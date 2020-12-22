@@ -7,13 +7,7 @@ RSpec.describe 'DeclareSchema Model FieldSpec' do
 
   context 'There are no model columns to change' do
     it '#different_to should return false for int8 == int8' do
-      class Advert < ActiveRecord::Base
-        fields do
-          price :integer, limit: 8
-        end
-      end
-
-      subject = DeclareSchema::Model::FieldSpec.new(Advert, :price, :integer, { limit: 8, null: false })
+      subject = DeclareSchema::Model::FieldSpec.new(Object, :price, :integer, limit: 8, null: false, position: 0)
 
       case Rails::VERSION::MAJOR
       when 4
@@ -28,13 +22,7 @@ RSpec.describe 'DeclareSchema Model FieldSpec' do
     end
 
     it '#different_to should return false for bigint == bigint' do
-      class Advert < ActiveRecord::Base
-        fields do
-          price :bigint
-        end
-      end
-
-      subject = DeclareSchema::Model::FieldSpec.new(Advert, :price, :bigint, { null: false })
+      subject = DeclareSchema::Model::FieldSpec.new(Object, :price, :bigint, null: false, position: 0)
 
       case Rails::VERSION::MAJOR
       when 4
@@ -49,13 +37,7 @@ RSpec.describe 'DeclareSchema Model FieldSpec' do
     end
 
     it '#different_to should return false for int8 == bigint' do
-      class Advert < ActiveRecord::Base
-        fields do
-          price :integer, limit: 8
-        end
-      end
-
-      subject = DeclareSchema::Model::FieldSpec.new(Advert, :price, :integer, { limit: 8, null: false })
+      subject = DeclareSchema::Model::FieldSpec.new(Object, :price, :integer, limit: 8, null: false, position: 0)
 
       case Rails::VERSION::MAJOR
       when 4
@@ -70,13 +52,7 @@ RSpec.describe 'DeclareSchema Model FieldSpec' do
     end
 
     it '#different_to should return false for bigint == int8' do
-      class Advert < ActiveRecord::Base
-        fields do
-          price :bigint
-        end
-      end
-
-      subject = DeclareSchema::Model::FieldSpec.new(Advert, :price, :bigint, { null: false })
+      subject = DeclareSchema::Model::FieldSpec.new(Object, :price, :bigint, null: false, position: 0)
 
       case Rails::VERSION::MAJOR
       when 4
