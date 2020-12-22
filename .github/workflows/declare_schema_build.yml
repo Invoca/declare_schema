@@ -35,7 +35,8 @@ jobs:
       - name: Appraisals
         id: appraisals
         run: |
-          bundle exec bundler --version
+          bundle version
+          bundle exec bundle version
           bundle install --jobs=3 --retry=3 --path=${BUNDLE_PATH:-vendor/bundle} --gemfile=${{ matrix.gemfile }}
           bundle exec ruby --version
           bundle exec rails --version
