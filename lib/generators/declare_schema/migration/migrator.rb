@@ -37,11 +37,9 @@ module Generators
 
         def field_specs
           i = 0
-          foreign_keys.reduce({}) do |h, v|
-            # some trickery to avoid an infinite loop when FieldSpec#initialize tries to call model.field_specs
-            h[v] = ::DeclareSchema::Model::FieldSpec.new(self, v, :integer, position: i, null: false)
+          foreign_keys.each_with_object({}) do |v, result|
+            result[v] = ::DeclareSchema::Model::FieldSpec.new(self, v, :integer, position: i, null: false)
             i += 1
-            h
           end
         end
 

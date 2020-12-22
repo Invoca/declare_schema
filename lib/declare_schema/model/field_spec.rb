@@ -33,7 +33,8 @@ module DeclareSchema
 
       attr_reader :model, :name, :type, :position, :options
 
-      def initialize(model, name, type, options = {})
+      def initialize(model, name, type, position: 0, **options)
+        # TODO: TECH-5116
         # Invoca change - searching for the primary key was causing an additional database read on every model load.  Assume
         # "id" which works for invoca.
         # raise ArgumentError, "you cannot provide a field spec for the primary key" if name == model.primary_key
@@ -43,7 +44,7 @@ module DeclareSchema
         @name = name.to_sym
         type.is_a?(Symbol) or raise ArgumentError, "type must be a Symbol; got #{type.inspect}"
         @type = type
-        position_option = options.delete(:position)
+        @position = position
         @options = options
         case type
         when :text
@@ -62,8 +63,6 @@ module DeclareSchema
           @options[:collation] and raise "collation may only given for :string and :text fields"
           @options[:charset]   and raise "charset may only given for :string and :text fields"
         end
-
-        @position = position_option || model.field_specs.length
       end
 
       TYPE_SYNONYMS = { timestamp: :datetime }.freeze

@@ -88,7 +88,7 @@ module DeclareSchema
         add_formatting_for_field(name, type)
         add_validations_for_field(name, type, args, options)
         add_index_for_field(name, args, options)
-        field_specs[name] = ::DeclareSchema::Model::FieldSpec.new(self, name, type, options)
+        field_specs[name] = ::DeclareSchema::Model::FieldSpec.new(self, name, type, position: field_specs.size, **options)
         attr_order << name unless attr_order.include?(name)
       end
 
