@@ -23,6 +23,10 @@ module Generators
           end
         end
 
+        def table_options
+          {}
+        end
+
         def table_name
           join_table
         end
@@ -33,11 +37,9 @@ module Generators
 
         def field_specs
           i = 0
-          foreign_keys.reduce({}) do |h, v|
-            # some trickery to avoid an infinite loop when FieldSpec#initialize tries to call model.field_specs
-            h[v] = ::DeclareSchema::Model::FieldSpec.new(self, v, :integer, position: i, null: false)
+          foreign_keys.each_with_object({}) do |v, result|
+            result[v] = ::DeclareSchema::Model::FieldSpec.new(self, v, :integer, position: i, null: false)
             i += 1
-            h
           end
         end
 
@@ -69,13 +71,19 @@ module Generators
       class Migrator
         class Error < RuntimeError; end
 
-        @ignore_models                    = []
-        @ignore_tables                    = []
+        DEFAULT_CHARSET   = :utf8mb4
+        DEFAULT_COLLATION = :utf8mb4_general
+
+        @ignore_models                        = []
+        @ignore_tables                        = []
         @before_generating_migration_callback = nil
-        @active_record_class              = ActiveRecord::Base
+        @active_record_class                  = ActiveRecord::Base
+        @default_charset                      = DEFAULT_CHARSET
+        @default_collation                    = DEFAULT_COLLATION
 
         class << self
-          attr_accessor :ignore_models, :ignore_tables, :disable_indexing, :disable_constraints, :active_record_class
+          attr_accessor :ignore_models, :ignore_tables, :disable_indexing, :disable_constraints,
+                        :active_record_class, :default_charset, :default_collation
           attr_reader :before_generating_migration_callback
 
           def active_record_class
@@ -292,52 +300,76 @@ module Generators
             "drop_table :#{t}"
           end * "\n"
 
-          changes = []
-          undo_changes = []
-          index_changes = []
-          undo_index_changes = []
-          fk_changes = []
-          undo_fk_changes = []
+          changes                    = []
+          undo_changes               = []
+          index_changes              = []
+          undo_index_changes         = []
+          fk_changes                 = []
+          undo_fk_changes            = []
+          table_options_changes      = []
+          undo_table_options_changes = []
+
           to_change.each do |t|
             model = models_by_table_name[t]
             table = to_rename.key(t) || model.table_name
             if table.in?(db_tables)
-              change, undo, index_change, undo_index, fk_change, undo_fk = change_table(model, table)
+              change, undo, index_change, undo_index, fk_change, undo_fk, table_options_change, undo_table_options_change = change_table(model, table)
               changes << change
               undo_changes << undo
               index_changes << index_change
               undo_index_changes << undo_index
               fk_changes << fk_change
               undo_fk_changes << undo_fk
+              table_options_changes << table_options_change
+              undo_table_options_changes << undo_table_options_change
             end
           end
 
-          up = [renames, drops, creates, changes, index_changes, fk_changes].flatten.reject(&:blank?) * "\n\n"
-          down = [undo_changes, undo_renames, undo_drops, undo_creates, undo_index_changes, undo_fk_changes].flatten.reject(&:blank?) * "\n\n"
+          up = [renames, drops, creates, changes, index_changes, fk_changes, table_options_changes].flatten.reject(&:blank?) * "\n\n"
+          down = [undo_changes, undo_renames, undo_drops, undo_creates, undo_index_changes, undo_fk_changes, undo_table_options_changes].flatten.reject(&:blank?) * "\n\n"
 
           [up, down]
         end
 
         def create_table(model)
-          longest_field_name = model.field_specs.values.map { |f| f.sql_type.to_s.length }.max
-          disable_auto_increment = model.respond_to?(:disable_auto_increment) && model.disable_auto_increment
-          primary_key_option =
-            if model.primary_key.blank? || disable_auto_increment
-              ", id: false"
-            elsif model.primary_key == "id"
-              ", id: :bigint"
-            else
-              ", primary_key: :#{model.primary_key}"
+          longest_field_name       = model.field_specs.values.map { |f| f.sql_type.to_s.length }.max
+          disable_auto_increment   = model.respond_to?(:disable_auto_increment) && model.disable_auto_increment
+          table_options_definition = ::DeclareSchema::Model::TableOptionsDefinition.new(model.table_name, table_options_for_model(model))
+          field_definitions        = [
+            disable_auto_increment ? "t.integer :id, limit: 8, auto_increment: false, primary_key: true" : nil,
+            *(model.field_specs.values.sort_by(&:position).map { |f| create_field(f, longest_field_name) })
+          ].compact
+
+          <<~EOS.strip
+            create_table :#{model.table_name}, #{create_table_options(model, disable_auto_increment)} do |t|
+              #{field_definitions.join("\n")}
             end
-          (["create_table :#{model.table_name}#{primary_key_option} do |t|"] +
-          [(disable_auto_increment ? "  t.integer :id, limit: 8, auto_increment: false, primary_key: true" : nil)] +
-           model.field_specs.values.sort_by(&:position).map { |f| create_field(f, longest_field_name) } +
-           ["end"] + (if Migrator.disable_indexing
-                        []
-                      else
-                        create_indexes(model) +
-                           create_constraints(model)
-                      end)).compact * "\n"
+
+            #{table_options_definition.alter_table_statement unless ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)}
+            #{create_indexes(model).join("\n")               unless Migrator.disable_indexing}
+            #{create_constraints(model).join("\n")           unless Migrator.disable_indexing}
+          EOS
+        end
+
+        def create_table_options(model, disable_auto_increment)
+          if model.primary_key.blank? || disable_auto_increment
+            "id: false"
+          elsif model.primary_key == "id"
+            "id: :bigint"
+          else
+            "primary_key: :#{model.primary_key}"
+          end
+        end
+
+        def table_options_for_model(model)
+          if ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
+            {}
+          else
+            {
+              charset:   model.table_options[:charset] || Migrator.default_charset,
+              collation: model.table_options[:collation] || Migrator.default_collation
+            }
+          end
         end
 
         def create_indexes(model)
@@ -351,7 +383,7 @@ module Generators
         def create_field(field_spec, field_name_width)
           options = fk_field_options(field_spec.model, field_spec.name).merge(field_spec.sql_options)
           args = [field_spec.name.inspect] + format_options(options, field_spec.sql_type)
-          format("  t.%-*s %s", field_name_width, field_spec.sql_type, args.join(', '))
+          format("t.%-*s %s", field_name_width, field_spec.sql_type, args.join(', '))
         end
 
         def change_table(model, current_table_name)
@@ -413,15 +445,17 @@ module Generators
             col_name = old_names[c] || c
             col = db_columns[col_name]
             spec = model.field_specs[c]
-            if spec.different_to?(col) # TODO: TECH-4814 DRY this up to a diff function that returns the differences. It's different if it has differences. -Colin
+            if spec.different_to?(current_table_name, col) # TODO: TECH-4814 DRY this up to a diff function that returns the differences. It's different if it has differences. -Colin
               change_spec = fk_field_options(model, c)
               change_spec[:limit]     ||= spec.limit   if (spec.sql_type != :text ||
                                                          ::DeclareSchema::Model::FieldSpec.mysql_text_limits?) &&
                                                           (spec.limit || col.limit)
-              change_spec[:precision] = spec.precision unless spec.precision.nil?
-              change_spec[:scale]     = spec.scale     unless spec.scale.nil?
-              change_spec[:null]      = spec.null      unless spec.null && col.null
-              change_spec[:default]   = spec.default   unless spec.default.nil? && col.default.nil?
+              change_spec[:precision]     = spec.precision     unless spec.precision.nil?
+              change_spec[:scale]         = spec.scale         unless spec.scale.nil?
+              change_spec[:null]          = spec.null          unless spec.null && col.null
+              change_spec[:default]       = spec.default       unless spec.default.nil? && col.default.nil?
+              change_spec[:collation]     = spec.collation     unless spec.collation.nil?
+              change_spec[:charset]       = spec.charset       unless spec.charset.nil?
 
               changes << "change_column :#{new_table_name}, :#{c}, " +
                          ([":#{spec.sql_type}"] + format_options(change_spec, spec.sql_type, changing: true)).join(", ")
@@ -436,13 +470,20 @@ module Generators
                                         else
                                           change_foreign_key_constraints(model, current_table_name)
                                         end
+          table_options_changes, undo_table_options_changes = if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
+                                                                change_table_options(model, current_table_name)
+                                                              else
+                                                                [[], []]
+                                                              end
 
           [(renames + adds + removes + changes) * "\n",
            (undo_renames + undo_adds + undo_removes + undo_changes) * "\n",
            index_changes * "\n",
            undo_index_changes * "\n",
            fk_changes * "\n",
-           undo_fk_changes * "\n"]
+           undo_fk_changes * "\n",
+           table_options_changes * "\n",
+           undo_table_options_changes * "\n"]
         end
 
         def change_indexes(model, old_table_name)
@@ -549,6 +590,20 @@ module Generators
             { limit: pk_limit }
           else
             {}
+          end
+        end
+
+        def change_table_options(model, current_table_name)
+          old_options_definition = ::DeclareSchema::Model::TableOptionsDefinition.for_model(model, current_table_name)
+          new_options_definition = ::DeclareSchema::Model::TableOptionsDefinition.new(model.table_name, table_options_for_model(model))
+
+          if old_options_definition.equivalent?(new_options_definition)
+            [[], []]
+          else
+            [
+              [new_options_definition.alter_table_statement],
+              [old_options_definition.alter_table_statement]
+            ]
           end
         end
 

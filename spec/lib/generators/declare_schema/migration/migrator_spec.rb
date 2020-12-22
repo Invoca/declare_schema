@@ -43,6 +43,34 @@ module Generators
           end
         end
 
+        describe '#default_charset' do
+          subject { described_class.default_charset }
+
+          context 'when not explicitly set' do
+            it { should eq(:utf8mb4) }
+          end
+
+          context 'when explicitly set' do
+            before { described_class.default_charset = :utf8 }
+            after  { described_class.default_charset = described_class::DEFAULT_CHARSET }
+            it     { should eq(:utf8) }
+          end
+        end
+
+        describe '#default_collation' do
+          subject { described_class.default_collation }
+
+          context 'when not explicitly set' do
+            it { should eq(:utf8mb4_general) }
+          end
+
+          context 'when explicitly set' do
+            before { described_class.default_collation = :utf8mb4_general_ci }
+            after  { described_class.default_collation = described_class::DEFAULT_COLLATION }
+            it     { should eq(:utf8mb4_general_ci) }
+          end
+        end
+
         describe 'load_rails_models' do
           before do
             expect(Rails.application).to receive(:eager_load!)

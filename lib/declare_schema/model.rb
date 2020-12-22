@@ -30,6 +30,10 @@ module DeclareSchema
           inheriting_cattr_reader ignore_indexes: []
           inheriting_cattr_reader constraint_specs: []
 
+          # table_options holds optional configuration for the create_table statement
+          # supported options include :charset and :collation
+          inheriting_cattr_reader table_options: HashWithIndifferentAccess.new
+
           # eval avoids the ruby 1.9.2 "super from singleton method ..." error
 
           eval %(
@@ -84,7 +88,7 @@ module DeclareSchema
         add_formatting_for_field(name, type)
         add_validations_for_field(name, type, args, options)
         add_index_for_field(name, args, options)
-        field_specs[name] = ::DeclareSchema::Model::FieldSpec.new(self, name, type, options)
+        field_specs[name] = ::DeclareSchema::Model::FieldSpec.new(self, name, type, position: field_specs.size, **options)
         attr_order << name unless attr_order.include?(name)
       end
 
