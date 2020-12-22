@@ -30,12 +30,11 @@ jobs:
       - name: Check Ruby Version
         run: |
           bundle exec ruby --version
-          echo ${BUNDLE_GEMFILE}
-          echo ${BUNDLE_PATH}
+          bundle version
       - name: Appraisals
         id: appraisals
         run: |
-          bundle exec bundle version
+          bundle version
           bundle install --jobs=3 --retry=3 --path=${BUNDLE_PATH:-vendor/bundle} --gemfile=${{ matrix.gemfile }}
           bundle exec ruby --version
           bundle exec rails --version
