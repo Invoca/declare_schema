@@ -22,7 +22,7 @@ jobs:
         id: checkout_branch
         uses: actions/checkout@v2
         with:
-          token: ${{ github.token }}
+          token: credentials('github_token')
       - name: Setup Ruby
         id: setup_ruby
         uses: ruby/setup-ruby@v1
