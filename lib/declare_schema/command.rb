@@ -41,7 +41,14 @@ module DeclareSchema
             file.puts "gem '#{gem}', '>= #{version}'"
           end
           puts "Generating Rails infrastructure..."
-          system("rails new #{app_name} #{args * ' '} -m #{template_path}")
+          database_option =
+            begin
+              require 'mysql2'
+              ' -d mysql'
+            rescue LoadError
+            end
+          puts("rails new #{app_name} #{args * ' '} -m #{template_path}#{database_option}")
+          system("rails new #{app_name} #{args * ' '} -m #{template_path}#{database_option}")
           File.delete(template_path)
 
         when /^(g|generate|destroy)$/

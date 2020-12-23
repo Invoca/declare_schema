@@ -40,7 +40,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       EOS
     else
       expect_test_definition_to_eq('alpha/beta', <<~EOS)
-        require "test_helper"
+        require 'test_helper'
 
         class Alpha::BetaTest < ActiveSupport::TestCase
           # test "the truth" do
@@ -101,7 +101,9 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     expect(File.exist?('db/schema.rb')).to be_truthy
 
-    expect(File.exist?("db/development.sqlite3") || File.exist?("db/test.sqlite3")).to be_truthy
+    if defined?(SQLite3)
+      expect(File.exist?("db/development.sqlite3") || File.exist?("db/test.sqlite3")).to be_truthy
+    end
 
     module Alpha; end
     require 'alpha/beta'
