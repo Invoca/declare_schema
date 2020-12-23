@@ -29,7 +29,7 @@ jobs:
           ruby-version: ${{matrix.ruby}}
       - name: Remove Bundler 2
         id: remove-bundler_2
-        if: matrix.ruby = "2.6.5" || "2.7.1"
+        if: matrix.ruby == "2.6.5" || "2.7.1"
         run: |
           rm -f /opt/hostedtoolcache/Ruby/2.*/x64/lib/ruby/gems/2.*/specifications/default/bundler-2.*.gemspec
           gem install bundler:1.17.3 --force --default
