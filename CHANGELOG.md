@@ -4,9 +4,16 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.0] - Unreleased
+## [0.6.0] - 2020-12-23
 ### Added
 - Fields may now be declared with `:bigint` type which is identical to `:integer, limit 8`
+- FieldSpec#initialize interface now includes `position` keyword argument and `**options` hash.
+
+### Fixed
+- Fixed cycle in which FieldSpec#initialize was calling `model.field_specs` 
+
+### Changed
+- Changed ci support from Travis to Github Workflow
 
 ## [0.5.0] - 2020-12-21
 ### Added
