@@ -72,7 +72,7 @@ module Generators
         class Error < RuntimeError; end
 
         DEFAULT_CHARSET   = :utf8mb4
-        DEFAULT_COLLATION = :utf8mb4_general
+        DEFAULT_COLLATION = :utf8mb4_bin
 
         @ignore_models                        = []
         @ignore_tables                        = []
@@ -425,7 +425,7 @@ module Generators
               else
                 [":integer"]
               end
-            "add_column :#{new_table_name}, :#{c}, #{args.join(', ')}"
+            ["add_column :#{new_table_name},    :#{c}", *args].join(', ')
           end
           undo_adds = to_add.map do |c|
             "remove_column :#{new_table_name}, :#{c}"
@@ -634,12 +634,12 @@ module Generators
 
         def change_column_back(table, col_name)
           type, options = column_options_from_reverted_table(table, col_name)
-          "change_column :#{table}, :#{col_name}, #{type}#{', ' + options.strip if options}"
+          ["change_column #{table.to_sym}", col_name.to_sym, type, options&.strip].compact.join(', ')
         end
 
         def revert_column(table, column)
           type, options = column_options_from_reverted_table(table, column)
-          "add_column :#{table}, :#{column}, #{type}#{', ' + options.strip if options}"
+          ["add_column #{table.to_sym}", column.to_sym, type, options&.strip].compact.join(', ')
         end
       end
     end

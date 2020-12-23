@@ -94,7 +94,7 @@ turn all tables into `utf8mb4` supporting tables:
 # frozen_string_literal: true
 
 Generators::DeclareSchema::Migration::Migrator.default_charset   = "utf8mb4"
-Generators::DeclareSchema::Migration::Migrator.default_collation = "utf8mb4_general"
+Generators::DeclareSchema::Migration::Migrator.default_collation = "utf8mb4_bin"
 ```
 
 ### Table Configuration
@@ -109,7 +109,7 @@ like the following:
 # frozen_string_literal: true
 
 class Comment < ActiveRecord::Base
-  fields charset: "utf8mb4", collation: "utf8mb4_general" do
+  fields charset: "utf8mb4", collation: "utf8mb4_bin" do
     subject :string, limit: 255
     content :text,   limit: 0xffff_ffff
   end
@@ -131,7 +131,7 @@ look like the following:
 class Comment < ActiveRecord::Base
   fields do
     subject :string, limit: 255
-    context :text,   limit: 0xffff_ffff, charset: "utf8mb4", collation: "utf8mb4_general"
+    context :text,   limit: 0xffff_ffff, charset: "utf8mb4", collation: "utf8mb4_bin"
   end
 end
 ```
