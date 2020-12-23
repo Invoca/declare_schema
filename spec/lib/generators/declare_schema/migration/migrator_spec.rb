@@ -61,7 +61,7 @@ module Generators
           subject { described_class.default_collation }
 
           context 'when not explicitly set' do
-            it { should eq(:utf8mb4_general) }
+            it { should eq(:utf8mb4_bin) }
           end
 
           context 'when explicitly set' do
