@@ -7,13 +7,12 @@ gem "bundler", "< 2"
 gem "climate_control", "~> 0.2"
 gem "pry"
 gem "pry-byebug"
-gem "mysql2"
-gem "rails", "~> 4.2"
+gem "rails", "~> 6.0"
 gem "responders"
 gem "rspec"
 gem "rubocop"
-gem "sqlite3", "~> 1.3.0"
 gem "yard"
+gem "mysql2"
 
 group :testapp do
   gem "bootsnap", ">= 1.1.0", require: false

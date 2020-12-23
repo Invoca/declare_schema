@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
-require 'active_record/connection_adapters/mysql2_adapter'
+if defined?(Mysql2)
+  require 'active_record/connection_adapters/mysql2_adapter'
+end
 require_relative '../../../../lib/declare_schema/model/table_options_definition'
 
 RSpec.describe DeclareSchema::Model::TableOptionsDefinition do
@@ -55,29 +57,31 @@ RSpec.describe DeclareSchema::Model::TableOptionsDefinition do
       end
       # TODO: Convert these tests to run against a MySQL database so that we can
       #       perform them without mocking out so much
-      context 'when using a MySQL connection' do
-        before do
-          double(ActiveRecord::ConnectionAdapters::Mysql2Adapter).tap do |stub_connection|
-            expect(stub_connection).to receive(:class).and_return(ActiveRecord::ConnectionAdapters::Mysql2Adapter)
-            expect(stub_connection).to receive(:current_database).and_return('test_database')
-            expect(stub_connection).to receive(:quote_string).with('test_database').and_return('test_database')
-            expect(stub_connection).to receive(:quote_string).with(model_class.table_name).and_return(model_class.table_name)
-            expect(stub_connection).to(
-              receive(:select_one).with(<<~EOS)
-                SELECT CCSA.character_set_name, CCSA.collation_name
-                FROM information_schema.`TABLES` T, information_schema.`COLLATION_CHARACTER_SET_APPLICABILITY` CCSA
-                WHERE CCSA.collation_name = T.table_collation AND
-                      T.table_schema = 'test_database' AND
-                      T.table_name = '#{model_class.table_name}';
-              EOS
-              .and_return({ "character_set_name" => "utf8", "collation_name" => "utf8_general" })
-            )
-            allow(model_class).to receive(:connection).and_return(stub_connection)
+      if defined?(Mysql2)
+        context 'when using a MySQL connection' do
+          before do
+            double(ActiveRecord::ConnectionAdapters::Mysql2Adapter).tap do |stub_connection|
+              expect(stub_connection).to receive(:class).and_return(ActiveRecord::ConnectionAdapters::Mysql2Adapter)
+              expect(stub_connection).to receive(:current_database).and_return('test_database')
+              expect(stub_connection).to receive(:quote_string).with('test_database').and_return('test_database')
+              expect(stub_connection).to receive(:quote_string).with(model_class.table_name).and_return(model_class.table_name)
+              expect(stub_connection).to(
+                receive(:select_one).with(<<~EOS)
+                  SELECT CCSA.character_set_name, CCSA.collation_name
+                  FROM information_schema.`TABLES` T, information_schema.`COLLATION_CHARACTER_SET_APPLICABILITY` CCSA
+                  WHERE CCSA.collation_name = T.table_collation AND
+                        T.table_schema = 'test_database' AND
+                        T.table_name = '#{model_class.table_name}';
+                EOS
+                .and_return({ "character_set_name" => "utf8", "collation_name" => "utf8_general" })
+              )
+              allow(model_class).to receive(:connection).and_return(stub_connection)
+            end
           end
-        end
 
-        subject { described_class.for_model(model_class) }
-        it { should eq(described_class.new(model_class.table_name, { charset: "utf8", collation: "utf8_general" })) }
+          subject { described_class.for_model(model_class) }
+          it { should eq(described_class.new(model_class.table_name, { charset: "utf8", collation: "utf8_general" })) }
+        end
       end
     end
   end
