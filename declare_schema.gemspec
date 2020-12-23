@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
   s.authors = ['Invoca Development adapted from hobo_fields by Tom Locke']
   s.email = 'development@invoca.com'
   s.homepage = 'https://github.com/Invoca/declare_schema'
-  s.summary = 'Database migration generator for Rails'
+  s.summary = 'Database schema declaration and migration generator for Rails'
   s.description = 'Declare your Rails/active_record model schemas and have database migrations generated for you!'
   s.name = "declare_schema"
   s.version = DeclareSchema::VERSION
