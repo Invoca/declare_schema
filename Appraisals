@@ -7,6 +7,7 @@ end
 
 appraise 'rails-4-mysql' do
   gem 'rails', '~> 4.2'
+  gem 'mysql2'
 end
 
 appraise 'rails-5-sqlite' do
@@ -20,11 +21,11 @@ appraise 'rails-5-mysql' do
 end
 
 appraise 'rails-6-sqlite' do
-  gem 'rails', '~> 6.0'
+  gem 'rails', '~> 6.1'
   gem 'sqlite3'
 end
 
 appraise 'rails-6-mysql' do
-  gem 'rails', '~> 6.0'
+  gem 'rails', '~> 6.1'
   gem 'mysql2'
 end
