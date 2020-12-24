@@ -464,7 +464,7 @@ module Generators
             end
           end.compact
 
-          index_changes, undo_index_changes = change_indexes(model, current_table_name)
+          index_changes, undo_index_changes = change_indexes(model, current_table_name, to_remove)
           fk_changes, undo_fk_changes = if ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
                                           [[], []]
                                         else
@@ -486,7 +486,7 @@ module Generators
            undo_table_options_changes * "\n"]
         end
 
-        def change_indexes(model, old_table_name)
+        def change_indexes(model, old_table_name, to_remove)
           return [[], []] if Migrator.disable_constraints
 
           new_table_name = model.table_name
@@ -499,7 +499,10 @@ module Generators
               end
             end || i
           end
-          existing_has_primary_key = existing_indexes.any? { |i| i.name == ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME }
+          existing_has_primary_key = existing_indexes.any? do |i|
+            i.name == ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME &&
+              !i.fields.all? { |f| to_remove.include?(f) } # if we're removing the primary key column(s), the primary key index will be removed too
+          end
           model_has_primary_key    = model_indexes.any?    { |i| i.name == ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME }
 
           add_indexes_init = model_indexes - existing_indexes
