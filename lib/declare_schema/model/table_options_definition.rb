@@ -26,12 +26,14 @@ module DeclareSchema
 
         def mysql_table_options(connection, table_name)
           database = connection.current_database
-          defaults = connection.select_one(<<~EOS) or raise "no defaults found"
+          defaults = connection.select_one(<<~EOS) or raise "no defaults found for table #{table_name}"
             SELECT CCSA.character_set_name, CCSA.collation_name
-            FROM information_schema.`TABLES` T, information_schema.`COLLATION_CHARACTER_SET_APPLICABILITY` CCSA
-            WHERE CCSA.collation_name = T.table_collation AND
-                  T.table_schema = '#{connection.quote_string(database)}' AND
-                  T.table_name = '#{connection.quote_string(table_name)}';
+            FROM information_schema.TABLES as T
+              JOIN information_schema.COLLATION_CHARACTER_SET_APPLICABILITY as CCSA
+                ON CCSA.collation_name = T.table_collation
+            WHERE
+              T.table_schema = '#{connection.quote_string(database)}' AND
+              T.table_name = '#{connection.quote_string(table_name)}'
           EOS
 
           defaults["character_set_name"] or raise "character_set_name missing from #{defaults.inspect}"
@@ -56,7 +58,7 @@ module DeclareSchema
       end
 
       def settings
-        @settings ||= table_options.map { |name, value| "#{TABLE_OPTIONS_TO_SQL_MAPPINGS[name]} #{value}" if value }.compact.join(" ")
+        @settings ||= table_options.map { |name, value| "#{TABLE_OPTIONS_TO_SQL_MAPPINGS[name]} #{value}" if value}.compact.join(" ")
       end
 
       def hash
@@ -75,7 +77,7 @@ module DeclareSchema
       alias to_s settings
 
       def alter_table_statement
-        statement = "ALTER TABLE #{ActiveRecord::Base.connection.quote_table_name(table_name)} #{to_s};"
+        statement = "ALTER TABLE #{ActiveRecord::Base.connection.quote_table_name(table_name)} #{to_s}"
         "execute #{statement.inspect}"
       end
     end
