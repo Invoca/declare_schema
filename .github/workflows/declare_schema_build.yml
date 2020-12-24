@@ -43,13 +43,18 @@ jobs:
           rm -f /opt/hostedtoolcache/Ruby/2.*/x64/lib/ruby/gems/2.*/specifications/default/bundler-2.*.gemspec
           gem install bundler:1.17.3 --force --default
           gem install bundler -v 1.17.3
+      - name: Start MySQL
+        id: start_mysql
+        run:
+          sudo systemctl enable mysql.service
+          sudo systemctl start mysql.service
       - name: Appraisals
         id: appraisals
         run: |
           bundle install --jobs=3 --retry=3 --path=${BUNDLE_PATH:-vendor/bundle} --gemfile=${{ matrix.gemfile }}
           git config --global user.email "dummy@example.com"
           git config --global user.name "dummy"
-          bundle exec rake test:prepare_testapp[force]
+          MYSQL_PORT=3306 bundle exec rake test:prepare_testapp[force]
           bundle exec rake test:all < test_responses.txt
     services:
       mysql:
