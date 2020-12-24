@@ -30,7 +30,15 @@ namespace "test" do
     if args.force || !File.directory?(TESTAPP_PATH)
       FileUtils.remove_entry_secure(TESTAPP_PATH, true)
       sh %(#{BIN} new #{TESTAPP_PATH} --skip-wizard --skip-bundle)
-      FileUtils.chdir TESTAPP_PATH
+      FileUtils.chdir(TESTAPP_PATH)
+      if ENV['MYSQL_PORT']
+        sh "(echo '/socket:';
+             echo 's/socket:.*/port: #{MYSQL_PORT}';
+             echo w;
+             echo q) | ed #{TESTAPP_PATH}/config/database.yml"
+        sh "echo === database.yml ==="
+        sh "cat #{TESTAPP_PATH}/config/database.yml"
+      end
       sh "bundle install"
       sh "(echo '';
            echo \"gem 'irt', :group => :development\";
