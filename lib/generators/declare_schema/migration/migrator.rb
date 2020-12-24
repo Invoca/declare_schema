@@ -632,6 +632,7 @@ module Generators
             _, type, options = *md
             type = ":#{type}"
           end
+          type or raise "unable to find column options in #{revert}"
           [type, options]
         end
 

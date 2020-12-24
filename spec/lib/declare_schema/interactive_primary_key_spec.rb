@@ -21,8 +21,6 @@ RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
       fields do
       end
       self.primary_key = "id"
-
-      index [:id], unique: true
     end
 
     puts "\n\e[45m Please enter 'id' (no quotes) at the next prompt \e[0m"
