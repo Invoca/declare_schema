@@ -4,6 +4,14 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - Unreleased
+### Added
+- Added Appraisals for MySQL as well as SQLite.
+
+### Fixed
+- Fixed case where primary key index will be gone by the time we get to adding a new primary key
+because all of the existing primary key columns are being removed.
+
 ## [0.6.0] - 2020-12-23
 ### Added
 - Fields may now be declared with `:bigint` type which is identical to `:integer, limit 8`
@@ -84,6 +92,7 @@ using the appropriate Rails configuration attributes.
 ### Added
 - Initial version from https://github.com/Invoca/hobo_fields v4.1.0.
 
+[0.6.1]: https://github.com/Invoca/declare_schema/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/Invoca/declare_schema/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Invoca/declare_schema/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/Invoca/declare_schema/compare/v0.4.1...v0.4.2
