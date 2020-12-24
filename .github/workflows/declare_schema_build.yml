@@ -51,3 +51,10 @@ jobs:
           git config --global user.name "dummy"
           bundle exec rake test:prepare_testapp[force]
           bundle exec rake test:all < test_responses.txt
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+        ports: [3306]
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
