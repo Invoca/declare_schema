@@ -21,6 +21,8 @@ RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
       fields do
       end
       self.primary_key = "id"
+
+      index [:id], unique: true
     end
 
     puts "\n\e[45m Please enter 'id' (no quotes) at the next prompt \e[0m"
@@ -32,7 +34,7 @@ RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
     ### migrate to
 
     if Rails::VERSION::MAJOR >= 5
-      # rename to custom primary_key
+      # replace custom primary_key
       class Foo < ActiveRecord::Base
         fields do
         end
