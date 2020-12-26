@@ -13,7 +13,6 @@ module DeclareSchema
       MYSQL_TEXT_LIMITS_ASCENDING = [MYSQL_TINYTEXT_LIMIT, MYSQL_TEXT_LIMIT, MYSQL_MEDIUMTEXT_LIMIT, MYSQL_LONGTEXT_LIMIT].freeze
 
       class << self
-        # method for easy stubbing in tests
         def mysql_text_limits?
           if defined?(@mysql_text_limits)
             @mysql_text_limits
