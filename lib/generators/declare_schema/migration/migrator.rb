@@ -454,8 +454,8 @@ module Generators
               change_spec[:scale]         = spec.scale         unless spec.scale.nil?
               change_spec[:null]          = spec.null          unless spec.null && col.null
               change_spec[:default]       = spec.default       unless spec.default.nil? && col.default.nil?
-              change_spec[:collation]     = spec.collation     unless spec.collation.nil?
               change_spec[:charset]       = spec.charset       unless spec.charset.nil?
+              change_spec[:collation]     = spec.collation     unless spec.collation.nil?
 
               changes << "change_column :#{new_table_name}, :#{c}, " +
                          ([":#{spec.sql_type}"] + format_options(change_spec, spec.sql_type, changing: true)).join(", ")
@@ -561,8 +561,9 @@ module Generators
         def format_options(options, type, changing: false)
           options.map do |k, v|
             unless changing
-              next if k == :limit && (type == :decimal || v == native_types[type][:limit])
-              next if k == :null && v == true
+              if (k == :limit && type == :decimal) || (k == :null && v == true)
+                next
+              end
             end
 
             next if k == :limit && type == :text && !::DeclareSchema::Model::FieldSpec.mysql_text_limits?
@@ -629,8 +630,8 @@ module Generators
             _, type, options = *md
           elsif (md = revert.match(/\s*t\.([a-z_]+)\s+"#{col_name}"(?:,\s+(.*?)$)?/m))
             # Sexy migration
-            _, type, options = *md
-            type = ":#{type}"
+            _, string_type, options = *md
+            type = ":#{string_type}"
           end
           type or raise "unable to find column options in #{revert}"
           [type, options]

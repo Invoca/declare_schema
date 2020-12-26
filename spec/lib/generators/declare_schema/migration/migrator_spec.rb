@@ -1,5 +1,9 @@
 # frozen_string_literal: true
 
+begin
+  require 'mysql2'
+rescue LoadError
+end
 require 'rails'
 require 'rails/generators'
 
@@ -16,24 +20,14 @@ module Generators
         describe 'format_options' do
           let(:mysql_longtext_limit) { 0xffff_ffff }
 
-          context 'MySQL' do
-            before do
-              expect(::DeclareSchema::Model::FieldSpec).to receive(:mysql_text_limits?).and_return(true)
-            end
-
+          if defined?(Mysql2)
             it 'returns text limits' do
               expect(subject.format_options({ limit: mysql_longtext_limit }, :text)).to eq(["limit: #{mysql_longtext_limit}"])
             end
           end
 
-          context 'non-MySQL' do
-            before do
-              expect(::DeclareSchema::Model::FieldSpec).to receive(:mysql_text_limits?).and_return(false)
-            end
-
-            it 'returns text limits' do
-              expect(subject.format_options({ limit: mysql_longtext_limit }, :text)).to eq([])
-            end
+          it 'returns text limits' do
+            expect(subject.format_options({ limit: mysql_longtext_limit }, :text)).to eq([])
           end
         end
 
