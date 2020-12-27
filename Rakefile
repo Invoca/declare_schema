@@ -34,7 +34,6 @@ namespace "test" do
       begin
         require 'mysql2'
         if ENV['MYSQL_PORT']
-          sh "cat #{TESTAPP_PATH}/config/database.yml"
           sh "(echo 'H';
                echo '1,$s/localhost/127.0.0.1/';
                echo '/host:/';
@@ -43,8 +42,6 @@ namespace "test" do
                echo '.';
                echo w;
                echo q) | ed #{TESTAPP_PATH}/config/database.yml || echo ed failed!"
-          sh "echo === database.yml ==="
-          sh "cat #{TESTAPP_PATH}/config/database.yml"
         end
       rescue LoadError
       end
