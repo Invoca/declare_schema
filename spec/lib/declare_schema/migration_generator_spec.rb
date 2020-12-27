@@ -30,6 +30,18 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       ', charset: "utf8mb4", collation: "utf8mb4_bin"'
     end
   end
+  let(:datetime_precision) do
+    if defined?(Mysql2) && Rails::VERSION::MAJOR >= 5
+      ', precision: 0'
+    end
+  end
+  let(:table_options) do
+    if defined?(Mysql2)
+      ", options: \"#{'ENGINE=InnoDB ' unless Rails::VERSION::MAJOR < 5}DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin\""
+    else
+      ", id: :integer" unless Rails::VERSION::MAJOR < 5
+    end
+  end
 
   # DeclareSchema - Migration Generator
   it 'generates migrations' do
@@ -57,7 +69,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       expect(migrations).to(
         migrate_up(<<~EOS.strip)
           create_table :adverts, id: :bigint do |t|
-            t.string :name, limit: 250
+            t.string :name, limit: 250#{charset_and_collation}
           end#{charset_alter_table}
         EOS
         .and migrate_down("drop_table :adverts")
@@ -90,7 +102,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     expect(migrate).to(
       migrate_up(<<~EOS.strip)
-        add_column :adverts, :body, :text#{text_limit}
+        add_column :adverts, :body, :text#{text_limit}#{charset_and_collation}
         add_column :adverts, :published_at, :datetime
       EOS
       .and migrate_down(<<~EOS.strip)
@@ -109,7 +121,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     expect(migrate).to(
       migrate_up("remove_column :adverts, :published_at").and(
-        migrate_down("add_column :adverts, :published_at, :datetime")
+        migrate_down("add_column :adverts, :published_at, :datetime#{datetime_precision}")
       )
     )
 
@@ -123,12 +135,12 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     expect(Generators::DeclareSchema::Migration::Migrator.run).to(
       migrate_up(<<~EOS.strip)
-        add_column :adverts, :title, :string, limit: 250
+        add_column :adverts, :title, :string, limit: 250#{charset_and_collation}
         remove_column :adverts, :name
       EOS
       .and migrate_down(<<~EOS.strip)
         remove_column :adverts, :title
-        add_column :adverts, :name, :string, limit: 250
+        add_column :adverts, :name, :string, limit: 250#{charset_and_collation}
       EOS
     )
 
@@ -149,7 +161,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     expect(Generators::DeclareSchema::Migration::Migrator.run).to(
       migrate_up("change_column :adverts, :title, :text#{text_limit}#{charset_and_collation}").and(
-        migrate_down("change_column :adverts, :title, :string, limit: 250")
+        migrate_down("change_column :adverts, :title, :string, limit: 250#{charset_and_collation}")
       )
     )
 
@@ -165,7 +177,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         change_column :adverts, :title, :string, limit: 250, default: "Untitled"#{charset_and_collation}
       EOS
       .and migrate_down(<<~EOS.strip)
-        change_column :adverts, :title, :string, limit: 250
+        change_column :adverts, :title, :string, limit: 250#{charset_and_collation}
       EOS
     )
 
@@ -192,7 +204,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     expect(Generators::DeclareSchema::Migration::Migrator.run).to(
       migrate_up(<<~EOS.strip)
-        change_column :adverts, :price, :integer, limit: 3#{charset_and_collation}
+        change_column :adverts, :price, :integer, limit: 3
       EOS
       .and migrate_down(<<~EOS.strip)
         change_column :adverts, :price, :integer, limit: 2
@@ -229,8 +241,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     expect(Generators::DeclareSchema::Migration::Migrator.run).to(
       migrate_up(<<~EOS.strip)
         add_column :adverts, :price, :decimal
-        add_column :adverts, :notes, :text, null: false#{text_limit}
-        add_column :adverts, :description, :text, null: false#{', limit: 65535' if defined?(Mysql2)}
+        add_column :adverts, :notes, :text, null: false#{text_limit}#{charset_and_collation}
+        add_column :adverts, :description, :text, null: false#{', limit: 65535' if defined?(Mysql2)}#{charset_and_collation}
       EOS
     )
 
@@ -252,8 +264,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       expect(Generators::DeclareSchema::Migration::Migrator.run).to(
         migrate_up(<<~EOS.strip)
-          add_column :adverts, :notes, :text, null: false, limit: 4294967295
-          add_column :adverts, :description, :text, null: false, limit: 255
+          add_column :adverts, :notes, :text, null: false, limit: 4294967295#{charset_and_collation}
+          add_column :adverts, :description, :text, null: false, limit: 255#{charset_and_collation}
         EOS
       )
 
@@ -296,7 +308,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           change_column :adverts, :description, :text, limit: 4294967295, null: false#{charset_and_collation}
         EOS
         .and migrate_down(<<~EOS.strip)
-          change_column :adverts, :description, :text#{', limit: 255' if defined?(Mysql2)}
+          change_column :adverts, :description, :text#{', limit: 255' if defined?(Mysql2)}#{charset_and_collation}
         EOS
       )
 
@@ -313,7 +325,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           change_column :adverts, :description, :text, limit: 4294967295, null: false#{charset_and_collation}
         EOS
         .and migrate_down(<<~EOS.strip)
-          change_column :adverts, :description, :text#{', limit: 255' if defined?(Mysql2)}
+          change_column :adverts, :description, :text#{', limit: 255' if defined?(Mysql2)}#{charset_and_collation}
         EOS
       )
     end
@@ -477,7 +489,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     expect(Generators::DeclareSchema::Migration::Migrator.run).to(
       migrate_up(<<~EOS.strip)
-        add_column :adverts, :title, :string, limit: 250
+        add_column :adverts, :title, :string, limit: 250#{charset_and_collation}
 
         add_index :adverts, [:title], name: 'on_title'
 
@@ -498,7 +510,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     expect(Generators::DeclareSchema::Migration::Migrator.run).to(
       migrate_up(<<~EOS.strip)
-        add_column :adverts, :title, :string, limit: 250
+        add_column :adverts, :title, :string, limit: 250#{charset_and_collation}
 
         add_index :adverts, [:title], unique: true, name: 'on_title'
 
@@ -519,7 +531,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     expect(Generators::DeclareSchema::Migration::Migrator.run).to(
       migrate_up(<<~EOS.strip)
-        add_column :adverts, :title, :string, limit: 250
+        add_column :adverts, :title, :string, limit: 250#{charset_and_collation}
 
         add_index :adverts, [:title], name: 'my_index'
 
@@ -538,7 +550,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     expect(Generators::DeclareSchema::Migration::Migrator.run).to(
       migrate_up(<<~EOS.strip)
-        add_column :adverts, :title, :string, limit: 250
+        add_column :adverts, :title, :string, limit: 250#{charset_and_collation}
 
         add_index :adverts, [:title], name: 'on_title'
 
@@ -557,7 +569,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     expect(Generators::DeclareSchema::Migration::Migrator.run).to(
       migrate_up(<<~EOS.strip)
-        add_column :adverts, :title, :string, limit: 250
+        add_column :adverts, :title, :string, limit: 250#{charset_and_collation}
 
         add_index :adverts, [:title], unique: true, name: 'my_index'
 
@@ -576,7 +588,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     expect(Generators::DeclareSchema::Migration::Migrator.run).to(
       migrate_up(<<~EOS.strip)
-        add_column :adverts, :title, :string, limit: 250
+        add_column :adverts, :title, :string, limit: 250#{charset_and_collation}
 
         add_index :adverts, [:title, :category_id], name: 'on_title_and_category_id'
 
@@ -610,8 +622,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       migrate_up(<<~EOS.strip)
         rename_table :adverts, :ads
 
-        add_column :ads, :title, :string, limit: 250
-        add_column :ads, :body, :text#{', limit: 4294967295' if defined?(Mysql2)}
+        add_column :ads, :title, :string, limit: 250#{charset_and_collation}
+        add_column :ads, :body, :text#{', limit: 4294967295' if defined?(Mysql2)}#{charset_and_collation}
 
         #{if defined?(SQLite3)
             "add_index :ads, [:id], unique: true, name: 'PRIMARY'\n"
@@ -663,8 +675,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       migrate_up(<<~EOS.strip)
         rename_table :adverts, :advertisements
 
-        add_column :advertisements, :title, :string, limit: 250
-        add_column :advertisements, :body, :text#{', limit: 4294967295' if defined?(Mysql2)}
+        add_column :advertisements, :title, :string, limit: 250#{charset_and_collation}
+        add_column :advertisements, :body, :text#{', limit: 4294967295' if defined?(Mysql2)}#{charset_and_collation}
         remove_column :advertisements, :name
 
         #{if defined?(SQLite3)
@@ -676,7 +688,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       .and migrate_down(<<~EOS.strip)
         remove_column :advertisements, :title
         remove_column :advertisements, :body
-        add_column :adverts, :name, :string, limit: 250
+        add_column :adverts, :name, :string, limit: 250#{charset_and_collation}
 
         rename_table :advertisements, :adverts
 
@@ -696,23 +708,15 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     # Dropping tables is where the automatic down-migration really comes in handy:
 
-    rails4_table_create = <<~EOS.strip
-      create_table "adverts", force: :cascade do |t|
-        t.string "name", limit: 250
-      end
-    EOS
-
-    rails5_table_create = <<~EOS.strip
-      create_table "adverts", id: :integer, force: :cascade do |t|
-        t.string "name", limit: 250
-      end
-    EOS
-
     expect(Generators::DeclareSchema::Migration::Migrator.run).to(
       migrate_up(<<~EOS.strip)
         drop_table :adverts
       EOS
-      .and migrate_down(Rails::VERSION::MAJOR >= 5 ? rails5_table_create : rails4_table_create)
+      .and migrate_down(<<~EOS.strip)
+        create_table "adverts"#{table_options}, force: :cascade do |t|
+          t.string "name", limit: 250#{charset_and_collation}
+        end
+      EOS
     )
 
     ## STI
@@ -738,7 +742,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     up, _ = Generators::DeclareSchema::Migration::Migrator.run do |migrations|
       expect(migrations).to(
         migrate_up(<<~EOS.strip)
-          add_column :adverts, :type, :string, limit: 250
+          add_column :adverts, :type, :string, limit: 250#{charset_and_collation}
 
           add_index :adverts, [:type], name: 'on_type'
         EOS
@@ -789,7 +793,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       EOS
       .and migrate_down(<<~EOS.strip)
         rename_column :adverts, :name, :title
-        change_column :adverts, :title, :string, limit: 250, default: "Untitled"
+        change_column :adverts, :title, :string, limit: 250, default: "Untitled"#{charset_and_collation}
       EOS
     )
 
