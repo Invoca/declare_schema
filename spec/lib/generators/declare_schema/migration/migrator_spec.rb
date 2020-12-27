@@ -19,15 +19,16 @@ module Generators
 
         describe 'format_options' do
           let(:mysql_longtext_limit) { 0xffff_ffff }
-
-          if defined?(Mysql2)
-            it 'returns text limits' do
-              expect(subject.format_options({ limit: mysql_longtext_limit }, :text)).to eq(["limit: #{mysql_longtext_limit}"])
+          let(:limit_option) do
+            if defined?(Mysql2)
+              ["limit: #{mysql_longtext_limit}"]
+            else
+              []
             end
           end
 
-          it 'returns text limits' do
-            expect(subject.format_options({ limit: mysql_longtext_limit }, :text)).to eq([])
+          it 'returns text limits if supported' do
+            expect(subject.format_options({ limit: mysql_longtext_limit }, :text)).to eq(limit_option)
           end
         end
 
