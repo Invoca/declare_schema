@@ -633,7 +633,7 @@ module Generators
             _, string_type, options = *md
             type = ":#{string_type}"
           end
-          type or raise "unable to find column options in #{revert}"
+          type or raise "unable to find column options for #{table}.#{col_name} in #{revert.inspect}"
           [type, options]
         end
 
