@@ -58,9 +58,14 @@ module DeclareSchema
           @options = options.merge(limit: 8)
         end
 
-        unless type.in?([:text, :string])
-          @options[:collation] and raise "collation may only given for :string and :text fields"
+        if type.in?([:text, :string])
+          if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
+            @options[:charset]   ||= model.table_options[:charset]   || Generators::DeclareSchema::Migration::Migrator.default_charset
+            @options[:collation] ||= model.table_options[:collation] || Generators::DeclareSchema::Migration::Migrator.default_collation
+          end
+        else
           @options[:charset]   and raise "charset may only given for :string and :text fields"
+          @options[:collation] and raise "collation may only given for :string and :text fields"
         end
       end
 
@@ -108,16 +113,12 @@ module DeclareSchema
         @options[:default]
       end
 
-      def collation
-        if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
-          (@options[:collation] || model.table_options[:collation] || Generators::DeclareSchema::Migration::Migrator.default_collation).to_s
-        end
+      def charset
+        @options[:charset]
       end
 
-      def charset
-        if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
-          (@options[:charset] || model.table_options[:charset] || Generators::DeclareSchema::Migration::Migrator.default_charset).to_s
-        end
+      def collation
+        @options[:collation]
       end
 
       def same_type?(col_spec)

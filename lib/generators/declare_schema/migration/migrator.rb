@@ -71,8 +71,8 @@ module Generators
       class Migrator
         class Error < RuntimeError; end
 
-        DEFAULT_CHARSET   = :utf8mb4
-        DEFAULT_COLLATION = :utf8mb4_bin
+        DEFAULT_CHARSET   = "utf8mb4"
+        DEFAULT_COLLATION = "utf8mb4_bin"
 
         @ignore_models                        = []
         @ignore_tables                        = []
@@ -82,9 +82,18 @@ module Generators
         @default_collation                    = DEFAULT_COLLATION
 
         class << self
-          attr_accessor :ignore_models, :ignore_tables, :disable_indexing, :disable_constraints,
-                        :active_record_class, :default_charset, :default_collation
-          attr_reader :before_generating_migration_callback
+          attr_accessor :ignore_models, :ignore_tables, :disable_indexing, :disable_constraints
+          attr_reader :active_record_class, :default_charset, :default_collation, :before_generating_migration_callback
+
+          def default_charset=(charset)
+            charset.is_a?(String) or raise ArgumentError, "charset must be a string (got #{charset.inspect})"
+            @default_charset = charset
+          end
+
+          def default_collation=(charset)
+            charset.is_a?(String) or raise ArgumentError, "charset must be a string (got #{charset.inspect})"
+            @default_collation = charset
+          end
 
           def active_record_class
             @active_record_class.is_a?(Class) or @active_record_class = @active_record_class.to_s.constantize
@@ -611,6 +620,7 @@ module Generators
           end
         end
 
+        # TODO: TECH-4814 remove all methods from here through end of file
         def revert_table(table)
           res = StringIO.new
           schema_dumper_klass = case Rails::VERSION::MAJOR
@@ -620,26 +630,48 @@ module Generators
                                   ActiveRecord::ConnectionAdapters::SchemaDumper
                                 end
           schema_dumper_klass.send(:new, ActiveRecord::Base.connection).send(:table, table, res)
-          res.string.strip.gsub("\n  ", "\n")
+          result = res.string.strip.gsub("\n  ", "\n")
+          if connection.class.name.match?(/mysql/i)
+            if !result['options: ']
+              result = result.sub('",', "\", options: \"DEFAULT CHARSET=#{Generators::DeclareSchema::Migration::Migrator.default_charset} "+
+                                   "COLLATE=#{Generators::DeclareSchema::Migration::Migrator.default_collation}\",")
+            end
+            default_charset   = result[/CHARSET=(\w+)/, 1]   or raise "unable to find charset in #{result.inspect}"
+            default_collation = result[/COLLATE=(\w+)/, 1] or raise "unable to find collation in #{result.inspect}"
+            result = result.split("\n").map do |line|
+              if line['t.text'] || line['t.string']
+                if !line['charset: ']
+                  if line['collation: ']
+                    line = line.sub('collation: ', "charset: #{default_charset.inspect}, collation: ")
+                  else
+                    line += ", charset: #{default_charset.inspect}"
+                  end
+                end
+                line['collation: '] or line += ", collation: #{default_collation.inspect}"
+              end
+              line
+            end.join("\n")
+          end
+          result
         end
 
-        def column_options_from_reverted_table(table, col_name)
+        def column_options_from_reverted_table(table, column)
           revert = revert_table(table)
-          if (md = revert.match(/\s*t\.column\s+"#{col_name}",\s+(:[a-zA-Z0-9_]+)(?:,\s+(.*?)$)?/m))
+          if (md = revert.match(/\s*t\.column\s+"#{column}",\s+(:[a-zA-Z0-9_]+)(?:,\s+(.*?)$)?/m))
             # Ugly migration
             _, type, options = *md
-          elsif (md = revert.match(/\s*t\.([a-z_]+)\s+"#{col_name}"(?:,\s+(.*?)$)?/m))
+          elsif (md = revert.match(/\s*t\.([a-z_]+)\s+"#{column}"(?:,\s+(.*?)$)?/m))
             # Sexy migration
             _, string_type, options = *md
             type = ":#{string_type}"
           end
-          type or raise "unable to find column options for #{table}.#{col_name} in #{revert.inspect}"
+          type or raise "unable to find column options for #{table}.#{column} in #{revert.inspect}"
           [type, options]
         end
 
-        def change_column_back(table, col_name)
-          type, options = column_options_from_reverted_table(table, col_name)
-          ["change_column :#{table}, :#{col_name}, #{type}", options&.strip].compact.join(', ')
+        def change_column_back(table, column)
+          type, options = column_options_from_reverted_table(table, column)
+          ["change_column :#{table}, :#{column}, #{type}", options&.strip].compact.join(', ')
         end
 
         def revert_column(table, column)
