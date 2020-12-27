@@ -30,6 +30,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       ', charset: "utf8mb4", collation: "utf8mb4_bin"'
     end
   end
+
   # DeclareSchema - Migration Generator
   it 'generates migrations' do
     ## The migration generator -- introduction
@@ -69,7 +70,11 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     if Rails::VERSION::MAJOR < 5
       # Rails 4 drivers don't always create PK properly. Fix that by dropping and recreating.
       ActiveRecord::Base.connection.execute("drop table adverts")
-      ActiveRecord::Base.connection.execute('CREATE TABLE adverts (id integer PRIMARY KEY AUTO_INCREMENT NOT NULL, name varchar(250)) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin')
+      if defined?(Mysql2)
+        ActiveRecord::Base.connection.execute("CREATE TABLE adverts (id integer PRIMARY KEY AUTO_INCREMENT NOT NULL, name varchar(250)) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin")
+      else
+        ActiveRecord::Base.connection.execute("CREATE TABLE adverts (id integer PRIMARY KEY AUTOINCREMENT  NOT NULL, name varchar(250))")
+      end
     end
 
     class Advert < ActiveRecord::Base
@@ -82,8 +87,6 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     Advert.connection.schema_cache.clear!
     Advert.reset_column_information
-
-    expect(::DeclareSchema::Model::FieldSpec.mysql_text_limits?).to be_truthy
 
     expect(migrate).to(
       migrate_up(<<~EOS.strip)
@@ -296,27 +299,24 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           change_column :adverts, :description, :text#{', limit: 255' if defined?(Mysql2)}
         EOS
       )
-    end
 
-    # TODO TECH-4814: The above test should have this output:
-    # TODO => "change_column :adverts, :description, :text, limit: 250
+      # And migrate to a stated text limit that is the same as the unstated one:
 
-    # And migrate to a stated text limit that is the same as the unstated one:
-
-    class Advert < ActiveRecord::Base
-      fields do
-        description :text, limit: 0xffffffff
+      class Advert < ActiveRecord::Base
+        fields do
+          description :text, limit: 0xffffffff
+        end
       end
-    end
 
-    expect(Generators::DeclareSchema::Migration::Migrator.run).to(
-      migrate_up(<<~EOS.strip)
-        change_column :adverts, :description, :text, limit: 4294967295, null: false#{charset_and_collation}
-      EOS
-      .and migrate_down(<<~EOS.strip)
-        change_column :adverts, :description, :text#{', limit: 255' if defined?(Mysql2)}
-      EOS
-    )
+      expect(Generators::DeclareSchema::Migration::Migrator.run).to(
+        migrate_up(<<~EOS.strip)
+          change_column :adverts, :description, :text, limit: 4294967295, null: false#{charset_and_collation}
+        EOS
+        .and migrate_down(<<~EOS.strip)
+          change_column :adverts, :description, :text#{', limit: 255' if defined?(Mysql2)}
+        EOS
+      )
+    end
 
     Advert.field_specs.clear
     Advert.connection.schema_cache.clear!
@@ -329,6 +329,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     up = Generators::DeclareSchema::Migration::Migrator.run.first
     ActiveRecord::Migration.class_eval up
+
     Advert.connection.schema_cache.clear!
     Advert.reset_column_information
 
@@ -614,8 +615,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
         #{if defined?(SQLite3)
             "add_index :ads, [:id], unique: true, name: 'PRIMARY'\n"
-          end
-          if defined?(Mysql2)
+          elsif defined?(Mysql2)
             "execute \"ALTER TABLE ads DROP PRIMARY KEY, ADD PRIMARY KEY (id)\"\n\n" +
             "execute \"ALTER TABLE adverts ADD CONSTRAINT index_adverts_on_category_id FOREIGN KEY index_adverts_on_category_id(category_id) REFERENCES categories(id) \"\nexecute \"ALTER TABLE adverts ADD CONSTRAINT index_adverts_on_c_id FOREIGN KEY index_adverts_on_c_id(c_id) REFERENCES categories(id) \""
           end}
@@ -628,8 +628,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
         #{if defined?(SQLite3)
             "add_index :adverts, [:id], unique: true, name: 'PRIMARY'\n"
-          end
-          if defined?(Mysql2)
+          elsif defined?(Mysql2)
             "execute \"ALTER TABLE adverts DROP PRIMARY KEY, ADD PRIMARY KEY (id)\"\n\n" +
             "remove_foreign_key('adverts', name: '')\n" +
             "remove_foreign_key('adverts', name: '')"
@@ -670,8 +669,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
         #{if defined?(SQLite3)
             "add_index :advertisements, [:id], unique: true, name: 'PRIMARY'"
-          end
-          if defined?(Mysql2)
+          elsif defined?(Mysql2)
             "execute \"ALTER TABLE advertisements DROP PRIMARY KEY, ADD PRIMARY KEY (id)\""
           end}
       EOS
@@ -684,8 +682,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
         #{if defined?(SQLite3)
             "add_index :adverts, [:id], unique: true, name: 'PRIMARY'"
-          end
-          if defined?(Mysql2)
+          elsif defined?(Mysql2)
             "execute \"ALTER TABLE adverts DROP PRIMARY KEY, ADD PRIMARY KEY (id)\""
           end}
       EOS
@@ -816,8 +813,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
         #{if defined?(SQLite3)
             "add_index :ads, [:id], unique: true, name: 'PRIMARY'"
-          end
-          if defined?(Mysql2)
+          elsif defined?(Mysql2)
             'execute "ALTER TABLE ads DROP PRIMARY KEY, ADD PRIMARY KEY (id)"'
           end}
       EOS
@@ -849,10 +845,9 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
         #{if defined?(SQLite3)
             "add_index :adverts, [:advert_id], unique: true, name: 'PRIMARY'"
-          end
-        if defined?(Mysql2)
+          elsif defined?(Mysql2)
           'execute "ALTER TABLE adverts DROP PRIMARY KEY, ADD PRIMARY KEY (advert_id)"'
-        end}
+          end}
       EOS
     )
 
