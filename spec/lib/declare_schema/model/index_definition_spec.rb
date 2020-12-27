@@ -64,7 +64,7 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
         ActiveRecord::Base.connection.execute <<~EOS
             CREATE TABLE index_definition_test_models (
               id INTEGER NOT NULL PRIMARY KEY,
-              name TEXT NOT NULL
+              name #{if defined?(Sqlite3) then 'TEXT' else 'VARCHAR(255)' end} NOT NULL
             )
         EOS
         ActiveRecord::Base.connection.execute <<~EOS
@@ -72,8 +72,8 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
         EOS
         ActiveRecord::Base.connection.execute <<~EOS
             CREATE TABLE index_definition_compound_index_models (
-              fk1_id INTEGER NULL,
-              fk2_id INTEGER NULL,
+              fk1_id INTEGER NOT NULL,
+              fk2_id INTEGER NOT NULL,
               PRIMARY KEY (fk1_id, fk2_id)
             )
         EOS
@@ -99,10 +99,9 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
           let(:model_class) { IndexDefinitionCompoundIndexModel }
 
           it 'returns the indexes for the model' do
-            # Simulate MySQL for Rails 4 work-around
             if Rails::VERSION::MAJOR < 5
               expect(model_class.connection).to receive(:primary_key).with('index_definition_compound_index_models').and_return(nil)
-              connection_stub = instance_double(ActiveRecord::ConnectionAdapters::SQLite3Adapter, "connection")
+              connection_stub = instance_double(ActiveRecord::Base.connection.class, "connection")
               expect(connection_stub).to receive(:indexes).
                 with('index_definition_compound_index_models').
                 and_return([DeclareSchema::Model::IndexDefinition.new(model_class, ['fk1_id', 'fk2_id'], name: 'PRIMARY')])
