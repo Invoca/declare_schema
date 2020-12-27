@@ -67,7 +67,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     expect(Advert.columns.map(&:name)).to eq(["id", "name"])
 
     if Rails::VERSION::MAJOR < 5
-      # Rails 4 sqlite driver doesn't create PK properly. Fix that by dropping and recreating.
+      # Rails 4 drivers don't always create PK properly. Fix that by dropping and recreating.
       ActiveRecord::Base.connection.execute("drop table adverts")
       ActiveRecord::Base.connection.execute('CREATE TABLE adverts (id integer PRIMARY KEY AUTO_INCREMENT NOT NULL, name varchar(250)) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin')
     end
@@ -1201,6 +1201,10 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
         migrations = Dir.glob('db/migrate/*declare_schema_migration*.rb')
         expect(migrations.size).to eq(1), migrations.inspect
+
+        if defined?(Mysql2) && Rails::VERSION::MAJOR < 5
+          ActiveRecord::Base.connection.execute("ALTER TABLE adverts ADD PRIMARY KEY (id)")
+        end
 
         class Advert < active_record_base_class.constantize
           fields do
