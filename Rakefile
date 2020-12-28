@@ -47,9 +47,7 @@ namespace "test" do
       end
       sh "bundle install"
       sh "(echo '';
-           echo \"gem 'irt', :group => :development\";
-           echo \"gem 'therubyracer'\";
-           echo \"gem 'kramdown'\") > Gemfile"
+           echo \"gem 'irb', :group => :development\") >> Gemfile"
       sh "echo '' > app/models/.gitignore" # because git reset --hard would rm the dir
       rm ".gitignore" # we need to reset everything in a testapp
       sh "git init && git add . && git commit -m \"initial commit\""
