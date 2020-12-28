@@ -16,7 +16,7 @@ module DeclareSchema
     EOS
 
     class << self
-      def run(gem, args, version)
+      def run(gem, args, version, gemfile_options = {})
         command = args.shift
 
         case command
@@ -38,7 +38,7 @@ module DeclareSchema
           end
           template_path = File.join(Dir.tmpdir, "declare_schema_app_template")
           File.open(template_path, 'w') do |file|
-            file.puts "gem '#{gem}', '>= #{version}'"
+            file.puts ["gem '#{gem}', '>= #{version}'", (gemfile_options.inspect unless gemfile_options.empty?)].compact.join(', ')
           end
           puts "Generating Rails infrastructure..."
           database_option =
