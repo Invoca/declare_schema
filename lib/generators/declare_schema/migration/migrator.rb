@@ -630,6 +630,7 @@ module Generators
                                   ActiveRecord::ConnectionAdapters::SchemaDumper
                                 end
           schema_dumper_klass.send(:new, ActiveRecord::Base.connection).send(:table, table, res)
+
           result = res.string.strip.gsub("\n  ", "\n")
           if connection.class.name.match?(/mysql/i)
             if !result['options: ']
