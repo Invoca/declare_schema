@@ -37,7 +37,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
   end
   let(:table_options) do
     if defined?(Mysql2)
-      ", options: \"#{'ENGINE=InnoDB ' unless Rails::VERSION::MAJOR < 5}DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin\""
+      ", options: \"#{'ENGINE=InnoDB ' if Rails::VERSION::MAJOR == 5}DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin\""
     else
       ", id: :integer" unless Rails::VERSION::MAJOR < 5
     end
