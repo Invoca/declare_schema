@@ -569,13 +569,13 @@ module Generators
 
         def format_options(options, type, changing: false)
           options.map do |k, v|
-            unless changing
-              if (k == :limit && type == :decimal) || (k == :null && v == true)
-                next
-              end
+            if !changing && ((k == :limit && type == :decimal) || (k == :null && v == true))
+              next
             end
 
-            next if k == :limit && type == :text && !::DeclareSchema::Model::FieldSpec.mysql_text_limits?
+            if !::DeclareSchema::Model::FieldSpec.mysql_text_limits? && k == :limit && type == :text
+              next
+            end
 
             if k.is_a?(Symbol)
               "#{k}: #{v.inspect}"
@@ -589,9 +589,9 @@ module Generators
           foreign_key = model.constraint_specs.find { |fk| field_name == fk.foreign_key.to_s }
           if foreign_key && (parent_table = foreign_key.parent_table_name)
             parent_columns = connection.columns(parent_table) rescue []
-            pk_limit  =
+            pk_limit =
               if (pk_column = parent_columns.find { |column| column.name.to_s == "id" }) # right now foreign keys assume id is the target
-                if Rails::VERSION::MAJOR <= 4
+                if Rails::VERSION::MAJOR < 5
                   pk_column.cast_type.limit
                 else
                   pk_column.limit
