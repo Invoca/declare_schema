@@ -90,9 +90,9 @@ module Generators
             @default_charset = charset
           end
 
-          def default_collation=(charset)
-            charset.is_a?(String) or raise ArgumentError, "charset must be a string (got #{charset.inspect})"
-            @default_collation = charset
+          def default_collation=(collation)
+            collation.is_a?(String) or raise ArgumentError, "collation must be a string (got #{collation.inspect})"
+            @default_collation = collation
           end
 
           def active_record_class
