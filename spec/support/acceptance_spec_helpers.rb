@@ -23,7 +23,7 @@ module AcceptanceSpecHelpers
 
   def expect_file_to_eq(file_path, expectation)
     expect(File.exist?(file_path)).to be_truthy
-    expect(File.read(file_path).gsub(/require "([^"]*)"/, "require '\\1'")).to eq(expectation)
+    expect(File.read(file_path).gsub(/require '([^']*)'/, 'require "\1"')).to eq(expectation)
   end
 
   def clean_up_model(model)

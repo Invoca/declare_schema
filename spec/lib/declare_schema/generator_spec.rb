@@ -30,7 +30,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     case Rails::VERSION::MAJOR
     when 4, 5
       expect_test_definition_to_eq('alpha/beta', <<~EOS)
-        require 'test_helper'
+        require "test_helper"
 
         class Alpha::BetaTest < ActiveSupport::TestCase
           # test "the truth" do
@@ -40,7 +40,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       EOS
     else
       expect_test_definition_to_eq('alpha/beta', <<~EOS)
-        require 'test_helper'
+        require "test_helper"
 
         class Alpha::BetaTest < ActiveSupport::TestCase
           # test "the truth" do
