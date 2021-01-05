@@ -58,7 +58,7 @@ module DeclareSchema
       end
 
       def settings
-        @settings ||= table_options.map { |name, value| "#{TABLE_OPTIONS_TO_SQL_MAPPINGS[name]} #{value}" if value}.compact.join(" ")
+        @settings ||= table_options.map { |name, value| "#{TABLE_OPTIONS_TO_SQL_MAPPINGS[name]} #{value}" if value }.compact.join(" ")
       end
 
       def hash
