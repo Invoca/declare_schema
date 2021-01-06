@@ -4,12 +4,12 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.1] - Unreleased
+## [0.6.1] - 2021-01-06
 ### Added
 - Added Appraisals for MySQL as well as SQLite.
 
 ### Fixed
-- Fixed case where primary key index will be gone by the time we get to adding a new primary key
+- Fixed case where primary key index will be gone by the time we get to dropping that primary key
 because all of the existing primary key columns are being removed.
 
 ## [0.6.0] - 2020-12-23
