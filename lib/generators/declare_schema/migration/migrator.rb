@@ -621,6 +621,15 @@ module Generators
         end
 
         # TODO: TECH-4814 remove all methods from here through end of file
+        def default_collation_from_charset(charset)
+          case charset
+          when "utf8"
+            "utf8_general_ci"
+          when "utf8mb4"
+            "utf8mb4_general_ci"
+          end
+        end
+
         def revert_table(table)
           res = StringIO.new
           schema_dumper_klass = case Rails::VERSION::MAJOR
@@ -638,7 +647,8 @@ module Generators
                                    "COLLATE=#{Generators::DeclareSchema::Migration::Migrator.default_collation}\",")
             end
             default_charset   = result[/CHARSET=(\w+)/, 1]   or raise "unable to find charset in #{result.inspect}"
-            default_collation = result[/COLLATE=(\w+)/, 1] or raise "unable to find collation in #{result.inspect}"
+            default_collation = result[/COLLATE=(\w+)/, 1] || default_collation_from_charset(default_charset) or
+              raise "unable to find collation in #{result.inspect} or charset #{default_charset.inspect}"
             result = result.split("\n").map do |line|
               if line['t.text'] || line['t.string']
                 if !line['charset: ']
