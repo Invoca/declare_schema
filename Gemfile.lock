@@ -193,7 +193,7 @@ DEPENDENCIES
   responders
   rspec
   rubocop
-  sqlite3 (~> 1.4.0)
+  sqlite3 (~> 1.4)
   yard
 
 BUNDLED WITH
