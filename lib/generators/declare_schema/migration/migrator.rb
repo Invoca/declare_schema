@@ -564,7 +564,7 @@ module Generators
         end
 
         def remove_foreign_key(old_table_name, fk_name)
-          "remove_foreign_key(#{old_table_name.inspect}, name: #{fk_name.inspect})"
+          "remove_foreign_key(#{old_table_name.inspect}, name: #{fk_name.to_s.inspect})"
         end
 
         def format_options(options, type, changing: false)
