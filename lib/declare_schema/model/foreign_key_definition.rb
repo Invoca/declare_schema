@@ -51,8 +51,7 @@ module DeclareSchema
       attr_writer :parent_table_name
 
       def to_add_statement
-        statement = "ALTER TABLE #{@child_table} ADD CONSTRAINT #{@constraint_name} FOREIGN KEY #{@index_name}(#{@foreign_key_name}) REFERENCES #{parent_table_name}(id) #{'ON DELETE CASCADE' if on_delete_cascade}"
-        "execute #{statement.inspect}"
+        "add_foreign_key(#{@child_table.inspect}, #{parent_table_name.inspect}, name: #{@constraint_name.inspect})"
       end
 
       def key
