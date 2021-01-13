@@ -376,7 +376,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
         remove_index :adverts, name: :on_category_id rescue ActiveRecord::StatementInvalid
 
-        #{"remove_foreign_key(\"adverts\", name: \"\")\n" if defined?(Mysql2)}
+        #{"remove_foreign_key(\"adverts\", name: \"index_adverts_on_category_id\")\n" if defined?(Mysql2)}
       EOS
     )
 
@@ -473,8 +473,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         remove_column :adverts, :updated_at
         remove_column :adverts, :lock_version
 
-        #{"remove_foreign_key(\"adverts\", name: \"\")\n" +
-          "remove_foreign_key(\"adverts\", name: \"\")" if defined?(Mysql2)}
+        #{"remove_foreign_key(\"adverts\", name: \"index_adverts_on_category_id\")\n" +
+          "remove_foreign_key(\"adverts\", name: \"index_adverts_on_c_id\")" if defined?(Mysql2)}
       EOS
     )
 
@@ -648,8 +648,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
             "add_index :adverts, [:id], unique: true, name: 'PRIMARY'\n"
           elsif defined?(Mysql2)
             "execute \"ALTER TABLE adverts DROP PRIMARY KEY, ADD PRIMARY KEY (id)\"\n\n" +
-            "remove_foreign_key(\"adverts\", name: \"\")\n" +
-            "remove_foreign_key(\"adverts\", name: \"\")"
+            "remove_foreign_key(\"adverts\", name: \"index_adverts_on_category_id\")\n" +
+            "remove_foreign_key(\"adverts\", name: \"index_adverts_on_c_id\")"
           end}
       EOS
     )
