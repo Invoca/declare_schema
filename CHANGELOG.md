@@ -5,11 +5,12 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.6.2] - 2021-01-06
-### Changed
-- added compatibility params to DeclareSchema::Model::ForeignKeyDefinition#to_add_statement
-
 ### Added
-- sqlite3 as dev dependency
+- Added `sqlite3` as dev dependency for local development
+
+### Fixed
+- Fixed a bug in migration generation caused by `DeclareSchema::Model::ForeignKeyDefinition#to_add_statement`
+  not being passed proper arguments.
 
 ## [0.6.1] - 2021-01-06
 ### Added
