@@ -9,7 +9,7 @@ group :testapp do
   gem 'listen'
 end
 
-gem 'appraisal'
+gem 'appraisal',        github: 'thoughtbot/appraisal'
 gem 'bundler',          '< 2'
 gem "climate_control",  '~> 0.2'
 gem 'pry'
