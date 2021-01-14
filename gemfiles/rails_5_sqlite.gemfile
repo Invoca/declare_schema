@@ -2,7 +2,7 @@
 
 source "https://rubygems.org"
 
-gem "appraisal"
+gem "appraisal", github: "thoughtbot/appraisal"
 gem "bundler", "< 2"
 gem "climate_control", "~> 0.2"
 gem "pry"
@@ -12,7 +12,7 @@ gem "responders"
 gem "rspec"
 gem "rubocop"
 gem "yard"
-gem "sqlite3"
+gem "sqlite3", "~> 1.4"
 
 group :testapp do
   gem "bootsnap", ">= 1.1.0", require: false
