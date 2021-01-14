@@ -50,7 +50,7 @@ module DeclareSchema
 
       attr_writer :parent_table_name
 
-      def to_add_statement
+      def to_add_statement(_new_table_name = nil, _existing_primary_key = nil)
         "add_foreign_key(#{@child_table.inspect}, #{parent_table_name.inspect}, name: #{@constraint_name.inspect})"
       end
 
