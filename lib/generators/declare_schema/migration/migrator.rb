@@ -386,7 +386,7 @@ module Generators
         end
 
         def create_constraints(model)
-          model.constraint_specs.map { |fk| fk.to_add_statement(model.table_name) }
+          model.constraint_specs.map { |fk| fk.to_add_statement }
         end
 
         def create_field(field_spec, field_name_width)
