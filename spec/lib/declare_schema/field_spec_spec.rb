@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe 'DeclareSchema Model FieldSpec' do
+RSpec.describe DeclareSchema::Model::FieldSpec do
   before do
     load File.expand_path('prepare_testapp.rb', __dir__)
   end
