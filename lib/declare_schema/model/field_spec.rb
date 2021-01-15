@@ -78,6 +78,12 @@ module DeclareSchema
           NilClass
         end
 
+      # returns the attributes for schema migrations as a Hash
+      # omits name and position since those are meta-data above the schema
+      def schema_attributes
+        { type: @type }.merge(@options)
+      end
+
       def sql_type
         @options[:sql_type] || begin
                                 if native_type?(type)
