@@ -82,7 +82,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
         col = ActiveRecord::ConnectionAdapters::Column.new("price", nil, sql_type_metadata, false, "adverts")
       end
 
-      expect(subject.different_to?(subject.name, col)).to eq(false)
+      expect(subject.different_to?(col)).to eq(false)
     end
 
     it '#different_to should return false for bigint == bigint' do
@@ -97,7 +97,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
         col = ActiveRecord::ConnectionAdapters::Column.new("price", nil, sql_type_metadata, false, "adverts")
       end
 
-      expect(subject.different_to?(subject.name, col)).to eq(false)
+      expect(subject.different_to?(col)).to eq(false)
     end
 
     it '#different_to should return false for int8 == bigint' do
@@ -112,7 +112,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
         col = ActiveRecord::ConnectionAdapters::Column.new("price", nil, sql_type_metadata, false, "adverts")
       end
 
-      expect(subject.different_to?(subject.name, col)).to eq(false)
+      expect(subject.different_to?(col)).to eq(false)
     end
 
     it '#different_to should return false for bigint == int8' do
@@ -127,7 +127,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
         col = ActiveRecord::ConnectionAdapters::Column.new("price", nil, sql_type_metadata, false, "adverts")
       end
 
-      expect(subject.different_to?(subject.name, col)).to eq(false)
+      expect(subject.different_to?(col)).to eq(false)
     end
   end
 end

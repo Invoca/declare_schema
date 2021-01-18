@@ -128,14 +128,13 @@ module DeclareSchema
         @options[:collation]
       end
 
-      def different_to?(table_name, col_spec)
-        !same_as(table_name, col_spec)
+      def different_to?(col_spec)
+        !same_as(col_spec)
       end
 
-      def same_as(table_name, col_spec)
+      def same_as(col_spec)
         @sql_type == col_spec.type &&
-          same_attributes?(col_spec) &&
-          (!type.in?([:text, :string]) || same_charset_and_collation?(table_name, col_spec))
+          same_attributes?(col_spec)
       end
 
       private
