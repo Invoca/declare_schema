@@ -62,6 +62,9 @@ module DeclareSchema
           if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
             @options[:charset]   ||= model.table_options[:charset]   || Generators::DeclareSchema::Migration::Migrator.default_charset
             @options[:collation] ||= model.table_options[:collation] || Generators::DeclareSchema::Migration::Migrator.default_collation
+          else
+            @options.delete(:charset)
+            @options.delete(:collation)
           end
         else
           @options[:charset]   and raise "charset may only given for :string and :text fields"

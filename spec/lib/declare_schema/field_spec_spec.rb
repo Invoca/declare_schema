@@ -33,8 +33,8 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
     end
 
     context 'string' do
-      it 'returns schema attributes' do
-        subject = described_class.new(Object, :title, :string, limit: 100, null: true, position: 0)
+      it 'returns schema attributes (including charset/collation iff mysql)' do
+        subject = described_class.new(Object, :title, :string, limit: 100, null: true, collation: 'utf8_general_ci', position: 0)
         if defined?(Mysql2)
           expect(subject.schema_attributes).to eq(type: :string, limit: 100, null: true, charset: 'utf8', collation: 'utf8_general_ci')
         else
@@ -44,8 +44,8 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
     end
 
     context 'text' do
-      it 'returns schema attributes' do
-        subject = described_class.new(Object, :title, :text, limit: 200, null: true, position: 2)
+      it 'returns schema attributes (including charset/collation iff mysql)' do
+        subject = described_class.new(Object, :title, :text, limit: 200, null: true, charset: 'utf8', position: 2)
         if defined?(Mysql2)
           expect(subject.schema_attributes).to eq(type: :text, limit: 255, null: true, charset: 'utf8', collation: 'utf8_general_ci')
         else
