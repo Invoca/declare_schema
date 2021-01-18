@@ -46,7 +46,7 @@ module DeclareSchema
         type.is_a?(Symbol) or raise ArgumentError, "type must be a Symbol; got #{type.inspect}"
         @type = TYPE_SYNONYMS[type] || type
         @position = position
-        @options = options
+        @options = options.dup
         case type
         when :text
           @options[:default] and raise "default may not be given for :text field #{model}##{@name}"
@@ -60,7 +60,16 @@ module DeclareSchema
           @options = options.merge(limit: 8)
         end
 
-        if type.in?([:text, :string])
+        @sql_type = @options.delete(:sql_type) || # TODO: Do we really need to support :sql_type? If not, this and the `dup` above can go away. -Colin
+          if native_type?(@type)
+            @type
+          else
+            if (field_class = DeclareSchema.to_class(@type))
+              field_class::COLUMN_TYPE
+            end or raise UnknownSqlTypeError, "#{@type.inspect} for #{model}##{@name}"
+          end
+
+        if @type.in?([:text, :string])
           if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
             @options[:charset]   ||= model.table_options[:charset]   || Generators::DeclareSchema::Migration::Migrator.default_charset
             @options[:collation] ||= model.table_options[:collation] || Generators::DeclareSchema::Migration::Migrator.default_collation
@@ -87,23 +96,12 @@ module DeclareSchema
         { type: @type }.merge(@options)
       end
 
-      def sql_type
-        @options[:sql_type] || begin
-                                if native_type?(type)
-                                  type
-                                else
-                                  field_class = DeclareSchema.to_class(type)
-                                  field_class && field_class::COLUMN_TYPE or raise UnknownSqlTypeError, "#{type.inspect} for #{model}##{@name}"
-                                end
-                              end
-      end
-
       def sql_options
         @options.except(:ruby_default, :validates)
       end
 
       def limit
-        @options[:limit] || native_types[sql_type][:limit]
+        @options[:limit] || native_types[@sql_type][:limit]
       end
 
       def precision
@@ -135,7 +133,7 @@ module DeclareSchema
       end
 
       def same_as(table_name, col_spec)
-        sql_type == col_spec.type &&
+        @sql_type == col_spec.type &&
           same_attributes?(col_spec) &&
           (!type.in?([:text, :string]) || same_charset_and_collation?(table_name, col_spec))
       end
@@ -145,10 +143,10 @@ module DeclareSchema
       def same_attributes?(col_spec)
         native_type = native_types[type]
         check_attributes = [:null, :default]
-        check_attributes += [:precision, :scale] if sql_type == :decimal && !col_spec.is_a?(SQLITE_COLUMN_CLASS)  # remove when rails fixes https://rails.lighthouseapp.com/projects/8994-ruby-on-rails/tickets/2872
-        check_attributes -= [:default] if sql_type == :text && col_spec.class.name =~ /mysql/i
-        check_attributes << :limit if sql_type.in?([:string, :binary, :varbinary, :integer, :enum]) ||
-                                      (sql_type == :text && self.class.mysql_text_limits?)
+        check_attributes += [:precision, :scale] if @sql_type == :decimal && !col_spec.is_a?(SQLITE_COLUMN_CLASS)  # remove when rails fixes https://rails.lighthouseapp.com/projects/8994-ruby-on-rails/tickets/2872
+        check_attributes -= [:default] if @sql_type == :text && col_spec.class.name =~ /mysql/i
+        check_attributes << :limit if @sql_type.in?([:string, :binary, :varbinary, :integer, :enum]) ||
+                                      (@sql_type == :text && self.class.mysql_text_limits?)
         check_attributes.all? do |k|
           if k == :default
             case Rails::VERSION::MAJOR
