@@ -150,7 +150,7 @@ module DeclareSchema
       def same_attributes?(col_spec)
         native_type = native_types[type]
         check_attributes = [:null, :default]
-        check_attributes += [:precision, :scale] if @sql_type == :decimal && !col_spec.is_a?(SQLITE_COLUMN_CLASS)  # remove when rails fixes https://rails.lighthouseapp.com/projects/8994-ruby-on-rails/tickets/2872
+        check_attributes += [:precision, :scale] if @sql_type == :decimal
         check_attributes.all? do |k|
           if k == :default
             case Rails::VERSION::MAJOR
