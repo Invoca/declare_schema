@@ -32,6 +32,8 @@ module DeclareSchema
 
       attr_reader :model, :name, :type, :position, :options
 
+      TYPE_SYNONYMS = { timestamp: :datetime }.freeze
+
       def initialize(model, name, type, position: 0, **options)
         # TODO: TECH-5116
         # Invoca change - searching for the primary key was causing an additional database read on every model load.  Assume
@@ -42,7 +44,7 @@ module DeclareSchema
         @model = model
         @name = name.to_sym
         type.is_a?(Symbol) or raise ArgumentError, "type must be a Symbol; got #{type.inspect}"
-        @type = type
+        @type = TYPE_SYNONYMS[type] || type
         @position = position
         @options = options
         case type
@@ -71,8 +73,6 @@ module DeclareSchema
           @options[:collation] and raise "collation may only given for :string and :text fields"
         end
       end
-
-      TYPE_SYNONYMS = { timestamp: :datetime }.freeze
 
       SQLITE_COLUMN_CLASS =
         begin
@@ -130,19 +130,12 @@ module DeclareSchema
         @options[:collation]
       end
 
-      def same_type?(col_spec)
-        type = sql_type
-        normalized_type           = TYPE_SYNONYMS[type] || type
-        normalized_col_spec_type  = TYPE_SYNONYMS[col_spec.type] || col_spec.type
-        normalized_type == normalized_col_spec_type
-      end
-
       def different_to?(table_name, col_spec)
         !same_as(table_name, col_spec)
       end
 
       def same_as(table_name, col_spec)
-        same_type?(col_spec) &&
+        sql_type == col_spec.type &&
           same_attributes?(col_spec) &&
           (!type.in?([:text, :string]) || same_charset_and_collation?(table_name, col_spec))
       end

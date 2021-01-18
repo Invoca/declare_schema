@@ -11,28 +11,28 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
   end
 
   describe '#schema_attributes' do
-    context 'integer 4' do
+    describe 'integer 4' do
       it 'returns schema attributes' do
         subject = described_class.new(Object, :price, :integer, limit: 4, null: false, position: 0)
         expect(subject.schema_attributes).to eq(type: :integer, limit: 4, null: false)
       end
     end
 
-    context 'integer 8' do
+    describe 'integer 8' do
       it 'returns schema attributes' do
         subject = described_class.new(Object, :price, :integer, limit: 8, null: true, position: 2)
         expect(subject.schema_attributes).to eq(type: :integer, limit: 8, null: true)
       end
     end
 
-    context 'bigint' do
+    describe 'bigint' do
       it 'returns schema attributes' do
         subject = described_class.new(Object, :price, :bigint, null: false, position: 2)
         expect(subject.schema_attributes).to eq(type: :integer, limit: 8, null: false)
       end
     end
 
-    context 'string' do
+    describe 'string' do
       it 'returns schema attributes (including charset/collation iff mysql)' do
         subject = described_class.new(Object, :title, :string, limit: 100, null: true, collation: 'utf8_general_ci', position: 0)
         if defined?(Mysql2)
@@ -43,7 +43,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
       end
     end
 
-    context 'text' do
+    describe 'text' do
       it 'returns schema attributes (including charset/collation iff mysql)' do
         subject = described_class.new(Object, :title, :text, limit: 200, null: true, charset: 'utf8', position: 2)
         if defined?(Mysql2)
@@ -51,6 +51,20 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
         else
           expect(subject.schema_attributes).to eq(type: :text, limit: 200, null: true)
         end
+      end
+    end
+
+    describe 'datetime' do
+      it 'keeps type as "datetime"' do
+        subject = described_class.new(Object, :created_at, :datetime, null: false, position: 1)
+        expect(subject.schema_attributes).to eq(type: :datetime, null: false)
+      end
+    end
+
+    describe 'timestamp' do
+      it 'normalizes type to "datetime"' do
+        subject = described_class.new(Object, :created_at, :timestamp, null: true, position: 2)
+        expect(subject.schema_attributes).to eq(type: :datetime, null: true)
       end
     end
   end

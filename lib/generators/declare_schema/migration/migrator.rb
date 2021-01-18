@@ -453,8 +453,9 @@ module Generators
           to_change.each do |c|
             col_name = old_names[c] || c
             col = db_columns[col_name]
-            spec = model.field_specs[c]
-            if spec.different_to?(current_table_name, col) # TODO: TECH-4814 DRY this up to a diff function that returns the differences. It's different if it has differences. -Colin
+            spec = model.field_specs[c] or raise "failed to find field spec for #{c.inspect}"
+            declared_schema_attributes = spec.schema_attributes
+            if spec.different_to?(current_table_name, col)
               change_spec = fk_field_options(model, c)
               change_spec[:limit]     ||= spec.limit   if (spec.sql_type != :text ||
                                                          ::DeclareSchema::Model::FieldSpec.mysql_text_limits?) &&
