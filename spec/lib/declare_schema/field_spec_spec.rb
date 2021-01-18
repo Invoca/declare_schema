@@ -45,11 +45,20 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
 
     describe 'text' do
       it 'returns schema attributes (including charset/collation iff mysql)' do
-        subject = described_class.new(Object, :title, :text, limit: 200, null: true, charset: 'utf8', position: 2)
+        subject = described_class.new(Object, :title, :text, limit: 200, null: true, default: nil, charset: 'utf8', position: 2)
         if defined?(Mysql2)
-          expect(subject.schema_attributes).to eq(type: :text, limit: 255, null: true, charset: 'utf8', collation: 'utf8_general_ci')
+          expect(subject.schema_attributes).to eq(type: :text, limit: 255, null: true, default: nil, charset: 'utf8', collation: 'utf8_general_ci')
         else
-          expect(subject.schema_attributes).to eq(type: :text, limit: 200, null: true)
+          expect(subject.schema_attributes).to eq(type: :text, limit: 200, null: true, default: nil)
+        end
+      end
+
+      it 'allows a default to be set unless mysql' do
+        subject = described_class.new(Object, :title, :text, limit: 200, null: true, default: 'none', charset: 'utf8', position: 2)
+        if defined?(Mysql2)
+          expect { subject.schema_attributes }.to raise_exception(DeclareSchema::MysqlTextMayNotHaveDefault)
+        else
+          expect(subject.schema_attributes).to eq(type: :text, limit: 200, null: true, default: 'none')
         end
       end
     end

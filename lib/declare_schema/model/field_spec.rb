@@ -1,9 +1,11 @@
 # frozen_string_literal: true
 
 module DeclareSchema
+  class UnknownSqlTypeError < RuntimeError; end
+  class MysqlTextMayNotHaveDefault < RuntimeError; end
+
   module Model
     class FieldSpec
-      class UnknownSqlTypeError < RuntimeError; end
 
       MYSQL_TINYTEXT_LIMIT    = 0xff
       MYSQL_TEXT_LIMIT        = 0xffff
@@ -49,18 +51,18 @@ module DeclareSchema
         @options = options.dup
         case type
         when :text
-          @options[:default] and raise "default may not be given for :text field #{model}##{@name}"
           if self.class.mysql_text_limits?
+            @options[:default] and raise MysqlTextMayNotHaveDefault, "when using MySQL, default may not be given for :text field #{model}##{@name}"
             @options[:limit] = self.class.round_up_mysql_text_limit(@options[:limit] || MYSQL_LONGTEXT_LIMIT)
           end
         when :string
-          @options[:limit] or raise "limit must be given for :string field #{model}##{@name}: #{@options.inspect}; do you want `limit: 255`?"
+          @options[:limit] or raise "limit: must be given for :string field #{model}##{@name}: #{@options.inspect}; do you want `limit: 255`?"
         when :bigint
           @type = :integer
           @options = options.merge(limit: 8)
         end
 
-        @sql_type = @options.delete(:sql_type) || # TODO: Do we really need to support :sql_type? If not, this and the `dup` above can go away. -Colin
+        @sql_type = @options.delete(:sql_type) || # TODO: Do we really need to support :sql_type? If not, this can go away. -Colin
           if native_type?(@type)
             @type
           else
@@ -68,6 +70,12 @@ module DeclareSchema
               field_class::COLUMN_TYPE
             end or raise UnknownSqlTypeError, "#{@type.inspect} for #{model}##{@name}"
           end
+
+        if @sql_type.in?([:string, :text, :binary, :varbinary, :integer, :enum])
+          @options[:limit] ||= native_types[@sql_type][:limit]
+        else
+          @options.has_key?(:limit) and raise "unsupported limit: for SQL type #{@sql_type} in field #{model}##{@name}"
+        end
 
         if @type.in?([:text, :string])
           if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
@@ -101,7 +109,6 @@ module DeclareSchema
       end
 
       def limit
-        @options[:limit] || native_types[@sql_type][:limit]
       end
 
       def precision
@@ -134,7 +141,8 @@ module DeclareSchema
 
       def same_as(col_spec)
         @sql_type == col_spec.type &&
-          same_attributes?(col_spec)
+          same_attributes?(col_spec) &&
+            (!type.in?([:text, :string]) || same_charset_and_collation?(table_name, col_spec))
       end
 
       private
@@ -143,9 +151,6 @@ module DeclareSchema
         native_type = native_types[type]
         check_attributes = [:null, :default]
         check_attributes += [:precision, :scale] if @sql_type == :decimal && !col_spec.is_a?(SQLITE_COLUMN_CLASS)  # remove when rails fixes https://rails.lighthouseapp.com/projects/8994-ruby-on-rails/tickets/2872
-        check_attributes -= [:default] if @sql_type == :text && col_spec.class.name =~ /mysql/i
-        check_attributes << :limit if @sql_type.in?([:string, :binary, :varbinary, :integer, :enum]) ||
-                                      (@sql_type == :text && self.class.mysql_text_limits?)
         check_attributes.all? do |k|
           if k == :default
             case Rails::VERSION::MAJOR
