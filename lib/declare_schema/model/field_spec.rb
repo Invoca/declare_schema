@@ -77,6 +77,14 @@ module DeclareSchema
           @options.has_key?(:limit) and raise "unsupported limit: for SQL type #{@sql_type} in field #{model}##{@name}"
         end
 
+        if @sql_type == :decimal
+          @options[:precision] or raise 'precision: required for :decimal type'
+          @options[:scale] or raise 'scale: required for :decimal type'
+        else
+          @options.has_key?(:precision) and raise "precision: only allowed for :decimal type"
+          @options.has_key?(:scale) and raise "scale: only allowed for :decimal type"
+        end
+
         if @type.in?([:text, :string])
           if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
             @options[:charset]   ||= model.table_options[:charset]   || Generators::DeclareSchema::Migration::Migrator.default_charset
@@ -149,8 +157,7 @@ module DeclareSchema
 
       def same_attributes?(col_spec)
         native_type = native_types[type]
-        check_attributes = [:null, :default]
-        check_attributes += [:precision, :scale] if @sql_type == :decimal
+        check_attributes = [:null, :default, :precision, :scale]
         check_attributes.all? do |k|
           if k == :default
             case Rails::VERSION::MAJOR

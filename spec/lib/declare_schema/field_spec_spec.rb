@@ -65,6 +65,43 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
           expect(subject.schema_attributes).to eq(type: :text, limit: 200, null: true, default: 'none')
         end
       end
+
+      describe 'decimal' do
+        it 'allows precision: and scale:' do
+          subject = described_class.new(model, :quantity, :decimal, precision: 8, scale: 10, null: true, position: 3)
+          expect(subject.schema_attributes).to eq(type: :decimal, precision: 8, scale: 10, null: true)
+        end
+
+        it 'requires and precision:' do
+          expect do
+            described_class.new(model, :quantity, :decimal, scale: 10, null: true, position: 3)
+          end.to raise_exception(RuntimeError, 'precision: required for :decimal type')
+        end
+
+        it 'requires scale:' do
+          expect do
+            described_class.new(model, :quantity, :decimal, precision: 8, null: true, position: 3)
+          end.to raise_exception(RuntimeError, 'scale: required for :decimal type')
+        end
+      end
+
+      [:integer, :bigint, :string, :text, :binary, :datetime, :date, :time].each do |t|
+        describe t.to_s do
+          let(:extra) { t == :string ? { limit: 100 } : {} }
+
+          it 'does not allow precision:' do
+            expect do
+              described_class.new(model, :quantity, t, { precision: 8, null: true, position: 3 }.merge(extra))
+            end.to raise_exception(RuntimeError, 'precision: only allowed for :decimal type')
+          end
+
+          it 'does not allow scale:' do
+            expect do
+              described_class.new(model, :quantity, t, { scale: 10, null: true, position: 3 }.merge(extra))
+            end.to raise_exception(RuntimeError, 'scale: only allowed for :decimal type')
+          end
+        end
+      end
     end
 
     describe 'datetime' do
