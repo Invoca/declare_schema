@@ -4,6 +4,16 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.3] - UNRELEASED
+### Added
+- Added `add_foreign_key` native rails call in `DeclareSchema::Model::ForeignKeyDefinition#to_add_statement`.
+
+### Fixed
+- Fixed a bug in migration generation caused by `DeclareSchema::Migration#create_constraints`
+  calling `DeclareSchema::Model::ForeignKeyDefinition#to_add_statement` with unused parameters.
+ 
+ - Fixed a bug in `DeclareSchema::Migration#remove_foreign_key` where special characters would not be quoted properly.
+
 ## [0.6.2] - 2021-01-06
 ### Added
 - Added `sqlite3` as dev dependency for local development
@@ -100,6 +110,7 @@ using the appropriate Rails configuration attributes.
 ### Added
 - Initial version from https://github.com/Invoca/hobo_fields v4.1.0.
 
+[0.6.3]: https://github.com/Invoca/declare_schema/compare/v0.6.2...v0.6.3
 [0.6.2]: https://github.com/Invoca/declare_schema/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/Invoca/declare_schema/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/Invoca/declare_schema/compare/v0.5.0...v0.6.0
