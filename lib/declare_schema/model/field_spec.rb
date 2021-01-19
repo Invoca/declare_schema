@@ -205,9 +205,37 @@ module DeclareSchema
       end
 
       def native_type?(type)
-        type.to_sym != :primary_key && native_types.has_key?(type)
+        type != :primary_key && native_types.has_key?(type)
       end
 
+      # MySQL example:
+      # { primary_key: "bigint auto_increment PRIMARY KEY",
+      #   string: { name: "varchar", limit: 255 },
+      #   text: { name: "text", limit: 65535},
+      #   integer: {name: "int", limit: 4 },
+      #   float: {name: "float", limit: 24 },
+      #   decimal: { name: "decimal" },
+      #   datetime: { name: "datetime" },
+      #   timestamp: { name: "timestamp" },
+      #   time: { name: "time" },
+      #   date: { name: "date" },
+      #   binary: { name>: "blob", limit: 65535 },
+      #   boolean: { name: "tinyint", limit: 1 },
+      #   json: { name: "json" } }
+      #
+      # SQLite example:
+      # { primary_key: "integer PRIMARY KEY AUTOINCREMENT NOT NULL",
+      #  string: { name: "varchar" },
+      #  text: { name: "text"},
+      #  integer: { name: "integer" },
+      #  float: { name: "float" },
+      #  decimal: { name: "decimal" },
+      #  datetime: { name: "datetime" },
+      #  time: { name: "time" },
+      #  date: { name: "date" },
+      #  binary: { name: "blob" },
+      #  boolean: { name: "boolean" },
+      #  json: { name: "json" } }
       def native_types
         Generators::DeclareSchema::Migration::Migrator.native_types
       end
