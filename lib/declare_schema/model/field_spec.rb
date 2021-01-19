@@ -156,23 +156,21 @@ module DeclareSchema
       private
 
       def same_attributes?(col_spec)
-        native_type = native_types[type]
-        check_attributes = [:null, :default, :precision, :scale]
-        check_attributes.all? do |k|
+        schema_attributes.all? do |k, v|
           if k == :default
             case Rails::VERSION::MAJOR
             when 4
-              col_spec.type_cast_from_database(col_spec.default) == col_spec.type_cast_from_database(default)
+              col_spec.type_cast_from_database(col_spec.default) == col_spec.type_cast_from_database(v)
             else
               cast_type = ActiveRecord::Base.connection.lookup_cast_type_from_column(col_spec) or raise "cast_type not found for #{col_spec.inspect}"
-              cast_type.deserialize(col_spec.default) == cast_type.deserialize(default)
+              cast_type.deserialize(col_spec.default) == cast_type.deserialize(v)
             end
           else
             col_value = col_spec.send(k)
-            if col_value.nil? && native_type
+            if col_value.nil? && (native_type = native_types[type])
               col_value = native_type[k]
             end
-            col_value == send(k)
+            col_value == v
           end
         end
       end
