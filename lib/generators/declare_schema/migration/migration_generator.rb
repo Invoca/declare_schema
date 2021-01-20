@@ -96,7 +96,7 @@ module DeclareSchema
           end
         end
       end
-    rescue ::DeclareSchema::Model::FieldSpec::UnknownSqlTypeError => ex
+    rescue ::DeclareSchema::UnknownSqlTypeError => ex
       say "Invalid field type: #{ex}"
     end
 

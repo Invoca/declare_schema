@@ -32,9 +32,9 @@ module DeclareSchema
         end
       end
 
-      attr_reader :model, :name, :type, :position, :options
+      attr_reader :model, :name, :type, :sql_type, :position, :options
 
-      TYPE_SYNONYMS = { timestamp: :datetime }.freeze
+      TYPE_SYNONYMS = { timestamp: :datetime }.freeze # TODO: drop this synonym. -Colin
 
       def initialize(model, name, type, position: 0, **options)
         # TODO: TECH-5116
@@ -108,8 +108,12 @@ module DeclareSchema
 
       # returns the attributes for schema migrations as a Hash
       # omits name and position since those are meta-data above the schema
-      def schema_attributes
-        { type: @type }.merge(@options)
+      def schema_attributes(col_spec)
+        { type: @type }.merge(@options).tap do |attrs|
+          if attrs[:default]
+            attrs[:default] = deserialize_default_value(col_spec, attrs[:default])
+          end
+        end
       end
 
       def sql_options
@@ -117,6 +121,7 @@ module DeclareSchema
       end
 
       def limit
+        # TODO: Why is this empty method here? -Colin
       end
 
       def precision
@@ -144,42 +149,48 @@ module DeclareSchema
       end
 
       def different_to?(col_spec)
-        !same_as(col_spec)
-      end
-
-      def same_as(col_spec)
-        @sql_type == col_spec.type &&
-          same_attributes?(col_spec) &&
-            (!type.in?([:text, :string]) || same_charset_and_collation?(table_name, col_spec))
+        schema_attrs = schema_attributes(col_spec)
+        col_attrs    = col_spec_attributes(col_spec, schema_attrs.keys)
+        schema_attrs != col_attrs
       end
 
       private
 
-      def same_attributes?(col_spec)
-        schema_attributes.all? do |k, v|
-          if k == :default
-            case Rails::VERSION::MAJOR
-            when 4
-              col_spec.type_cast_from_database(col_spec.default) == col_spec.type_cast_from_database(v)
-            else
-              cast_type = ActiveRecord::Base.connection.lookup_cast_type_from_column(col_spec) or raise "cast_type not found for #{col_spec.inspect}"
-              cast_type.deserialize(col_spec.default) == cast_type.deserialize(v)
-            end
-          else
-            col_value = col_spec.send(k)
-            if col_value.nil? && (native_type = native_types[type])
-              col_value = native_type[k]
-            end
-            col_value == v
-          end
+      def deserialize_default_value(col_spec, default_value)
+        case Rails::VERSION::MAJOR
+        when 4
+          col_spec.type_cast_from_database(default_value)
+        else
+          cast_type = ActiveRecord::Base.connection.lookup_cast_type_from_column(col_spec) or
+            raise "cast_type not found for #{col_spec.inspect}"
+          cast_type.deserialize(default_value)
         end
       end
 
-      def same_charset_and_collation?(table_name, col_spec)
-        current_collation_and_charset = collation_and_charset_for_column(table_name, col_spec)
+      def col_spec_attributes(col_spec, keys)
+        keys.each_with_object({}) do |key, result|
+          result[key] =
+            case key
+            when :default
+              deserialize_default_value(col_spec, col_spec.default)
+            when :charset
+              cached_collation_and_charset_for_column(table_name, col_spec)[:charset]
+            when :collation
+              cached_collation_and_charset_for_column(table_name, col_spec)[:collation]
+            else
+              col_value = col_spec.send(key)
+              if col_value.nil? && (native_type = native_types[type])
+                native_type[key]
+              else
+                col_value
+              end
+            end
+        end
+      end
 
-        collation == current_collation_and_charset[:collation] &&
-          charset == current_collation_and_charset[:charset]
+      def cached_collation_and_charset_for_column(table_name, col_spec)
+        @collation_and_charset_for_column_cache ||= {}
+        @collation_and_charset_for_column_cache[[table_name, col_spec]] ||= collation_and_charset_for_column(table_name, col_spec)
       end
 
       def collation_and_charset_for_column(table_name, col_spec)
