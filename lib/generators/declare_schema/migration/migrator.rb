@@ -454,8 +454,9 @@ module Generators
             col_name = old_names[c] || c
             col = db_columns[col_name] or raise "failed to find column info for #{col_name.inspect}"
             spec = model.field_specs[c] or raise "failed to find field spec for #{c.inspect}"
-            declared_schema_attributes = spec.schema_attributes
-            if spec.different_to?(col)
+            declared_schema_attributes = spec.schema_attributes(col)
+            col_attrs = spec.class.col_spec_attributes(col, declared_schema_attributes.keys)
+            if schema_attrs != col_attrs
               change_spec = fk_field_options(model, c)
               change_spec[:limit]     ||= spec.limit   if (spec.sql_type != :text ||
                                                          ::DeclareSchema::Model::FieldSpec.mysql_text_limits?) &&

@@ -17,21 +17,21 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
     describe 'integer 4' do
       it 'returns schema attributes' do
         subject = described_class.new(model, :price, :integer, limit: 4, null: false, position: 0)
-        expect(subject.schema_attributes(col_spec)).to eq(type: :integer, limit: 4, null: false)
+        expect(subject.schema_attributes(col_spec)).to eq(type: :integer, limit: 4, null: false, default: nil)
       end
     end
 
     describe 'integer 8' do
       it 'returns schema attributes' do
         subject = described_class.new(model, :price, :integer, limit: 8, null: true, position: 2)
-        expect(subject.schema_attributes(col_spec)).to eq(type: :integer, limit: 8, null: true)
+        expect(subject.schema_attributes(col_spec)).to eq(type: :integer, limit: 8, null: true, default: nil)
       end
     end
 
     describe 'bigint' do
       it 'returns schema attributes' do
         subject = described_class.new(model, :price, :bigint, null: false, position: 2)
-        expect(subject.schema_attributes(col_spec)).to eq(type: :integer, limit: 8, null: false)
+        expect(subject.schema_attributes(col_spec)).to eq(type: :integer, limit: 8, null: false, default: nil)
       end
     end
 
@@ -39,9 +39,9 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
       it 'returns schema attributes (including charset/collation iff mysql)' do
         subject = described_class.new(model, :title, :string, limit: 100, null: true, charset: 'utf8mb4', position: 0)
         if defined?(Mysql2)
-          expect(subject.schema_attributes(col_spec)).to eq(type: :string, limit: 100, null: true, charset: 'utf8mb4', collation: 'utf8mb4_bin')
+          expect(subject.schema_attributes(col_spec)).to eq(type: :string, limit: 100, null: true, default: nil, charset: 'utf8mb4', collation: 'utf8mb4_bin')
         else
-          expect(subject.schema_attributes(col_spec)).to eq(type: :string, limit: 100, null: true)
+          expect(subject.schema_attributes(col_spec)).to eq(type: :string, limit: 100, null: true, default: nil)
         end
       end
     end
@@ -70,7 +70,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
       describe 'decimal' do
         it 'allows precision: and scale:' do
           subject = described_class.new(model, :quantity, :decimal, precision: 8, scale: 10, null: true, position: 3)
-          expect(subject.schema_attributes(col_spec)).to eq(type: :decimal, precision: 8, scale: 10, null: true)
+          expect(subject.schema_attributes(col_spec)).to eq(type: :decimal, precision: 8, scale: 10, null: true, default: nil)
         end
 
         it 'requires and precision:' do
@@ -108,14 +108,14 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
     describe 'datetime' do
       it 'keeps type as "datetime"' do
         subject = described_class.new(model, :created_at, :datetime, null: false, position: 1)
-        expect(subject.schema_attributes(col_spec)).to eq(type: :datetime, null: false)
+        expect(subject.schema_attributes(col_spec)).to eq(type: :datetime, null: false, default: nil)
       end
     end
 
     describe 'timestamp' do
       it 'normalizes type to "datetime"' do
         subject = described_class.new(model, :created_at, :timestamp, null: true, position: 2)
-        expect(subject.schema_attributes(col_spec)).to eq(type: :datetime, null: true)
+        expect(subject.schema_attributes(col_spec)).to eq(type: :datetime, null: true, default: nil)
       end
     end
 
@@ -129,65 +129,49 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
     end
   end
 
-  context 'There are no model, columns to change' do
-    it '#different_to should return false for int8 == int8' do
-      subject = described_class.new(model, :price, :integer, limit: 8, null: false, position: 0)
-
+  describe '#schema_attributes' do
+    let(:col_spec) do
       case Rails::VERSION::MAJOR
       when 4
         cast_type = ActiveRecord::Type::Integer.new(limit: 8)
-        col = ActiveRecord::ConnectionAdapters::Column.new("price", nil, cast_type, "integer(8)", false)
+        ActiveRecord::ConnectionAdapters::Column.new("price", nil, cast_type, "integer(8)", false)
       else
         sql_type_metadata = ActiveRecord::ConnectionAdapters::SqlTypeMetadata.new(sql_type: "integer(8)", type: :integer, limit: 8)
-        col = ActiveRecord::ConnectionAdapters::Column.new("price", nil, sql_type_metadata, false, "adverts")
+        ActiveRecord::ConnectionAdapters::Column.new("price", nil, sql_type_metadata, false, "adverts")
       end
-
-      expect(subject.different_to?(col)).to eq(false)
     end
 
-    it '#different_to should return false for bigint == bigint' do
-      subject = described_class.new(model, :price, :bigint, null: false, position: 0)
-
-      case Rails::VERSION::MAJOR
-      when 4
-        cast_type = ActiveRecord::Type::BigInteger.new(limit: 8)
-        col = ActiveRecord::ConnectionAdapters::Column.new("price", nil, cast_type, "bigint(20)", false)
-      else
-        sql_type_metadata = ActiveRecord::ConnectionAdapters::SqlTypeMetadata.new(sql_type: "bigint(20)", type: :integer, limit: 8)
-        col = ActiveRecord::ConnectionAdapters::Column.new("price", nil, sql_type_metadata, false, "adverts")
-      end
-
-      expect(subject.different_to?(col)).to eq(false)
+    it 'returns the attributes except name, position' do
+      subject = described_class.new(model, :price, :bigint, null: true, default: 0, position: 2)
+      expect(subject.schema_attributes(col_spec)).to eq(type: :integer, limit: 8, null: true, default: 0)
     end
 
-    it '#different_to should return false for int8 == bigint' do
-      subject = described_class.new(model, :price, :integer, limit: 8, null: false, position: 0)
+    it 'aliases :bigint and :integer limit: 8' do
+      int8 = described_class.new(model, :price, :integer, limit: 8, null: false, position: 0)
+      bigint = described_class.new(model, :price, :bigint,          null: false, position: 0)
 
-      case Rails::VERSION::MAJOR
-      when 4
-        cast_type = ActiveRecord::Type::BigInteger.new(limit: 8)
-        col = ActiveRecord::ConnectionAdapters::Column.new("price", nil, cast_type, "bigint(20)", false)
-      else
-        sql_type_metadata = ActiveRecord::ConnectionAdapters::SqlTypeMetadata.new(sql_type: "bigint(20)", type: :integer, limit: 8)
-        col = ActiveRecord::ConnectionAdapters::Column.new("price", nil, sql_type_metadata, false, "adverts")
-      end
-
-      expect(subject.different_to?(col)).to eq(false)
+      expected_attributes = { type: :integer, limit: 8, null: false, default: nil }
+      expect(int8.schema_attributes(col_spec)).to eq(expected_attributes)
+      expect(bigint.schema_attributes(col_spec)).to eq(expected_attributes)
     end
+  end
 
-    it '#different_to should return false for bigint == int8' do
-      subject = described_class.new(model, :price, :bigint, null: false, position: 0)
-
-      case Rails::VERSION::MAJOR
-      when 4
-        cast_type = ActiveRecord::Type::Integer.new(limit: 8)
-        col = ActiveRecord::ConnectionAdapters::Column.new("price", nil, cast_type, "integer(8)", false)
-      else
-        sql_type_metadata = ActiveRecord::ConnectionAdapters::SqlTypeMetadata.new(sql_type: "integer(8)", type: :integer, limit: 8)
-        col = ActiveRecord::ConnectionAdapters::Column.new("price", nil, sql_type_metadata, false, "adverts")
+  describe 'class methods' do
+    describe '#col_spec_attributes' do
+      let(:col_spec) do
+        case Rails::VERSION::MAJOR
+        when 4
+          cast_type = ActiveRecord::Type::Integer.new(limit: 8)
+          ActiveRecord::ConnectionAdapters::Column.new("price", nil, cast_type, "integer(8)", false)
+        else
+          sql_type_metadata = ActiveRecord::ConnectionAdapters::SqlTypeMetadata.new(sql_type: "integer(8)", type: :integer, limit: 8)
+          ActiveRecord::ConnectionAdapters::Column.new("price", nil, sql_type_metadata, false, "adverts")
+        end
       end
 
-      expect(subject.different_to?(col)).to eq(false)
+      it 'returns the requested keys' do
+        expect(described_class.col_spec_attributes(col_spec, [:type, :limit, :null, :default])).to eq(type: :integer, limit: 8, null: false, default: nil)
+      end
     end
   end
 end

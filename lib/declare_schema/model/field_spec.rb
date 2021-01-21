@@ -30,6 +30,40 @@ module DeclareSchema
             end
           end or raise ArgumentError, "limit of #{limit} is too large for MySQL"
         end
+
+        def col_spec_attributes(col_spec, keys)
+          keys.each_with_object({}) do |key, result|
+            result[key] =
+              case key
+              when :default
+                deserialize_default_value(col_spec, @sql_type, col_spec.default)
+              when :charset
+                cached_collation_and_charset_for_column(table_name, col_spec)[:charset]
+              when :collation
+                cached_collation_and_charset_for_column(table_name, col_spec)[:collation]
+              else
+                col_value = col_spec.send(key)
+                if col_value.nil? && (native_type = native_types[type])
+                  native_type[key]
+                else
+                  col_value
+                end
+              end
+          end
+        end
+
+        def deserialize_default_value(col_spec, sql_type, default_value)
+          case Rails::VERSION::MAJOR
+          when 4
+            # TODO: Delete this code ASAP! This could be wrong, since it's using the type of the old column...which
+            # might be getting migrated to a new type. We should be using just sql_type. -Colin
+            col_spec.type_cast_from_database(default_value)
+          else
+            cast_type = ActiveRecord::Base.connection.send(:lookup_cast_type, sql_type) or
+              raise "cast_type not found for #{@sql_type}"
+            cast_type.deserialize(default_value)
+          end
+        end
       end
 
       attr_reader :model, :name, :type, :sql_type, :position, :options
@@ -49,20 +83,23 @@ module DeclareSchema
         @type = TYPE_SYNONYMS[type] || type
         @position = position
         @options = options.dup
+
+        @options.has_key?(:default) or @options[:default] = nil
+
         case type
         when :text
           if self.class.mysql_text_limits?
-            @options[:default] and raise MysqlTextMayNotHaveDefault, "when using MySQL, default may not be given for :text field #{model}##{@name}"
+            @options[:default].nil? or raise MysqlTextMayNotHaveDefault, "when using MySQL, non-nil default may not be given for :text field #{model}##{@name}"
             @options[:limit] = self.class.round_up_mysql_text_limit(@options[:limit] || MYSQL_LONGTEXT_LIMIT)
           end
         when :string
           @options[:limit] or raise "limit: must be given for :string field #{model}##{@name}: #{@options.inspect}; do you want `limit: 255`?"
         when :bigint
           @type = :integer
-          @options = options.merge(limit: 8)
+          @options[:limit] = 8
         end
 
-        @sql_type = @options.delete(:sql_type) || # TODO: Do we really need to support :sql_type? If not, this can go away. -Colin
+        @sql_type = @options.delete(:sql_type) || # TODO: Do we really need to support :sql_type? Ideally drop it. -Colin
           if native_type?(@type)
             @type
           else
@@ -109,9 +146,9 @@ module DeclareSchema
       # returns the attributes for schema migrations as a Hash
       # omits name and position since those are meta-data above the schema
       def schema_attributes(col_spec)
-        { type: @type }.merge(@options).tap do |attrs|
-          if attrs[:default]
-            attrs[:default] = deserialize_default_value(col_spec, attrs[:default])
+        @options.merge(type: @type).tap do |attrs|
+          unless attrs[:default].nil?
+            attrs[:default] = self.class.deserialize_default_value(col_spec, @sql_type, attrs[:default])
           end
         end
       end
@@ -148,45 +185,7 @@ module DeclareSchema
         @options[:collation]
       end
 
-      def different_to?(col_spec)
-        schema_attrs = schema_attributes(col_spec)
-        col_attrs    = col_spec_attributes(col_spec, schema_attrs.keys)
-        schema_attrs != col_attrs
-      end
-
       private
-
-      def deserialize_default_value(col_spec, default_value)
-        case Rails::VERSION::MAJOR
-        when 4
-          col_spec.type_cast_from_database(default_value)
-        else
-          cast_type = ActiveRecord::Base.connection.lookup_cast_type_from_column(col_spec) or
-            raise "cast_type not found for #{col_spec.inspect}"
-          cast_type.deserialize(default_value)
-        end
-      end
-
-      def col_spec_attributes(col_spec, keys)
-        keys.each_with_object({}) do |key, result|
-          result[key] =
-            case key
-            when :default
-              deserialize_default_value(col_spec, col_spec.default)
-            when :charset
-              cached_collation_and_charset_for_column(table_name, col_spec)[:charset]
-            when :collation
-              cached_collation_and_charset_for_column(table_name, col_spec)[:collation]
-            else
-              col_value = col_spec.send(key)
-              if col_value.nil? && (native_type = native_types[type])
-                native_type[key]
-              else
-                col_value
-              end
-            end
-        end
-      end
 
       def cached_collation_and_charset_for_column(table_name, col_spec)
         @collation_and_charset_for_column_cache ||= {}
