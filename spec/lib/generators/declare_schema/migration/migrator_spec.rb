@@ -28,7 +28,7 @@ module Generators
           end
 
           it 'returns text limits if supported' do
-            expect(subject.format_options({ limit: mysql_longtext_limit }, :text)).to eq(limit_option)
+            expect(subject.format_options({ limit: mysql_longtext_limit })).to eq(limit_option)
           end
         end
 

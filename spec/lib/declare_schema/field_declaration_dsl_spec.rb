@@ -25,7 +25,7 @@ RSpec.describe DeclareSchema::FieldDeclarationDsl do
   end
 
   it 'stores limits' do
-    expect(TestModel.field_specs['name'].limit).to eq(127)
+    expect(TestModel.field_specs['name'].limit).to eq(127), TestModel.field_specs['name'].inspect
   end
 
   # TODO: fill out remaining tests

@@ -391,7 +391,7 @@ module Generators
 
         def create_field(field_spec, field_name_width)
           options = fk_field_options(field_spec.model, field_spec.name).merge(field_spec.sql_options)
-          args = [field_spec.name.inspect] + format_options(options, field_spec.sql_type)
+          args = [field_spec.name.inspect] + format_options(options)
           format("t.%-*s %s", field_name_width, field_spec.sql_type, args.join(', '))
         end
 
@@ -430,7 +430,7 @@ module Generators
             args =
               if (spec = model.field_specs[c])
                 options = fk_field_options(model, c).merge(spec.sql_options)
-                [":#{spec.sql_type}", *format_options(options, spec.sql_type)]
+                [":#{spec.sql_type}", *format_options(options)]
               else
                 [":integer"]
               end
@@ -455,23 +455,19 @@ module Generators
             col = db_columns[col_name] or raise "failed to find column info for #{col_name.inspect}"
             spec = model.field_specs[c] or raise "failed to find field spec for #{c.inspect}"
             declared_schema_attributes = spec.schema_attributes(col)
-            col_attrs = spec.class.col_spec_attributes(col, declared_schema_attributes.keys)
-            if schema_attrs != col_attrs
-              change_spec = fk_field_options(model, c)
-              change_spec[:limit]     ||= spec.limit   if (spec.sql_type != :text ||
-                                                         ::DeclareSchema::Model::FieldSpec.mysql_text_limits?) &&
-                                                          (spec.limit || col.limit)
-              change_spec[:precision]     = spec.precision     unless spec.precision.nil?
-              change_spec[:scale]         = spec.scale         unless spec.scale.nil?
-              change_spec[:null]          = spec.null          unless spec.null && col.null
-              change_spec[:default]       = spec.default       unless spec.default.nil? && col.default.nil?
-              change_spec[:charset]       = spec.charset       unless spec.charset.nil?
-              change_spec[:collation]     = spec.collation     unless spec.collation.nil?
+            col_attrs = spec.col_spec_attributes(col, declared_schema_attributes.keys)
+            if declared_schema_attributes != col_attrs
+              normalized_schema_attributes = declared_schema_attributes.merge(fk_field_options(model, c))
 
-              changes << "change_column :#{new_table_name}, :#{c}, " +
-                         ([":#{spec.sql_type}"] + format_options(change_spec, spec.sql_type, changing: true)).join(", ")
-              back = change_column_back(current_table_name, col_name)
-              undo_changes << back unless back.blank?
+              same_attrs = Hash[normalized_schema_attributes.map { |k, v| col_attrs[k] == v }]
+              changing_keys = normalized_schema_attributes.keys - same_attrs.keys
+              up_attrs = Hash[changing_keys.map { |k| [k, normalized_spec[k]] }]
+              down_attrs = Hash[changing_keys.map { |k| [k, col_spec[k]] }]
+              changes << "change_column! :#{new_table_name}, :#{c}, " + format_options(same_attrs) +
+                "do\n" +
+                "  up! " + format_options(up_attrs) + "\n" +
+                "  down! " + format_options(down_attrs) + "\n" +
+                "end"
             end
           end.compact
 
@@ -569,22 +565,18 @@ module Generators
           "remove_foreign_key(#{old_table_name.inspect}, name: #{fk_name.to_s.inspect})"
         end
 
-        def format_options(options, type, changing: false)
+        def format_options(options)
           options.map do |k, v|
-            if !changing && ((k == :limit && type == :decimal) || (k == :null && v == true))
-              next
-            end
-
-            if !::DeclareSchema::Model::FieldSpec.mysql_text_limits? && k == :limit && type == :text
-              next
-            end
+            # if !changing && ((k == :limit && type == :decimal) || (k == :null && v == true))
+            #   next
+            # end
 
             if k.is_a?(Symbol)
               "#{k}: #{v.inspect}"
             else
               "#{k.inspect} => #{v.inspect}"
             end
-          end.compact
+          end
         end
 
         def fk_field_options(model, field_name)

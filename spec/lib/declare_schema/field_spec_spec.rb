@@ -170,7 +170,8 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
       end
 
       it 'returns the requested keys' do
-        expect(described_class.col_spec_attributes(col_spec, [:type, :limit, :null, :default])).to eq(type: :integer, limit: 8, null: false, default: nil)
+        subject = described_class.new(model, :price, :bigint, null: true, default: 0, position: 2)
+        expect(subject.col_spec_attributes(col_spec, [:type, :limit, :null, :default])).to eq(type: :integer, limit: 8, null: false, default: nil)
       end
     end
   end

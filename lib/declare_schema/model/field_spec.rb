@@ -31,28 +31,8 @@ module DeclareSchema
           end or raise ArgumentError, "limit of #{limit} is too large for MySQL"
         end
 
-        def col_spec_attributes(col_spec, keys)
-          keys.each_with_object({}) do |key, result|
-            result[key] =
-              case key
-              when :default
-                deserialize_default_value(col_spec, @sql_type, col_spec.default)
-              when :charset
-                cached_collation_and_charset_for_column(table_name, col_spec)[:charset]
-              when :collation
-                cached_collation_and_charset_for_column(table_name, col_spec)[:collation]
-              else
-                col_value = col_spec.send(key)
-                if col_value.nil? && (native_type = native_types[type])
-                  native_type[key]
-                else
-                  col_value
-                end
-              end
-          end
-        end
-
         def deserialize_default_value(col_spec, sql_type, default_value)
+          sql_type or raise ArgumentError, "must pass sql_type; got #{sql_type.inspect}"
           case Rails::VERSION::MAJOR
           when 4
             # TODO: Delete this code ASAP! This could be wrong, since it's using the type of the old column...which
@@ -60,15 +40,24 @@ module DeclareSchema
             col_spec.type_cast_from_database(default_value)
           else
             cast_type = ActiveRecord::Base.connection.send(:lookup_cast_type, sql_type) or
-              raise "cast_type not found for #{@sql_type}"
+              raise "cast_type not found for #{sql_type}"
             cast_type.deserialize(default_value)
           end
         end
       end
 
-      attr_reader :model, :name, :type, :sql_type, :position, :options
+      attr_reader :model, :name, :type, :sql_type, :position, :options, :sql_options
 
       TYPE_SYNONYMS = { timestamp: :datetime }.freeze # TODO: drop this synonym. -Colin
+
+      SQL_OPTIONS     = [:limit, :precision, :scale, :null, :default, :charset, :collation].freeze
+      NON_SQL_OPTIONS = [:ruby_default, :validates].freeze
+      VALID_OPTIONS   = (SQL_OPTIONS + NON_SQL_OPTIONS).freeze
+      OPTION_INDEXES  = Hash[VALID_OPTIONS.each_with_index.to_a].freeze
+
+      VALID_OPTIONS.each do |option|
+        define_method(option) { @options[option] }
+      end
 
       def initialize(model, name, type, position: 0, **options)
         # TODO: TECH-5116
@@ -86,6 +75,8 @@ module DeclareSchema
 
         @options.has_key?(:default) or @options[:default] = nil
 
+        @options.has_key?(:null) or @options[:null] = false
+
         case type
         when :text
           if self.class.mysql_text_limits?
@@ -99,7 +90,7 @@ module DeclareSchema
           @options[:limit] = 8
         end
 
-        @sql_type = @options.delete(:sql_type) || # TODO: Do we really need to support :sql_type? Ideally drop it. -Colin
+        @sql_type = @options.delete(:sql_type) || # TODO: Do we really need to support a :sql_type option? Ideally drop it. -Colin
           if native_type?(@type)
             @type
           else
@@ -134,6 +125,10 @@ module DeclareSchema
           @options[:charset]   and raise "charset may only given for :string and :text fields"
           @options[:collation] and raise "collation may only given for :string and :text fields"
         end
+
+        @options = Hash[@options.sort_by { |k, v| OPTION_INDEXES[k] }]
+
+        @sql_options = @options.except(*NON_SQL_OPTIONS)
       end
 
       SQLITE_COLUMN_CLASS =
@@ -147,42 +142,31 @@ module DeclareSchema
       # omits name and position since those are meta-data above the schema
       def schema_attributes(col_spec)
         @options.merge(type: @type).tap do |attrs|
-          unless attrs[:default].nil?
-            attrs[:default] = self.class.deserialize_default_value(col_spec, @sql_type, attrs[:default])
-          end
+          attrs[:default] = self.class.deserialize_default_value(col_spec, @sql_type, attrs[:default])
         end
       end
 
-      def sql_options
-        @options.except(:ruby_default, :validates)
-      end
-
-      def limit
-        # TODO: Why is this empty method here? -Colin
-      end
-
-      def precision
-        @options[:precision]
-      end
-
-      def scale
-        @options[:scale]
-      end
-
-      def null
-        !:null.in?(@options) || @options[:null]
-      end
-
-      def default
-        @options[:default]
-      end
-
-      def charset
-        @options[:charset]
-      end
-
-      def collation
-        @options[:collation]
+      # TODO: introduce a new class that encapsulates the Column Spec. Move this and cached_collation_and_charset_for_column
+      # into that class. -Colin
+      def col_spec_attributes(col_spec, keys)
+        keys.each_with_object({}) do |key, result|
+          result[key] =
+            case key
+            when :default
+              self.class.deserialize_default_value(col_spec, @sql_type, col_spec.default)
+            when :charset
+              cached_collation_and_charset_for_column(col_spec.table_name, col_spec)[:charset]
+            when :collation
+              cached_collation_and_charset_for_column(col_spec.table_name, col_spec)[:collation]
+            else
+              col_value = col_spec.send(key)
+              if col_value.nil? && (native_type = native_types[type])
+                native_type[key]
+              else
+                col_value
+              end
+            end
+        end
       end
 
       private

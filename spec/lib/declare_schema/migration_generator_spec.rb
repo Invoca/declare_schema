@@ -74,7 +74,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       expect(migrations).to(
         migrate_up(<<~EOS.strip)
           create_table :adverts, id: :bigint do |t|
-            t.string :name, limit: 250#{charset_and_collation}
+            t.string :name, limit: 250, null: true, default: nil#{charset_and_collation}
           end#{charset_alter_table}
         EOS
         .and migrate_down("drop_table :adverts")
@@ -107,8 +107,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     expect(migrate).to(
       migrate_up(<<~EOS.strip)
-        add_column :adverts, :body, :text#{text_limit}#{charset_and_collation}
-        add_column :adverts, :published_at, :datetime
+        add_column :adverts, :body, :text#{text_limit}, null: true, default: nil#{charset_and_collation}
+        add_column :adverts, :published_at, :datetime, null: true, default: nil
       EOS
       .and migrate_down(<<~EOS.strip)
         remove_column :adverts, :body
