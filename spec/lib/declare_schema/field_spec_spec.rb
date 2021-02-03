@@ -155,24 +155,4 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
       expect(bigint.schema_attributes(col_spec)).to eq(expected_attributes)
     end
   end
-
-  describe 'class methods' do
-    describe '#col_spec_attributes' do
-      let(:col_spec) do
-        case Rails::VERSION::MAJOR
-        when 4
-          cast_type = ActiveRecord::Type::Integer.new(limit: 8)
-          ActiveRecord::ConnectionAdapters::Column.new("price", nil, cast_type, "integer(8)", false)
-        else
-          sql_type_metadata = ActiveRecord::ConnectionAdapters::SqlTypeMetadata.new(sql_type: "integer(8)", type: :integer, limit: 8)
-          ActiveRecord::ConnectionAdapters::Column.new("price", nil, sql_type_metadata, false, "adverts")
-        end
-      end
-
-      it 'returns the requested keys' do
-        subject = described_class.new(model, :price, :bigint, null: true, default: 0, position: 2)
-        expect(subject.col_spec_attributes(col_spec, [:type, :limit, :null, :default])).to eq(type: :integer, limit: 8, null: false, default: nil)
-      end
-    end
-  end
 end

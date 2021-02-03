@@ -11,16 +11,6 @@ module DeclareSchema
           type != :primary_key && native_types.has_key?(type)
         end
 
-        def fix_native_types(types)
-          case ActiveRecord::Base.connection.class.name
-          when /mysql/i
-            types[:integer][:limit] ||= 11
-            types[:text][:limit]    ||= 0xffff
-            types[:binary][:limit]  ||= 0xffff
-          end
-          types
-        end
-
         # MySQL example:
         # { primary_key: "bigint auto_increment PRIMARY KEY",
         #   string: { name: "varchar", limit: 255 },
@@ -50,7 +40,13 @@ module DeclareSchema
         #  boolean: { name: "boolean" },
         #  json: { name: "json" } }
         def native_types
-          @native_types ||= fix_native_types(ActiveRecord::Base.connection.native_database_types)
+          @native_types ||= ActiveRecord::Base.connection.native_database_types.tap do |types|
+            if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
+              types[:integer][:limit] ||= 11
+              types[:text][:limit]    ||= 0xffff
+              types[:binary][:limit]  ||= 0xffff
+            end
+          end
         end
 
         def sql_type(type)
