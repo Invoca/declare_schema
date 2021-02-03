@@ -116,20 +116,6 @@ module Generators
             ActiveRecord::Base.connection
           end
 
-          def fix_native_types(types)
-            case connection.class.name
-            when /mysql/i
-              types[:integer][:limit] ||= 11
-              types[:text][:limit]    ||= 0xffff
-              types[:binary][:limit]  ||= 0xffff
-            end
-            types
-          end
-
-          def native_types
-            @native_types ||= fix_native_types(connection.native_database_types)
-          end
-
           def before_generating_migration(&block)
             block or raise ArgumentError, 'A block is required when setting the before_generating_migration callback'
             @before_generating_migration_callback = block
@@ -299,7 +285,7 @@ module Generators
             "drop_table :#{t}"
           end * "\n"
           undo_drops = to_drop.map do |t|
-            revert_table(t)
+            add_table_back(t)
           end * "\n\n"
 
           creates = to_create.map do |t|
@@ -390,8 +376,8 @@ module Generators
         end
 
         def create_field(field_spec, field_name_width)
-          options = fk_field_options(field_spec.model, field_spec.name).merge(field_spec.sql_options)
-          args = [field_spec.name.inspect] + format_options(options)
+          options = field_spec.sql_options.merge(fk_field_options(field_spec.model, field_spec.name))
+          args = [field_spec.name.inspect] + format_options(options.compact)
           format("t.%-*s %s", field_name_width, field_spec.sql_type, args.join(', '))
         end
 
@@ -429,8 +415,8 @@ module Generators
           adds = to_add.map do |c|
             args =
               if (spec = model.field_specs[c])
-                options = fk_field_options(model, c).merge(spec.sql_options)
-                [":#{spec.sql_type}", *format_options(options)]
+                options = spec.sql_options.merge(fk_field_options(model, c))
+                [":#{spec.sql_type}", *format_options(options.compact)]
               else
                 [":integer"]
               end
@@ -444,7 +430,7 @@ module Generators
             "remove_column :#{new_table_name}, :#{c}"
           end
           undo_removes = to_remove.map do |c|
-            revert_column(current_table_name, c)
+            add_column_back(model, current_table_name, c)
           end
 
           old_names = to_rename.invert
@@ -453,21 +439,19 @@ module Generators
           to_change.each do |c|
             col_name = old_names[c] || c
             col = db_columns[col_name] or raise "failed to find column info for #{col_name.inspect}"
+            column_declaration = ::DeclareSchema::Model::Column.new(model, current_table_name, col)
             spec = model.field_specs[c] or raise "failed to find field spec for #{c.inspect}"
             declared_schema_attributes = spec.schema_attributes(col)
-            col_attrs = spec.col_spec_attributes(col, declared_schema_attributes.keys)
+            col_attrs = column_declaration.schema_attributes
             if declared_schema_attributes != col_attrs
               normalized_schema_attributes = declared_schema_attributes.merge(fk_field_options(model, c))
 
-              same_attrs = Hash[normalized_schema_attributes.map { |k, v| col_attrs[k] == v }]
-              changing_keys = normalized_schema_attributes.keys - same_attrs.keys
-              up_attrs = Hash[changing_keys.map { |k| [k, normalized_spec[k]] }]
-              down_attrs = Hash[changing_keys.map { |k| [k, col_spec[k]] }]
-              changes << "change_column! :#{new_table_name}, :#{c}, " + format_options(same_attrs) +
-                "do\n" +
-                "  up! " + format_options(up_attrs) + "\n" +
-                "  down! " + format_options(down_attrs) + "\n" +
-                "end"
+              # same_attrs = Hash[normalized_schema_attributes.map { |k, v| col_attrs[k] == v }]
+              # changing_keys = normalized_schema_attributes.keys - same_attrs.keys
+              type = normalized_schema_attributes.delete(:type) or raise "no :type found in #{normalized_schema_attributes.inspect}"
+              changes << ["change_column #{new_table_name.to_sym.inspect}", c.to_sym.inspect,
+                          type.to_sym.inspect, *format_options(normalized_schema_attributes.compact)].join(", ")
+              undo_changes << change_column_back(model, current_table_name, col_name)
             end
           end.compact
 
@@ -614,52 +598,78 @@ module Generators
           end
         end
 
-        # TODO: TECH-4814 remove all methods from here through end of file
-        # def default_collation_from_charset(charset)
-        #   case charset
-        #   when "utf8"
-        #     "utf8_general_ci"
-        #   when "utf8mb4"
-        #     "utf8mb4_general_ci"
-        #   end
-        # end
-        #
-        # def revert_table(table)
-        #   res = StringIO.new
-        #   schema_dumper_klass = case Rails::VERSION::MAJOR
-        #                         when 4
-        #                           ActiveRecord::SchemaDumper
-        #                         else
-        #                           ActiveRecord::ConnectionAdapters::SchemaDumper
-        #                         end
-        #   schema_dumper_klass.send(:new, ActiveRecord::Base.connection).send(:table, table, res)
-        #
-        #   result = res.string.strip.gsub("\n  ", "\n")
-        #   if connection.class.name.match?(/mysql/i)
-        #     if !result['options: ']
-        #       result = result.sub('",', "\", options: \"DEFAULT CHARSET=#{Generators::DeclareSchema::Migration::Migrator.default_charset} "+
-        #                            "COLLATE=#{Generators::DeclareSchema::Migration::Migrator.default_collation}\",")
-        #     end
-        #     default_charset   = result[/CHARSET=(\w+)/, 1]   or raise "unable to find charset in #{result.inspect}"
-        #     default_collation = result[/COLLATE=(\w+)/, 1] || default_collation_from_charset(default_charset) or
-        #       raise "unable to find collation in #{result.inspect} or charset #{default_charset.inspect}"
-        #     result = result.split("\n").map do |line|
-        #       if line['t.text'] || line['t.string']
-        #         if !line['charset: ']
-        #           if line['collation: ']
-        #             line = line.sub('collation: ', "charset: #{default_charset.inspect}, collation: ")
-        #           else
-        #             line += ", charset: #{default_charset.inspect}"
-        #           end
-        #         end
-        #         line['collation: '] or line += ", collation: #{default_collation.inspect}"
-        #       end
-        #       line
-        #     end.join("\n")
-        #   end
-        #   result
-        # end
-        #
+        def with_previous_model_table_name(model, table_name)
+          model_table_name, model.table_name = model.table_name, table_name
+          yield
+        ensure
+          model.table_name = model_table_name
+        end
+
+        def add_column_back(model, current_table_name, column)
+          with_previous_model_table_name(model, current_table_name) do
+            col = model.columns_hash[column] or raise "no columns_hash entry found for #{column} in #{model.inspect}"
+            col_spec = ::DeclareSchema::Model::Column.new(model, current_table_name, col)
+            options = col_spec.schema_attributes
+            type = options.delete(:type) or raise "no :type found in #{options.inspect}"
+            ["add_column :#{current_table_name}, :#{column}, #{type.inspect}", *format_options(options.compact)].join(', ')
+          end
+        end
+
+        def change_column_back(model, current_table_name, column)
+          with_previous_model_table_name(model, current_table_name) do
+            col = model.columns_hash[column] or raise "no columns_hash entry found for #{column} in #{model.inspect}"
+            col_spec = ::DeclareSchema::Model::Column.new(model, current_table_name, col)
+            options = col_spec.schema_attributes
+            type = options.delete(:type) or raise "no :type found in #{options.inspect}"
+            ["change_column #{current_table_name.to_sym.inspect}", column.to_sym.inspect, type.to_sym.inspect, *format_options(options.compact)].join(', ')
+          end
+        end
+
+        def default_collation_from_charset(charset)
+          case charset
+          when "utf8"
+            "utf8_general_ci"
+          when "utf8mb4"
+            "utf8mb4_general_ci"
+          end
+        end
+
+        def add_table_back(table)
+          res = StringIO.new
+          schema_dumper_klass = case Rails::VERSION::MAJOR
+                                when 4
+                                  ActiveRecord::SchemaDumper
+                                else
+                                  ActiveRecord::ConnectionAdapters::SchemaDumper
+                                end
+          schema_dumper_klass.send(:new, ActiveRecord::Base.connection).send(:table, table, res)
+
+          result = res.string.strip.gsub("\n  ", "\n")
+          if connection.class.name.match?(/mysql/i)
+            if !result['options: ']
+              result = result.sub('",', "\", options: \"DEFAULT CHARSET=#{Generators::DeclareSchema::Migration::Migrator.default_charset} "+
+                                   "COLLATE=#{Generators::DeclareSchema::Migration::Migrator.default_collation}\",")
+            end
+            default_charset   = result[/CHARSET=(\w+)/, 1]   or raise "unable to find charset in #{result.inspect}"
+            default_collation = result[/COLLATE=(\w+)/, 1] || default_collation_from_charset(default_charset) or
+              raise "unable to find collation in #{result.inspect} or charset #{default_charset.inspect}"
+            result = result.split("\n").map do |line|
+              if line['t.text'] || line['t.string']
+                if !line['charset: ']
+                  if line['collation: ']
+                    line = line.sub('collation: ', "charset: #{default_charset.inspect}, collation: ")
+                  else
+                    line += ", charset: #{default_charset.inspect}"
+                  end
+                end
+                line['collation: '] or line += ", collation: #{default_collation.inspect}"
+              end
+              line
+            end.join("\n")
+          end
+          result
+        end
+
         # def column_options_from_reverted_table(table, column)
         #   revert = revert_table(table)
         #   if (md = revert.match(/\s*t\.column\s+"#{column}",\s+(:[a-zA-Z0-9_]+)(?:,\s+(.*?)$)?/m))
@@ -672,16 +682,6 @@ module Generators
         #   end
         #   type or raise "unable to find column options for #{table}.#{column} in #{revert.inspect}"
         #   [type, options]
-        # end
-        #
-        # def change_column_back(table, column)
-        #   type, options = column_options_from_reverted_table(table, column)
-        #   ["change_column :#{table}, :#{column}, #{type}", options&.strip].compact.join(', ')
-        # end
-        #
-        # def revert_column(table, column)
-        #   type, options = column_options_from_reverted_table(table, column)
-        #   ["add_column :#{table}, :#{column}, #{type}", options&.strip].compact.join(', ')
         # end
       end
     end
