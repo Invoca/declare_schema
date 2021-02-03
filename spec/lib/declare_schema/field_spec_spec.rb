@@ -6,12 +6,14 @@ rescue LoadError
 end
 
 RSpec.describe DeclareSchema::Model::FieldSpec do
-  before do
-    load File.expand_path('prepare_testapp.rb', __dir__)
-  end
-
   let(:model) { double('model', table_options: {}) }
   let(:col_spec) { double('col_spec', sql_type: 'varchar') }
+
+  before do
+    load File.expand_path('prepare_testapp.rb', __dir__)
+
+    allow(col_spec).to receive(:type_cast_from_database, &:itself)
+  end
 
   describe '#schema_attributes' do
     describe 'integer 4' do
@@ -123,6 +125,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
       let(:col_spec) { double('col_spec', sql_type: :integer) }
 
       it 'typecasts default value' do
+        allow(col_spec).to receive(:type_cast_from_database) { |default| Integer(default) }
         subject = described_class.new(model, :price, :integer, limit: 4, default: '42', null: true, position: 2)
         expect(subject.schema_attributes(col_spec)).to eq(type: :integer, limit: 4, default: 42, null: true)
       end
