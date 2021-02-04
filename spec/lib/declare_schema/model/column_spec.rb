@@ -1,5 +1,12 @@
 # frozen_string_literal: true
 
+require 'rails'
+
+begin
+  require 'mysql2'
+rescue LoadError
+end
+
 require_relative '../../../../lib/declare_schema/model/column'
 
 RSpec.describe DeclareSchema::Model::Column do
@@ -9,7 +16,7 @@ RSpec.describe DeclareSchema::Model::Column do
 
   describe 'class methods' do
     describe '.native_type?' do
-      if defined?(Mysql2)
+      if defined?(Mysql2) && Rails::VERSION::MAJOR >= 5
         let(:native_types) { [:string, :text, :integer, :float, :decimal, :datetime, :time, :date, :binary, :boolean, :json] }
       else
         let(:native_types) { [:string, :text, :integer, :float, :decimal, :datetime, :time, :date, :binary, :boolean] }
