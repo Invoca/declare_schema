@@ -69,6 +69,8 @@ module DeclareSchema
           if self.class.mysql_text_limits?
             @options[:default].nil? or raise MysqlTextMayNotHaveDefault, "when using MySQL, non-nil default may not be given for :text field #{model}##{@name}"
             @options[:limit] = self.class.round_up_mysql_text_limit(@options[:limit] || MYSQL_LONGTEXT_LIMIT)
+          else
+            @options[:limit] = nil
           end
         when :string
           @options[:limit] or raise "limit: must be given for :string field #{model}##{@name}: #{@options.inspect}; do you want `limit: 255`?"

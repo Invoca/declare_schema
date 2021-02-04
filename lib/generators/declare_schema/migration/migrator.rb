@@ -443,7 +443,7 @@ module Generators
             spec = model.field_specs[c] or raise "failed to find field spec for #{c.inspect}"
             declared_schema_attributes = spec.schema_attributes(col)
             col_attrs = column_declaration.schema_attributes
-            if declared_schema_attributes != col_attrs
+            if !::DeclareSchema::Model::Column.equivalent_schema_attributes?(declared_schema_attributes, col_attrs)
               normalized_schema_attributes = declared_schema_attributes.merge(fk_field_options(model, c))
 
               # same_attrs = Hash[normalized_schema_attributes.map { |k, v| col_attrs[k] == v }]
@@ -551,10 +551,6 @@ module Generators
 
         def format_options(options)
           options.map do |k, v|
-            # if !changing && ((k == :limit && type == :decimal) || (k == :null && v == true))
-            #   next
-            # end
-
             if k.is_a?(Symbol)
               "#{k}: #{v.inspect}"
             else

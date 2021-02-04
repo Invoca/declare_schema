@@ -106,6 +106,10 @@ RSpec.describe DeclareSchema::Model::Column do
     let(:column) { double("ActiveRecord Column",
                           name: 'count',
                           type: :integer,
+                          limit: nil,
+                          precision: nil,
+                          scale: nil,
+                          type_cast_from_database: nil,
                           null: false,
                           default: nil,
                           sql_type_metadata: {}) }
@@ -119,7 +123,7 @@ RSpec.describe DeclareSchema::Model::Column do
 
     describe '#schema_attributes' do
       it 'returns a hash with relevant key/values' do
-        expect(subject.schema_attributes).to eq(type: :integer, null: false, default: nil)
+        expect(subject.schema_attributes).to eq(type: :integer, null: false)
       end
     end
   end

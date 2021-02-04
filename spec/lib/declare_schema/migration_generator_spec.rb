@@ -469,7 +469,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       migrate_up(<<~EOS.strip)
         add_column :adverts, :created_at, :datetime, null: true
         add_column :adverts, :updated_at, :datetime, null: true
-        add_column :adverts, :lock_version, :integer, limit: 4, null: false, default: 1
+        add_column :adverts, :lock_version, :integer, null: false, default: 1
 
         #{"add_foreign_key(\"adverts\", \"categories\", column: \"category_id\", name: \"index_adverts_on_category_id\")\n" +
           "add_foreign_key(\"adverts\", \"categories\", column: \"c_id\", name: \"index_adverts_on_c_id\")" if defined?(Mysql2)}

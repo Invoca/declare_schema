@@ -18,17 +18,8 @@ module Generators
         subject { described_class.new }
 
         describe 'format_options' do
-          let(:mysql_longtext_limit) { 0xffff_ffff }
-          let(:limit_option) do
-            if defined?(Mysql2)
-              ["limit: #{mysql_longtext_limit}"]
-            else
-              []
-            end
-          end
-
-          it 'returns text limits if supported' do
-            expect(subject.format_options({ limit: mysql_longtext_limit })).to eq(limit_option)
+          it 'returns an array of option .inspect strings, with symbols using the modern : hash notation' do
+            expect(subject.format_options({ limit: 4, 'key' => 'value "quoted"' })).to eq(["limit: 4", '"key" => "value \"quoted\""'])
           end
         end
 

@@ -71,6 +71,35 @@ module DeclareSchema
             cast_type.deserialize(default_value)
           end
         end
+
+        # Normalizes schema attributes for the specific database adapter that is currently running
+        # Note that the un-normalized attributes are still useful for generating migrations because those
+        # may be run with a different adapter.
+        # This method never mutates its argument. In fact it freezes it to be certain.
+        def normalize_schema_attributes(schema_attributes)
+          schema_attributes.freeze
+          schema_attributes[:type] or raise ArgumentError, ":type key not found; keys: #{schema_attributes.keys.inspect}"
+
+          case ActiveRecord::Base.connection.class.name
+          when /mysql/i
+            schema_attributes
+          when /sqlite/i
+            case schema_attributes[:type]
+            when :text
+              schema_attributes = schema_attributes.merge(limit: nil)
+            when :integer
+              schema_attributes = schema_attributes.dup
+              schema_attributes[:limit] ||= 8
+            end
+            schema_attributes
+          else
+            schema_attributes
+          end
+        end
+
+        def equivalent_schema_attributes?(schema_attributes_lhs, schema_attributes_rhs)
+          normalize_schema_attributes(schema_attributes_lhs) == normalize_schema_attributes(schema_attributes_rhs)
+        end
       end
 
       def initialize(model, current_table_name, column)
@@ -88,11 +117,7 @@ module DeclareSchema
       # omits keys with nil values
       def schema_attributes
         SCHEMA_KEYS.each_with_object({}) do |key, result|
-          # omit any of these keys that aren't applicable for this column
-          next if key.in?([:limit, :precision, :scale]) &&
-            (@column.sql_type_metadata.try(key).nil? || @column.send(key).nil?)
-
-          result[key] =
+          value =
             case key
             when :default
               self.class.deserialize_default_value(@column, sql_type, @column.default)
@@ -104,11 +129,13 @@ module DeclareSchema
                 col_value
               end
             end
+
+          result[key] = value unless value.nil?
         end.tap do |result|
           if ActiveRecord::Base.connection.class.name.match?(/mysql/i) && @column.type.in?([:string, :text])
             result.merge!(collation_and_charset_for_column(@current_table_name, @column.name))
           end
-        end.compact
+        end
       end
 
       private
