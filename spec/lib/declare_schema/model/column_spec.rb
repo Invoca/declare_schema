@@ -123,7 +123,11 @@ RSpec.describe DeclareSchema::Model::Column do
 
     describe '#schema_attributes' do
       it 'returns a hash with relevant key/values' do
-        expect(subject.schema_attributes).to eq(type: :integer, null: false)
+        if defined?(Mysql2)
+          expect(subject.schema_attributes).to eq(type: :integer, null: false, limit: 4)
+        else
+          expect(subject.schema_attributes).to eq(type: :integer, null: false)
+        end
       end
     end
   end
