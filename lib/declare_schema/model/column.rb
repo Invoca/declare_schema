@@ -37,12 +37,10 @@ module DeclareSchema
         #  time: { name: "time" },
         #  date: { name: "date" },
         #  binary: { name: "blob" },
-        #  boolean: { name: "boolean" },
-        #  json: { name: "json" } }
+        #  boolean: { name: "boolean" }
         def native_types
           @native_types ||= ActiveRecord::Base.connection.native_database_types.tap do |types|
             if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
-              types[:integer][:limit] ||= 11
               types[:text][:limit]    ||= 0xffff
               types[:binary][:limit]  ||= 0xffff
             end
@@ -61,6 +59,7 @@ module DeclareSchema
 
         def deserialize_default_value(column, sql_type, default_value)
           sql_type or raise ArgumentError, "must pass sql_type; got #{sql_type.inspect}"
+
           case Rails::VERSION::MAJOR
           when 4
             # TODO: Delete this code ASAP! This could be wrong, since it's using the type of the old column...which

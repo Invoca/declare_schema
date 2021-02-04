@@ -9,13 +9,19 @@ RSpec.describe DeclareSchema::Model::Column do
 
   describe 'class methods' do
     describe '.native_type?' do
+      if defined?(Mysql2)
+        let(:native_types) { [:string, :text, :integer, :float, :decimal, :datetime, :time, :date, :binary, :boolean, :json] }
+      else
+        let(:native_types) { [:string, :text, :integer, :float, :decimal, :datetime, :time, :date, :binary, :boolean] }
+      end
+
       it 'is falsey for :primary_key' do
         expect(described_class.native_type?(:primary_key)).to be_falsey
       end
 
       it 'is truthy for native types' do
-        [:string, :text, :integer, :float, :decimal, :datetime, :time, :date, :binary, :boolean, :json].each do |type|
-          expect(described_class.native_type?(type)).to be_truthy
+        native_types.each do |type|
+          expect(described_class.native_type?(type)).to be_truthy, type.inspect
         end
       end
 
