@@ -12,7 +12,9 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
   before do
     load File.expand_path('prepare_testapp.rb', __dir__)
 
-    allow(col_spec).to receive(:type_cast_from_database, &:itself)
+    if Rails::VERSION::MAJOR < 5
+      allow(col_spec).to receive(:type_cast_from_database, &:itself)
+    end
   end
 
   describe '#schema_attributes' do
