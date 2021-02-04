@@ -450,7 +450,7 @@ module Generators
               # changing_keys = normalized_schema_attributes.keys - same_attrs.keys
               type = normalized_schema_attributes.delete(:type) or raise "no :type found in #{normalized_schema_attributes.inspect}"
               changes << ["change_column #{new_table_name.to_sym.inspect}", c.to_sym.inspect,
-                          type.to_sym.inspect, *format_options(normalized_schema_attributes.compact)].join(", ")
+                          type.to_sym.inspect, *format_options(normalized_schema_attributes)].join(", ")
               undo_changes << change_column_back(model, current_table_name, col_name)
             end
           end.compact
@@ -609,9 +609,9 @@ module Generators
           with_previous_model_table_name(model, current_table_name) do
             col = model.columns_hash[column] or raise "no columns_hash entry found for #{column} in #{model.inspect}"
             col_spec = ::DeclareSchema::Model::Column.new(model, current_table_name, col)
-            options = col_spec.schema_attributes
-            type = options.delete(:type) or raise "no :type found in #{options.inspect}"
-            ["add_column :#{current_table_name}, :#{column}, #{type.inspect}", *format_options(options.compact)].join(', ')
+            schema_attributes = col_spec.schema_attributes
+            type = schema_attributes.delete(:type) or raise "no :type found in #{schema_attributes.inspect}"
+            ["add_column :#{current_table_name}, :#{column}, #{type.inspect}", *format_options(schema_attributes)].join(', ')
           end
         end
 
@@ -619,9 +619,9 @@ module Generators
           with_previous_model_table_name(model, current_table_name) do
             col = model.columns_hash[column] or raise "no columns_hash entry found for #{column} in #{model.inspect}"
             col_spec = ::DeclareSchema::Model::Column.new(model, current_table_name, col)
-            options = col_spec.schema_attributes
-            type = options.delete(:type) or raise "no :type found in #{options.inspect}"
-            ["change_column #{current_table_name.to_sym.inspect}", column.to_sym.inspect, type.to_sym.inspect, *format_options(options.compact)].join(', ')
+            schema_attributes = col_spec.schema_attributes
+            type = schema_attributes.delete(:type) or raise "no :type found in #{schema_attributes.inspect}"
+            ["change_column #{current_table_name.to_sym.inspect}", column.to_sym.inspect, type.to_sym.inspect, *format_options(schema_attributes)].join(', ')
           end
         end
 

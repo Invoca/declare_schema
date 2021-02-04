@@ -121,10 +121,11 @@ module DeclareSchema
 
       # returns the attributes for schema migrations as a Hash
       # omits name and position since those are meta-data above the schema
+      # omits keys with nil values
       def schema_attributes(col_spec)
         @options.merge(type: @type).tap do |attrs|
           attrs[:default] = Column.deserialize_default_value(col_spec, @sql_type, attrs[:default])
-        end
+        end.compact
       end
     end
   end

@@ -86,6 +86,7 @@ module DeclareSchema
 
       SCHEMA_KEYS = [:type, :limit, :precision, :scale, :null, :default].freeze
 
+      # omits keys with nil values
       def schema_attributes
         SCHEMA_KEYS.each_with_object({}) do |key, result|
           # omit any of these keys that aren't applicable for this column
@@ -108,7 +109,7 @@ module DeclareSchema
           if ActiveRecord::Base.connection.class.name.match?(/mysql/i) && @column.type.in?([:string, :text])
             result.merge!(collation_and_charset_for_column(@current_table_name, @column.name))
           end
-        end
+        end.compact
       end
 
       private
