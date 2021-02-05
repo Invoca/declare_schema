@@ -63,8 +63,8 @@ module DeclareSchema
 
           case Rails::VERSION::MAJOR
           when 4
-            # TODO: Delete this code ASAP! This could be wrong, since it's using the type of the old column...which
-            # might be getting migrated to a new type. We should be using just sql_type. -Colin
+            # TODO: Delete this Rails 4 support ASAP! This could be wrong, since it's using the type of the old column...which
+            # might be getting migrated to a new type. We should be using just sql_type as below. -Colin
             column.type_cast_from_database(default_value)
           else
             cast_type = ActiveRecord::Base.connection.send(:lookup_cast_type, sql_type) or
