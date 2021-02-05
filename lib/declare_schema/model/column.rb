@@ -78,8 +78,8 @@ module DeclareSchema
         # may be run with a different adapter.
         # This method never mutates its argument. In fact it freezes it to be certain.
         def normalize_schema_attributes(schema_attributes)
-          schema_attributes.freeze
           schema_attributes[:type] or raise ArgumentError, ":type key not found; keys: #{schema_attributes.keys.inspect}"
+          schema_attributes.freeze
 
           case ActiveRecord::Base.connection.class.name
           when /mysql/i
