@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'active_record'
+require 'active_record/connection_adapters/abstract_adapter'
 
 module Generators
   module DeclareSchema
