@@ -16,7 +16,7 @@ RSpec.describe DeclareSchema::Model::Column do
 
   describe 'class methods' do
     describe '.native_type?' do
-      if defined?(Mysql2) && Rails::VERSION::MAJOR >= 5
+      if Rails::VERSION::MAJOR >= 5
         let(:native_types) { [:string, :text, :integer, :float, :decimal, :datetime, :time, :date, :binary, :boolean, :json] }
       else
         let(:native_types) { [:string, :text, :integer, :float, :decimal, :datetime, :time, :date, :binary, :boolean] }

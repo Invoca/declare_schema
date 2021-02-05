@@ -37,7 +37,8 @@ module DeclareSchema
         #  time: { name: "time" },
         #  date: { name: "date" },
         #  binary: { name: "blob" },
-        #  boolean: { name: "boolean" }
+        #  boolean: { name: "boolean" },
+        #  json: { name: "json" } }
         def native_types
           @native_types ||= ActiveRecord::Base.connection.native_database_types.tap do |types|
             if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
