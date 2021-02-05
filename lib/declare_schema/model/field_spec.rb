@@ -60,8 +60,6 @@ module DeclareSchema
         @position = position
         @options = options.dup
 
-        @options.has_key?(:default) or @options[:default] = nil
-
         @options.has_key?(:null) or @options[:null] = false
 
         case type
@@ -79,7 +77,7 @@ module DeclareSchema
           @options[:limit] = 8
         end
 
-        # TODO: Do we really need to support a :sql_type option? Ideally drop it. -Colin
+        # TODO: Do we really need to support a :sql_type option? Ideally, drop it. -Colin
         @sql_type = @options.delete(:sql_type) || Column.sql_type(@type)
 
         if @sql_type.in?([:string, :text, :binary, :varbinary, :integer, :enum])
@@ -113,13 +111,6 @@ module DeclareSchema
 
         @sql_options = @options.except(*NON_SQL_OPTIONS)
       end
-
-      SQLITE_COLUMN_CLASS =
-        begin
-          ActiveRecord::ConnectionAdapters::SQLiteColumn
-        rescue NameError
-          NilClass
-        end
 
       # returns the attributes for schema migrations as a Hash
       # omits name and position since those are meta-data above the schema

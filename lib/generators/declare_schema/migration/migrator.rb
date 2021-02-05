@@ -331,7 +331,7 @@ module Generators
           disable_auto_increment   = model.respond_to?(:disable_auto_increment) && model.disable_auto_increment
           table_options_definition = ::DeclareSchema::Model::TableOptionsDefinition.new(model.table_name, table_options_for_model(model))
           field_definitions        = [
-            disable_auto_increment ? "t.integer :id, limit: 8, auto_increment: false, primary_key: true" : nil,
+            ("t.integer :id, limit: 8, auto_increment: false, primary_key: true" if disable_auto_increment),
             *(model.field_specs.values.sort_by(&:position).map { |f| create_field(f, longest_field_name) })
           ].compact
 
@@ -436,30 +436,28 @@ module Generators
           old_names = to_rename.invert
           changes = []
           undo_changes = []
-          to_change.each do |c|
-            col_name = old_names[c] || c
-            col = db_columns[col_name] or raise "failed to find column info for #{col_name.inspect}"
-            column_declaration = ::DeclareSchema::Model::Column.new(model, current_table_name, col)
-            spec = model.field_specs[c] or raise "failed to find field spec for #{c.inspect}"
-            declared_schema_attributes = spec.schema_attributes(col)
+          to_change.each do |col_name_to_change|
+            orig_col_name = old_names[col_name_to_change] || col_name_to_change
+            column = db_columns[orig_col_name] or raise "failed to find column info for #{orig_col_name.inspect}"
+            spec = model.field_specs[col_name_to_change] or raise "failed to find field spec for #{col_name_to_change.inspect}"
+            spec_attrs = spec.schema_attributes(column)
+            column_declaration = ::DeclareSchema::Model::Column.new(model, current_table_name, column)
             col_attrs = column_declaration.schema_attributes
-            if !::DeclareSchema::Model::Column.equivalent_schema_attributes?(declared_schema_attributes, col_attrs)
-              normalized_schema_attributes = declared_schema_attributes.merge(fk_field_options(model, c))
+            if !::DeclareSchema::Model::Column.equivalent_schema_attributes?(spec_attrs, col_attrs)
+              normalized_schema_attributes = spec_attrs.merge(fk_field_options(model, col_name_to_change))
 
-              # same_attrs = Hash[normalized_schema_attributes.map { |k, v| col_attrs[k] == v }]
-              # changing_keys = normalized_schema_attributes.keys - same_attrs.keys
               type = normalized_schema_attributes.delete(:type) or raise "no :type found in #{normalized_schema_attributes.inspect}"
-              changes << ["change_column #{new_table_name.to_sym.inspect}", c.to_sym.inspect,
+              changes << ["change_column #{new_table_name.to_sym.inspect}", col_name_to_change.to_sym.inspect,
                           type.to_sym.inspect, *format_options(normalized_schema_attributes)].join(", ")
-              undo_changes << change_column_back(model, current_table_name, col_name)
+              undo_changes << change_column_back(model, current_table_name, orig_col_name)
             end
-          end.compact
+          end
 
           index_changes, undo_index_changes = change_indexes(model, current_table_name, to_remove)
-          fk_changes, undo_fk_changes = if ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
-                                          [[], []]
-                                        else
+          fk_changes, undo_fk_changes = if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
                                           change_foreign_key_constraints(model, current_table_name)
+                                        else
+                                          [[], []]
                                         end
           table_options_changes, undo_table_options_changes = if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
                                                                 change_table_options(model, current_table_name)
@@ -467,26 +465,26 @@ module Generators
                                                                 [[], []]
                                                               end
 
-          [(renames + adds + removes + changes) * "\n",
+          [(renames + adds + removes + changes)                     * "\n",
            (undo_renames + undo_adds + undo_removes + undo_changes) * "\n",
-           index_changes * "\n",
-           undo_index_changes * "\n",
-           fk_changes * "\n",
-           undo_fk_changes * "\n",
-           table_options_changes * "\n",
-           undo_table_options_changes * "\n"]
+           index_changes                                            * "\n",
+           undo_index_changes                                       * "\n",
+           fk_changes                                               * "\n",
+           undo_fk_changes                                          * "\n",
+           table_options_changes                                    * "\n",
+           undo_table_options_changes                               * "\n"]
         end
 
         def change_indexes(model, old_table_name, to_remove)
-          return [[], []] if Migrator.disable_constraints
+          Migrator.disable_constraints and return [[], []]
 
           new_table_name = model.table_name
           existing_indexes = ::DeclareSchema::Model::IndexDefinition.for_model(model, old_table_name)
           model_indexes_with_equivalents = model.index_definitions_with_primary_key
           model_indexes = model_indexes_with_equivalents.map do |i|
             if i.explicit_name.nil?
-              if ex = existing_indexes.find { |e| i != e && e.equivalent?(i) }
-                i.with_name(ex.name)
+              if (existing = existing_indexes.find { |e| i != e && e.equivalent?(i) })
+                i.with_name(existing.name)
               end
             end || i
           end
@@ -496,15 +494,13 @@ module Generators
           end
           model_has_primary_key    = model_indexes.any?    { |i| i.name == ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME }
 
-          add_indexes_init = model_indexes - existing_indexes
-          drop_indexes_init = existing_indexes - model_indexes
           undo_add_indexes = []
-          undo_drop_indexes = []
-          add_indexes = add_indexes_init.map do |i|
+          add_indexes = (model_indexes - existing_indexes).map do |i|
             undo_add_indexes << drop_index(old_table_name, i.name) unless i.name == ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME
             i.to_add_statement(new_table_name, existing_has_primary_key)
           end
-          drop_indexes = drop_indexes_init.map do |i|
+          undo_drop_indexes = []
+          drop_indexes = (existing_indexes - model_indexes).map do |i|
             undo_drop_indexes << i.to_add_statement(old_table_name, model_has_primary_key)
             drop_index(new_table_name, i.name) unless i.name == ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME
           end.compact
@@ -520,24 +516,22 @@ module Generators
         end
 
         def change_foreign_key_constraints(model, old_table_name)
-          ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/) and raise 'SQLite does not support foreign keys'
-          return [[], []] if Migrator.disable_indexing
+          ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/) and raise ArgumentError, 'SQLite does not support foreign keys'
+          Migrator.disable_indexing and return [[], []]
 
           new_table_name = model.table_name
           existing_fks = ::DeclareSchema::Model::ForeignKeyDefinition.for_model(model, old_table_name)
           model_fks = model.constraint_specs
-          add_fks = model_fks - existing_fks
-          drop_fks = existing_fks - model_fks
-          undo_add_fks = []
-          undo_drop_fks = []
 
-          add_fks.map! do |fk|
+          undo_add_fks = []
+          add_fks = (model_fks - existing_fks).map do |fk|
             # next if fk.parent.constantize.abstract_class || fk.parent == fk.model.class_name
             undo_add_fks << remove_foreign_key(old_table_name, fk.constraint_name)
             fk.to_add_statement
-          end.compact
+          end
 
-          drop_fks.map! do |fk|
+          undo_drop_fks = []
+          drop_fks = (existing_fks - model_fks).map do |fk|
             undo_drop_fks << fk.to_add_statement
             remove_foreign_key(new_table_name, fk.constraint_name)
           end
@@ -601,23 +595,23 @@ module Generators
           model.table_name = model_table_name
         end
 
-        def add_column_back(model, current_table_name, column)
+        def add_column_back(model, current_table_name, col_name)
           with_previous_model_table_name(model, current_table_name) do
-            col = model.columns_hash[column] or raise "no columns_hash entry found for #{column} in #{model.inspect}"
-            col_spec = ::DeclareSchema::Model::Column.new(model, current_table_name, col)
+            column = model.columns_hash[col_name] or raise "no columns_hash entry found for #{col_name} in #{model.inspect}"
+            col_spec = ::DeclareSchema::Model::Column.new(model, current_table_name, column)
             schema_attributes = col_spec.schema_attributes
             type = schema_attributes.delete(:type) or raise "no :type found in #{schema_attributes.inspect}"
-            ["add_column :#{current_table_name}, :#{column}, #{type.inspect}", *format_options(schema_attributes)].join(', ')
+            ["add_column :#{current_table_name}, :#{col_name}, #{type.inspect}", *format_options(schema_attributes)].join(', ')
           end
         end
 
-        def change_column_back(model, current_table_name, column)
+        def change_column_back(model, current_table_name, col_name)
           with_previous_model_table_name(model, current_table_name) do
-            col = model.columns_hash[column] or raise "no columns_hash entry found for #{column} in #{model.inspect}"
-            col_spec = ::DeclareSchema::Model::Column.new(model, current_table_name, col)
+            column = model.columns_hash[col_name] or raise "no columns_hash entry found for #{col_name} in #{model.inspect}"
+            col_spec = ::DeclareSchema::Model::Column.new(model, current_table_name, column)
             schema_attributes = col_spec.schema_attributes
             type = schema_attributes.delete(:type) or raise "no :type found in #{schema_attributes.inspect}"
-            ["change_column #{current_table_name.to_sym.inspect}", column.to_sym.inspect, type.to_sym.inspect, *format_options(schema_attributes)].join(', ')
+            ["change_column #{current_table_name.to_sym.inspect}", col_name.to_sym.inspect, type.to_sym.inspect, *format_options(schema_attributes)].join(', ')
           end
         end
 
@@ -630,55 +624,48 @@ module Generators
           end
         end
 
-        def add_table_back(table)
-          res = StringIO.new
-          schema_dumper_klass = case Rails::VERSION::MAJOR
-                                when 4
-                                  ActiveRecord::SchemaDumper
-                                else
-                                  ActiveRecord::ConnectionAdapters::SchemaDumper
-                                end
-          schema_dumper_klass.send(:new, ActiveRecord::Base.connection).send(:table, table, res)
+        SchemaDumper = case Rails::VERSION::MAJOR
+                       when 4
+                         ActiveRecord::SchemaDumper
+                       else
+                         ActiveRecord::ConnectionAdapters::SchemaDumper
+                       end
 
-          result = res.string.strip.gsub("\n  ", "\n")
+        def add_table_back(table)
+          dumped_schema_stream = StringIO.new
+          SchemaDumper.send(:new, ActiveRecord::Base.connection).send(:table, table, dumped_schema_stream)
+
+          dumped_schema = dumped_schema_stream.string.strip.gsub!("\n  ", "\n")
           if connection.class.name.match?(/mysql/i)
-            if !result['options: ']
-              result = result.sub('",', "\", options: \"DEFAULT CHARSET=#{Generators::DeclareSchema::Migration::Migrator.default_charset} "+
-                                   "COLLATE=#{Generators::DeclareSchema::Migration::Migrator.default_collation}\",")
-            end
-            default_charset   = result[/CHARSET=(\w+)/, 1]   or raise "unable to find charset in #{result.inspect}"
-            default_collation = result[/COLLATE=(\w+)/, 1] || default_collation_from_charset(default_charset) or
-              raise "unable to find collation in #{result.inspect} or charset #{default_charset.inspect}"
-            result = result.split("\n").map do |line|
-              if line['t.text'] || line['t.string']
-                if !line['charset: ']
-                  if line['collation: ']
-                    line = line.sub('collation: ', "charset: #{default_charset.inspect}, collation: ")
-                  else
-                    line += ", charset: #{default_charset.inspect}"
-                  end
-                end
-                line['collation: '] or line += ", collation: #{default_collation.inspect}"
-              end
-              line
-            end.join("\n")
+            fix_mysql_charset_and_collation(dumped_schema)
+          else
+            dumped_schema
           end
-          result
         end
 
-        # def column_options_from_reverted_table(table, column)
-        #   revert = revert_table(table)
-        #   if (md = revert.match(/\s*t\.column\s+"#{column}",\s+(:[a-zA-Z0-9_]+)(?:,\s+(.*?)$)?/m))
-        #     # Ugly migration
-        #     _, type, options = *md
-        #   elsif (md = revert.match(/\s*t\.([a-z_]+)\s+"#{column}"(?:,\s+(.*?)$)?/m))
-        #     # Sexy migration
-        #     _, string_type, options = *md
-        #     type = ":#{string_type}"
-        #   end
-        #   type or raise "unable to find column options for #{table}.#{column} in #{revert.inspect}"
-        #   [type, options]
-        # end
+        # TODO: rewrite this method to use charset and collation variables rather than manipulating strings. -Colin
+        def fix_mysql_charset_and_collation(dumped_schema)
+          if !dumped_schema['options: ']
+            dumped_schema.sub!('",', "\", options: \"DEFAULT CHARSET=#{Generators::DeclareSchema::Migration::Migrator.default_charset} "+
+              "COLLATE=#{Generators::DeclareSchema::Migration::Migrator.default_collation}\",")
+          end
+          default_charset   = dumped_schema[/CHARSET=(\w+)/, 1]   or raise "unable to find charset in #{dumped_schema.inspect}"
+          default_collation = dumped_schema[/COLLATE=(\w+)/, 1] || default_collation_from_charset(default_charset) or
+            raise "unable to find collation in #{dumped_schema.inspect} or charset #{default_charset.inspect}"
+          dumped_schema.split("\n").map do |line|
+            if line['t.text'] || line['t.string']
+              if !line['charset: ']
+                if line['collation: ']
+                  line.sub!('collation: ', "charset: #{default_charset.inspect}, collation: ")
+                else
+                  line << ", charset: #{default_charset.inspect}"
+                end
+              end
+              line['collation: '] or line << ", collation: #{default_collation.inspect}"
+            end
+            line
+          end.join("\n")
+        end
       end
     end
   end
