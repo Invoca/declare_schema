@@ -5,7 +5,7 @@ module DeclareSchema
     class ForeignKeyDefinition
       include Comparable
 
-      attr_reader :constraint_name, :model, :foreign_key, :options, :on_delete_cascade
+      attr_reader :constraint_name, :model, :foreign_key, :foreign_key_name, :options, :on_delete_cascade
 
       def initialize(model, foreign_key, options = {})
         @model = model
