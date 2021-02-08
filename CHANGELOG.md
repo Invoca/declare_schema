@@ -12,7 +12,10 @@ Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0
 - Fixed a bug in migration generation caused by `DeclareSchema::Migration#create_constraints`
   calling `DeclareSchema::Model::ForeignKeyDefinition#to_add_statement` with unused parameters.
  
- - Fixed a bug in `DeclareSchema::Migration#remove_foreign_key` where special characters would not be quoted properly.
+- Fixed a bug in `DeclareSchema::Migration#remove_foreign_key` where special characters would not be quoted properly.
+
+- Fixed a bug where the generated call to add_foreign_key() was not setting `column:`,
+  so it only worked in cases where Rails could infer the foreign key by convention.
 
 ## [0.6.2] - 2021-01-06
 ### Added
