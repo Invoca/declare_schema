@@ -4,7 +4,7 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.4] - UNRELEASED
+## [0.6.4] - 2020-02-08
 - Fixed a bug where the generated call to add_foreign_key() was not setting `column:`,
   so it only worked in cases where Rails could infer the foreign key by convention.
 
