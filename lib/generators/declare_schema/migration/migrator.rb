@@ -455,10 +455,10 @@ module Generators
           end
 
           index_changes, undo_index_changes = change_indexes(model, current_table_name, to_remove)
-          fk_changes, undo_fk_changes = if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
-                                          change_foreign_key_constraints(model, current_table_name)
-                                        else
+          fk_changes, undo_fk_changes = if ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
                                           [[], []]
+                                        else
+                                          change_foreign_key_constraints(model, current_table_name)
                                         end
           table_options_changes, undo_table_options_changes = if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
                                                                 change_table_options(model, current_table_name)
