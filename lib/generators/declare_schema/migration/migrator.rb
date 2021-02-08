@@ -438,12 +438,12 @@ module Generators
           changes = []
           undo_changes = []
           to_change.each do |col_name_to_change|
-            orig_col_name = old_names[col_name_to_change] || col_name_to_change
-            column = db_columns[orig_col_name] or raise "failed to find column info for #{orig_col_name.inspect}"
-            spec = model.field_specs[col_name_to_change] or raise "failed to find field spec for #{col_name_to_change.inspect}"
-            spec_attrs = spec.schema_attributes(column)
+            orig_col_name      = old_names[col_name_to_change] || col_name_to_change
+            column             = db_columns[orig_col_name] or raise "failed to find column info for #{orig_col_name.inspect}"
+            spec               = model.field_specs[col_name_to_change] or raise "failed to find field spec for #{col_name_to_change.inspect}"
+            spec_attrs         = spec.schema_attributes(column)
             column_declaration = ::DeclareSchema::Model::Column.new(model, current_table_name, column)
-            col_attrs = column_declaration.schema_attributes
+            col_attrs          = column_declaration.schema_attributes
             if !::DeclareSchema::Model::Column.equivalent_schema_attributes?(spec_attrs, col_attrs)
               normalized_schema_attributes = spec_attrs.merge(fk_field_options(model, col_name_to_change))
 
