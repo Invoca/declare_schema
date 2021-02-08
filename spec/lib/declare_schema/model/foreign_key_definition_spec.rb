@@ -18,16 +18,17 @@ RSpec.describe DeclareSchema::Model::ForeignKeyDefinition do
   let(:model_class) { Network }
 
   describe 'instance methods' do
-    describe '#initialize' do
-      let(:connection) { instance_double(ActiveRecord::Base.connection.class) }
-      let(:model) { instance_double('Model', table_name: 'models', connection: connection) }
-      let(:foreign_key) { :network_id }
-      let(:options) { {} }
-      subject { described_class.new(model, foreign_key, options)}
-      before do
-        allow(connection).to receive(:index_name).with('models', column: :network_id) { }
-      end
+    let(:connection) { instance_double(ActiveRecord::Base.connection.class) }
+    let(:model) { instance_double('Model', table_name: 'models', connection: connection) }
+    let(:foreign_key) { :network_id }
+    let(:options) { {} }
+    subject { described_class.new(model, foreign_key, options)}
 
+    before do
+      allow(connection).to receive(:index_name).with('models', column: 'network_id') { 'on_network_id' }
+    end
+
+    describe '#initialize' do
       it 'normalizes symbols to strings' do
         expect(subject.foreign_key).to eq('network_id')
         expect(subject.parent_table_name).to eq('networks')
@@ -58,6 +59,12 @@ RSpec.describe DeclareSchema::Model::ForeignKeyDefinition do
           expect(subject.constraint_name).to eq('constraint_1')
           expect(subject.on_delete_cascade).to be_truthy
         end
+      end
+    end
+
+    describe '#to_add_statement' do
+      it 'returns add_foreign_key command' do
+        expect(subject.to_add_statement).to eq('add_foreign_key("models", "networks", column: "network_id", name: "on_network_id")')
       end
     end
   end
