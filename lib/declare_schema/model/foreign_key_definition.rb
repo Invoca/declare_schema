@@ -65,7 +65,7 @@ module DeclareSchema
       end
 
       def <=>(rhs)
-        key <=> rhs.key
+        key <=> rhs.send(:key)
       end
 
       alias eql? ==
