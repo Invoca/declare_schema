@@ -14,8 +14,8 @@ module DeclareSchema
 
         @child_table = model.table_name # unless a table rename, which would happen when a class is renamed??
         @parent_table_name = options[:parent_table]&.to_s
-        @foreign_key_name = options[:foreign_key]&.to_s || foreign_key
-        @index_name = options[:index_name]&.to_s || model.connection.index_name(model.table_name, column: foreign_key)
+        @foreign_key_name = options[:foreign_key]&.to_s || @foreign_key
+        @index_name = options[:index_name]&.to_s || model.connection.index_name(model.table_name, column: @foreign_key_name)
         @constraint_name = options[:constraint_name]&.to_s || @index_name&.to_s || ''
         @on_delete_cascade = options[:dependent] == :delete
 
@@ -59,11 +59,18 @@ module DeclareSchema
             foreign_key.sub(/_id\z/, '').camelize.constantize.table_name
       end
 
-      attr_writer :parent_table_name
-
       def to_add_statement
-        "add_foreign_key(#{@child_table.inspect}, #{parent_table_name.inspect}, name: #{@constraint_name.inspect})"
+        "add_foreign_key(#{@child_table.inspect}, #{parent_table_name.inspect}, " +
+          "column: #{@foreign_key_name.inspect}, name: #{@constraint_name.inspect})"
       end
+
+      def <=>(rhs)
+        key <=> rhs.key
+      end
+
+      alias eql? ==
+
+      private
 
       def key
         @key ||= [@child_table, parent_table_name, @foreign_key_name, @on_delete_cascade].map(&:to_s)
@@ -72,12 +79,6 @@ module DeclareSchema
       def hash
         key.hash
       end
-
-      def <=>(rhs)
-        key <=> rhs.key
-      end
-
-      alias eql? ==
     end
   end
 end
