@@ -9,14 +9,14 @@ module DeclareSchema
 
       def initialize(model, foreign_key, options = {})
         @model = model
-        @foreign_key = foreign_key.presence
+        @foreign_key = foreign_key.to_s.presence
         @options = options
 
         @child_table = model.table_name # unless a table rename, which would happen when a class is renamed??
-        @parent_table_name = options[:parent_table]
-        @foreign_key_name = options[:foreign_key] || self.foreign_key
-        @index_name = options[:index_name] || model.connection.index_name(model.table_name, column: foreign_key)
-        @constraint_name = options[:constraint_name] || @index_name || ''
+        @parent_table_name = options[:parent_table]&.to_s
+        @foreign_key_name = options[:foreign_key]&.to_s || foreign_key
+        @index_name = options[:index_name]&.to_s || model.connection.index_name(model.table_name, column: foreign_key)
+        @constraint_name = options[:constraint_name]&.to_s || @index_name&.to_s || ''
         @on_delete_cascade = options[:dependent] == :delete
 
         # Empty constraint lets mysql generate the name
@@ -28,11 +28,12 @@ module DeclareSchema
           constraints = show_create_table.split("\n").map { |line| line.strip if line['CONSTRAINT'] }.compact
 
           constraints.map do |fkc|
-            options = {}
             name, foreign_key, parent_table = fkc.match(/CONSTRAINT `([^`]*)` FOREIGN KEY \(`([^`]*)`\) REFERENCES `([^`]*)`/).captures
-            options[:constraint_name] = name
-            options[:parent_table] = parent_table
-            options[:foreign_key] = foreign_key
+            options = {
+              constraint_name: name,
+              parent_table:    parent_table,
+              foreign_key:     foreign_key
+            }
             options[:dependent] = :delete if fkc['ON DELETE CASCADE']
 
             new(model, foreign_key, options)
@@ -40,12 +41,22 @@ module DeclareSchema
         end
       end
 
+      # returns the parent class as a Class object
+      # or nil if no :class_name option given
+      def parent_class
+        if (class_name = options[:class_name])
+          if class_name.is_a?(Class)
+            class_name
+          else
+            class_name.to_s.constantize
+          end
+        end
+      end
+
       def parent_table_name
         @parent_table_name ||=
-          if (klass = options[:class_name])
-            klass = klass.to_s.constantize unless klass.is_a?(Class)
-            klass.try(:table_name)
-          end || foreign_key.sub(/_id\z/, '').camelize.constantize.table_name
+          parent_class&.try(:table_name) ||
+            foreign_key.sub(/_id\z/, '').camelize.constantize.table_name
       end
 
       attr_writer :parent_table_name
