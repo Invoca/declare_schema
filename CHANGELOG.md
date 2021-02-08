@@ -4,7 +4,11 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.3] - UNRELEASED
+## [0.6.4] - UNRELEASED
+- Fixed a bug where the generated call to add_foreign_key() was not setting `column:`,
+  so it only worked in cases where Rails could infer the foreign key by convention.
+
+## [0.6.3] - 2020-01-21
 ### Added
 - Added `add_foreign_key` native rails call in `DeclareSchema::Model::ForeignKeyDefinition#to_add_statement`.
 
@@ -13,9 +17,6 @@ Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0
   calling `DeclareSchema::Model::ForeignKeyDefinition#to_add_statement` with unused parameters.
  
 - Fixed a bug in `DeclareSchema::Migration#remove_foreign_key` where special characters would not be quoted properly.
-
-- Fixed a bug where the generated call to add_foreign_key() was not setting `column:`,
-  so it only worked in cases where Rails could infer the foreign key by convention.
 
 ## [0.6.2] - 2021-01-06
 ### Added
@@ -113,6 +114,7 @@ using the appropriate Rails configuration attributes.
 ### Added
 - Initial version from https://github.com/Invoca/hobo_fields v4.1.0.
 
+[0.6.4]: https://github.com/Invoca/declare_schema/compare/v0.6.3...v0.6.4
 [0.6.3]: https://github.com/Invoca/declare_schema/compare/v0.6.2...v0.6.3
 [0.6.2]: https://github.com/Invoca/declare_schema/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/Invoca/declare_schema/compare/v0.6.0...v0.6.1
