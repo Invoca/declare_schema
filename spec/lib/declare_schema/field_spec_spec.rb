@@ -17,6 +17,13 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
     end
   end
 
+  describe '#initialize' do
+    it 'normalizes option order' do
+      subject = described_class.new(model, :price, :integer, anonymize_using: 'x', null: false, position: 0, limit: 4)
+      expect(subject.options.keys).to eq([:limit, :null, :anonymize_using])
+    end
+  end
+
   describe '#schema_attributes' do
     describe 'integer 4' do
       it 'returns schema attributes' do

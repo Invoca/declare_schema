@@ -107,7 +107,7 @@ module DeclareSchema
           @options[:collation] and raise "collation may only given for :string and :text fields"
         end
 
-        @options = Hash[@options.sort_by { |k, v| OPTION_INDEXES[k] }]
+        @options = Hash[@options.sort_by { |k, _v| OPTION_INDEXES[k] || 9999 }]
 
         @sql_options = @options.except(*NON_SQL_OPTIONS)
       end
