@@ -83,15 +83,18 @@ module DeclareSchema
         if @sql_type.in?([:string, :text, :binary, :varbinary, :integer, :enum])
           @options[:limit] ||= Column.native_types[@sql_type][:limit]
         else
-          @options.has_key?(:limit) and raise "unsupported limit: for SQL type #{@sql_type} in field #{model}##{@name}"
+          @sql_type != :decimal && @options.has_key?(:limit) and warn("unsupported limit: for SQL type #{@sql_type} in field #{model}##{@name}")
+          @options.delete(:limit)
         end
 
         if @sql_type == :decimal
-          @options[:precision] or raise 'precision: required for :decimal type'
-          @options[:scale] or raise 'scale: required for :decimal type'
+          @options[:precision] or warn("precision: required for :decimal type in field #{model}##{@name}")
+          @options[:scale] or warn("scale: required for :decimal type in field #{model}##{@name}")
         else
-          @options.has_key?(:precision) and raise "precision: only allowed for :decimal type"
-          @options.has_key?(:scale) and raise "scale: only allowed for :decimal type"
+          if @sql_type != :datetime
+            @options.has_key?(:precision) and warn("precision: only allowed for :decimal type or :datetime for SQL type #{@sql_type} in field #{model}##{@name}")
+          end
+          @options.has_key?(:scale) and warn("scale: only allowed for :decimal type for SQL type #{@sql_type} in field #{model}##{@name}")
         end
 
         if @type.in?([:text, :string])
@@ -103,8 +106,8 @@ module DeclareSchema
             @options.delete(:collation)
           end
         else
-          @options[:charset]   and raise "charset may only given for :string and :text fields"
-          @options[:collation] and raise "collation may only given for :string and :text fields"
+          @options[:charset]   and warn("charset may only given for :string and :text fields for SQL type #{@sql_type} in field #{model}##{@name}")
+          @options[:collation] and warne("collation may only given for :string and :text fields for SQL type #{@sql_type} in field #{model}##{@name}")
         end
 
         @options = Hash[@options.sort_by { |k, _v| OPTION_INDEXES[k] || 9999 }]

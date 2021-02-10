@@ -84,16 +84,14 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
           expect(subject.schema_attributes(col_spec)).to eq(type: :decimal, precision: 8, scale: 10, null: true)
         end
 
-        it 'requires and precision:' do
-          expect do
-            described_class.new(model, :quantity, :decimal, scale: 10, null: true, position: 3)
-          end.to raise_exception(RuntimeError, 'precision: required for :decimal type')
+        it 'requires precision:' do
+          expect_any_instance_of(described_class).to receive(:warn).with(/precision: required for :decimal type/)
+          described_class.new(model, :quantity, :decimal, scale: 10, null: true, position: 3)
         end
 
         it 'requires scale:' do
-          expect do
-            described_class.new(model, :quantity, :decimal, precision: 8, null: true, position: 3)
-          end.to raise_exception(RuntimeError, 'scale: required for :decimal type')
+          expect_any_instance_of(described_class).to receive(:warn).with(/scale: required for :decimal type/)
+          described_class.new(model, :quantity, :decimal, precision: 8, null: true, position: 3)
         end
       end
 
@@ -102,15 +100,13 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
           let(:extra) { t == :string ? { limit: 100 } : {} }
 
           it 'does not allow precision:' do
-            expect do
-              described_class.new(model, :quantity, t, { precision: 8, null: true, position: 3 }.merge(extra))
-            end.to raise_exception(RuntimeError, 'precision: only allowed for :decimal type')
-          end
+            expect_any_instance_of(described_class).to receive(:warn).with(/precision: only allowed for :decimal type/)
+            described_class.new(model, :quantity, t, { precision: 8, null: true, position: 3 }.merge(extra))
+          end unless t == :datetime
 
           it 'does not allow scale:' do
-            expect do
-              described_class.new(model, :quantity, t, { scale: 10, null: true, position: 3 }.merge(extra))
-            end.to raise_exception(RuntimeError, 'scale: only allowed for :decimal type')
+            expect_any_instance_of(described_class).to receive(:warn).with(/scale: only allowed for :decimal type/)
+            described_class.new(model, :quantity, t, { scale: 10, null: true, position: 3 }.merge(extra))
           end
         end
       end
