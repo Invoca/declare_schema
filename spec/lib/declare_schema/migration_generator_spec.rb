@@ -223,16 +223,6 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       EOS
     )
 
-    # limit on a decimal column is not supported (use :scale and :precision instead)
-
-    expect do
-      class Advert < ActiveRecord::Base
-        fields do
-          price :decimal, limit: 4, null: true
-        end
-      end
-    end.to raise_exception(RuntimeError, /unsupported limit: for SQL type decimal in field Advert#price/)
-
     ActiveRecord::Migration.class_eval("remove_column :adverts, :price")
     class Advert < ActiveRecord::Base
       fields do
