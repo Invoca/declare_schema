@@ -4,7 +4,7 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.7.0] - Unreleased
+## [0.7.0] - 2020-02-14
 ### Changed
 - Use `schema_attributes` for generating both up and down change migrations, so they are guaranteed to be symmetrical.
   Note: Rails schema dumper is still used for the down migration to replace a model that has been dropped.
