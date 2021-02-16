@@ -73,33 +73,33 @@ module DeclareSchema
           end
         end
 
-        # Normalizes schema attributes for the specific database adapter that is currently running
+        # Normalizes schema attributes for the given database adapter name.
         # Note that the un-normalized attributes are still useful for generating migrations because those
         # may be run with a different adapter.
-        # This method never mutates its argument. In fact it freezes it to be certain.
-        def normalize_schema_attributes(schema_attributes)
-          schema_attributes[:type] or raise ArgumentError, ":type key not found; keys: #{schema_attributes.keys.inspect}"
-          schema_attributes.freeze
-
-          case ActiveRecord::Base.connection.class.name
-          when /mysql/i
-            schema_attributes
-          when /sqlite/i
-            case schema_attributes[:type]
-            when :text
-              schema_attributes = schema_attributes.merge(limit: nil)
-            when :integer
-              schema_attributes = schema_attributes.dup
-              schema_attributes[:limit] ||= 8
-            end
-            schema_attributes
-          else
-            schema_attributes
-          end
+        # This method never mutates its argument.
+        def normalize_schema_attributes(schema_attributes, db_adapter_name)
+          case schema_attributes[:type]
+          when :boolean
+            schema_attributes.reverse_merge(limit: 1)
+          when :integer
+            schema_attributes.reverse_merge(limit: 8) if db_adapter_name.match?(/sqlite/i)
+          when :float
+            schema_attributes.except(:limit)
+          when :text
+            schema_attributes.except(:limit)          if db_adapter_name.match?(/sqlite/i)
+          when :datetime
+            schema_attributes.reverse_merge(precision: 0)
+          when NilClass
+            raise ArgumentError, ":type key not found; keys: #{schema_attributes.keys.inspect}"
+          end || schema_attributes
         end
 
         def equivalent_schema_attributes?(schema_attributes_lhs, schema_attributes_rhs)
-          normalize_schema_attributes(schema_attributes_lhs) == normalize_schema_attributes(schema_attributes_rhs)
+          db_adapter_name = ActiveRecord::Base.connection.class.name
+          normalized_lhs = normalize_schema_attributes(schema_attributes_lhs, db_adapter_name)
+          normalized_rhs = normalize_schema_attributes(schema_attributes_rhs, db_adapter_name)
+
+          normalized_lhs == normalized_rhs
         end
       end
 

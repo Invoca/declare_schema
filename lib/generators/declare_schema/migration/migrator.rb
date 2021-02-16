@@ -444,12 +444,12 @@ module Generators
             spec_attrs         = spec.schema_attributes(column)
             column_declaration = ::DeclareSchema::Model::Column.new(model, current_table_name, column)
             col_attrs          = column_declaration.schema_attributes
-            if !::DeclareSchema::Model::Column.equivalent_schema_attributes?(spec_attrs, col_attrs)
-              normalized_schema_attributes = spec_attrs.merge(fk_field_options(model, col_name_to_change))
+            normalized_schema_attrs = spec_attrs.merge(fk_field_options(model, col_name_to_change))
 
-              type = normalized_schema_attributes.delete(:type) or raise "no :type found in #{normalized_schema_attributes.inspect}"
+            if !::DeclareSchema::Model::Column.equivalent_schema_attributes?(normalized_schema_attrs, col_attrs)
+              type = normalized_schema_attrs.delete(:type) or raise "no :type found in #{normalized_schema_attrs.inspect}"
               changes << ["change_column #{new_table_name.to_sym.inspect}", col_name_to_change.to_sym.inspect,
-                          type.to_sym.inspect, *format_options(normalized_schema_attributes)].join(", ")
+                          type.to_sym.inspect, *format_options(normalized_schema_attrs)].join(", ")
               undo_changes << change_column_back(model, current_table_name, orig_col_name)
             end
           end
