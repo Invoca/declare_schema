@@ -112,7 +112,7 @@ module DeclareSchema
 
         @options = Hash[@options.sort_by { |k, _v| OPTION_INDEXES[k] || 9999 }]
 
-        @sql_options = @options.except(*NON_SQL_OPTIONS)
+        @sql_options = @options.slice(*SQL_OPTIONS)
       end
 
       # returns the attributes for schema migrations as a Hash
