@@ -163,4 +163,11 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
       expect(bigint.schema_attributes(col_spec)).to eq(expected_attributes)
     end
   end
+
+  describe '#sql_options' do
+    subject { described_class.new(model, :price, :integer, limit: 4, null: true, default: 0, position: 2, encrypt_using: ->(field) { field }) }
+    it 'excludes non-sql options' do
+      expect(subject.sql_options).to eq(limit: 4, null: true, default: 0)
+    end
+  end
 end
