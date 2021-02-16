@@ -103,14 +103,13 @@ module DeclareSchema
         end
       end
 
+      attr_reader :sql_type
+
       def initialize(model, current_table_name, column)
         @model = model or raise ArgumentError, "must pass model"
         @current_table_name = current_table_name or raise ArgumentError, "must pass current_table_name"
         @column = column or raise ArgumentError, "must pass column"
-      end
-
-      def sql_type
-        @sql_type ||= self.class.sql_type(@column.type)
+        @sql_type = self.class.sql_type(@column.type)
       end
 
       SCHEMA_KEYS = [:type, :limit, :precision, :scale, :null, :default].freeze
@@ -121,7 +120,7 @@ module DeclareSchema
           value =
             case key
             when :default
-              self.class.deserialize_default_value(@column, sql_type, @column.default)
+              self.class.deserialize_default_value(@column, @sql_type, @column.default)
             else
               col_value = @column.send(key)
               if col_value.nil? && (native_type = self.class.native_types[@column.type])
