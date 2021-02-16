@@ -81,8 +81,7 @@ module DeclareSchema
       # arguments. The arguments are forwarded to the #field_added
       # callback, allowing custom metadata to be added to field
       # declarations.
-      def declare_field(name, type, *args)
-        options = args.extract_options!
+      def declare_field(name, type, *args, **options)
         try(:field_added, name, type, args, options)
         add_serialize_for_field(name, type, options)
         add_formatting_for_field(name, type)
