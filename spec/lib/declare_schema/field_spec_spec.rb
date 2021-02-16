@@ -149,8 +149,8 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
       end
     end
 
-    it 'returns the attributes except name, position' do
-      subject = described_class.new(model, :price, :bigint, null: true, default: 0, position: 2)
+    it 'returns the attributes except name, position, and non-SQL options' do
+      subject = described_class.new(model, :price, :bigint, null: true, default: 0, ruby_default: -> { }, encrypt_using: -> { }, position: 2)
       expect(subject.schema_attributes(col_spec)).to eq(type: :integer, limit: 8, null: true, default: 0)
     end
 
