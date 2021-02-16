@@ -4,6 +4,12 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - UNRELEASED
+### Fixed
+- Exclude unknown options from FieldSpec#sql_options and #schema_attributes.
+- Fixed a bug where fk_field_options were getting merged into spec_attrs after checking for equivalence,
+  leading to phantom migrations with no changes, or missing migrations when just the fk_field_options changed.
+
 ## [0.7.0] - 2020-02-14
 ### Changed
 - Use `schema_attributes` for generating both up and down change migrations, so they are guaranteed to be symmetrical.
@@ -119,6 +125,7 @@ using the appropriate Rails configuration attributes.
 ### Added
 - Initial version from https://github.com/Invoca/hobo_fields v4.1.0.
 
+[0.7.1]: https://github.com/Invoca/declare_schema/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/Invoca/declare_schema/compare/v0.6.3...v0.7.0
 [0.6.4]: https://github.com/Invoca/declare_schema/compare/v0.6.3...v0.6.4
 [0.6.3]: https://github.com/Invoca/declare_schema/compare/v0.6.2...v0.6.3
