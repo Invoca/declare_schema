@@ -28,13 +28,12 @@ module DeclareSchema
       field(:lock_version, :integer, default: 1, null: false)
     end
 
-    def field(name, type, *args)
-      options = args.extract_options!
-      @model.declare_field(name, type, *(args + [@options.merge(options)]))
+    def field(name, type, *args, **options)
+      @model.declare_field(name, type, *[*args, @options.merge(options)])
     end
 
     def method_missing(name, *args)
-      field(name, args.first, *args[1..-1])
+      field(name, *args)
     end
   end
 end
