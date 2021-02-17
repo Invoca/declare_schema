@@ -6,69 +6,6 @@ require 'active_record/connection_adapters/abstract_adapter'
 module Generators
   module DeclareSchema
     module Migration
-      HabtmModelShim = Struct.new(:join_table, :foreign_keys, :foreign_key_classes, :connection) do
-        class << self
-          def from_reflection(refl)
-            join_table = refl.join_table
-            foreign_keys_and_classes = [
-              [refl.foreign_key.to_s, refl.active_record],
-              [refl.association_foreign_key.to_s, refl.class_name.constantize]
-            ].sort { |a, b| a.first <=> b.first }
-            foreign_keys = foreign_keys_and_classes.map(&:first)
-            foreign_key_classes = foreign_keys_and_classes.map(&:last)
-            # this may fail in weird ways if HABTM is running across two DB connections (assuming that's even supported)
-            # figure that anybody who sets THAT up can deal with their own migrations...
-            connection = refl.active_record.connection
-
-            new(join_table, foreign_keys, foreign_key_classes, connection)
-          end
-        end
-
-        def table_options
-          {}
-        end
-
-        def table_name
-          join_table
-        end
-
-        def table_exists?
-          ActiveRecord::Migration.table_exists? table_name
-        end
-
-        def field_specs
-          i = 0
-          foreign_keys.each_with_object({}) do |v, result|
-            result[v] = ::DeclareSchema::Model::FieldSpec.new(self, v, :integer, position: i, null: false)
-            i += 1
-          end
-        end
-
-        def primary_key
-          false # no single-column primary key
-        end
-
-        def index_definitions_with_primary_key
-          [
-            ::DeclareSchema::Model::IndexDefinition.new(self, foreign_keys, unique: true, name: ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME),
-            ::DeclareSchema::Model::IndexDefinition.new(self, foreign_keys.last) # not unique by itself; combines with primary key to be unique
-          ]
-        end
-
-        alias_method :index_definitions, :index_definitions_with_primary_key
-
-        def ignore_indexes
-          []
-        end
-
-        def constraint_specs
-          [
-            ::DeclareSchema::Model::ForeignKeyDefinition.new(self, foreign_keys.first, parent_table: foreign_key_classes.first.table_name, constraint_name: "#{join_table}_FK1", dependent: :delete),
-            ::DeclareSchema::Model::ForeignKeyDefinition.new(self, foreign_keys.last, parent_table: foreign_key_classes.last.table_name, constraint_name: "#{join_table}_FK2", dependent: :delete)
-          ]
-        end
-      end
-
       class Migrator
         class Error < RuntimeError; end
 
@@ -266,7 +203,7 @@ module Generators
           end
           # generate shims for HABTM models
           habtm_tables.each do |name, refls|
-            models_by_table_name[name] = HabtmModelShim.from_reflection(refls.first)
+            models_by_table_name[name] = ::DeclareSchema::Model::HabtmModelShim.from_reflection(refls.first)
           end
           model_table_names = models_by_table_name.keys
 
