@@ -9,8 +9,9 @@ module Generators
       class Migrator
         class Error < RuntimeError; end
 
-        DEFAULT_CHARSET   = "utf8mb4"
-        DEFAULT_COLLATION = "utf8mb4_bin"
+        DEFAULT_CHARSET       = "utf8mb4"
+        DEFAULT_COLLATION     = "utf8mb4_bin"
+        DEFAULT_TEXT_LIMIT    = 0xffff_ffff
 
         @ignore_models                        = []
         @ignore_tables                        = []
@@ -18,10 +19,12 @@ module Generators
         @active_record_class                  = ActiveRecord::Base
         @default_charset                      = DEFAULT_CHARSET
         @default_collation                    = DEFAULT_COLLATION
+        @default_text_limit                   = DEFAULT_TEXT_LIMIT
+
 
         class << self
           attr_accessor :ignore_models, :ignore_tables, :disable_indexing, :disable_constraints
-          attr_reader :active_record_class, :default_charset, :default_collation, :before_generating_migration_callback
+          attr_reader :active_record_class, :default_charset, :default_collation, :default_text_limit, :before_generating_migration_callback
 
           def default_charset=(charset)
             charset.is_a?(String) or raise ArgumentError, "charset must be a string (got #{charset.inspect})"
@@ -31,6 +34,11 @@ module Generators
           def default_collation=(collation)
             collation.is_a?(String) or raise ArgumentError, "collation must be a string (got #{collation.inspect})"
             @default_collation = collation
+          end
+
+          def default_text_limit=(text_limit)
+            text_limit.is_a?(Integer) or raise ArgumentError, "text limit must be an integer (got #{text_limit.inspect})"
+            @default_text_limit = text_limit
           end
 
           def active_record_class
