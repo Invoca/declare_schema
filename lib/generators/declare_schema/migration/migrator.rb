@@ -328,7 +328,7 @@ module Generators
         end
 
         def create_table(model)
-          longest_field_name       = model.field_specs.values.map { |f| f.sql_type.to_s.length }.max
+          longest_field_name       = model.field_specs.values.map { |f| f.type.to_s.length }.max
           disable_auto_increment   = model.respond_to?(:disable_auto_increment) && model.disable_auto_increment
           table_options_definition = ::DeclareSchema::Model::TableOptionsDefinition.new(model.table_name, table_options_for_model(model))
           field_definitions        = [
@@ -379,7 +379,7 @@ module Generators
         def create_field(field_spec, field_name_width)
           options = field_spec.sql_options.merge(fk_field_options(field_spec.model, field_spec.name))
           args = [field_spec.name.inspect] + format_options(options.compact)
-          format("t.%-*s %s", field_name_width, field_spec.sql_type, args.join(', '))
+          format("t.%-*s %s", field_name_width, field_spec.type, args.join(', '))
         end
 
         def change_table(model, current_table_name)
@@ -417,7 +417,7 @@ module Generators
             args =
               if (spec = model.field_specs[c])
                 options = spec.sql_options.merge(fk_field_options(model, c))
-                [":#{spec.sql_type}", *format_options(options.compact)]
+                [":#{spec.type}", *format_options(options.compact)]
               else
                 [":integer"]
               end

@@ -59,26 +59,6 @@ RSpec.describe DeclareSchema::Model::Column do
       end
     end
 
-    describe '.sql_type' do
-      it 'returns the sql type for :string' do
-        expect(described_class.sql_type(:string)).to eq(:string)
-      end
-
-      it 'returns the sql type for :integer' do
-        expect(described_class.sql_type(:integer)).to match(:integer)
-      end
-
-      it 'returns the sql type for :datetime' do
-        expect(described_class.sql_type(:datetime)).to eq(:datetime)
-      end
-
-      it 'raises UnknownSqlType' do
-        expect do
-          described_class.sql_type(:email)
-        end.to raise_exception(::DeclareSchema::UnknownSqlTypeError, /:email for type :email/)
-      end
-    end
-
     describe '.deserialize_default_value' do
       require 'rails'
 
@@ -109,10 +89,11 @@ RSpec.describe DeclareSchema::Model::Column do
       end
     end
     let(:model) { ColumnTestModel }
+    let(:type) { :integer }
     let(:current_table_name) { model.table_name }
     let(:column) { double("ActiveRecord Column",
                           name: 'count',
-                          type: :integer,
+                          type: type,
                           limit: nil,
                           precision: nil,
                           scale: nil,
@@ -122,9 +103,9 @@ RSpec.describe DeclareSchema::Model::Column do
                           sql_type_metadata: {}) }
     subject { described_class.new(model, current_table_name, column) }
 
-    describe '#sql_type' do
-      it 'returns sql type' do
-        expect(subject.sql_type).to match(/int/)
+    describe '#type' do
+      it 'returns type' do
+        expect(subject.type).to eq(type)
       end
     end
 

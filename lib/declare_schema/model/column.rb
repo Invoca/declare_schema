@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
 module DeclareSchema
-  class UnknownSqlTypeError < RuntimeError; end
+  class UnknownTypeError < RuntimeError; end
 
   module Model
     # This class is a wrapper for the ActiveRecord::...::Column class
     class Column
       class << self
         def native_type?(type)
-          type != :primary_key && native_types.has_key?(type)
+          type != :primary_key && native_types[type]
         end
 
         # MySQL example:
@@ -48,27 +48,17 @@ module DeclareSchema
           end
         end
 
-        def sql_type(type)
-          if native_type?(type)
-            type
-          else
-            if (field_class = DeclareSchema.to_class(type))
-              field_class::COLUMN_TYPE
-            end or raise UnknownSqlTypeError, "#{type.inspect} for type #{type.inspect}"
-          end
-        end
-
-        def deserialize_default_value(column, sql_type, default_value)
-          sql_type or raise ArgumentError, "must pass sql_type; got #{sql_type.inspect}"
+        def deserialize_default_value(column, type, default_value)
+          type or raise ArgumentError, "must pass type; got #{type.inspect}"
 
           case Rails::VERSION::MAJOR
           when 4
             # TODO: Delete this Rails 4 support ASAP! This could be wrong, since it's using the type of the old column...which
-            # might be getting migrated to a new type. We should be using just sql_type as below. -Colin
+            # might be getting migrated to a new type. We should be using just type as below. -Colin
             column.type_cast_from_database(default_value)
           else
-            cast_type = ActiveRecord::Base.connection.send(:lookup_cast_type, sql_type) or
-              raise "cast_type not found for #{sql_type}"
+            cast_type = ActiveRecord::Base.connection.send(:lookup_cast_type, type) or
+              raise "cast_type not found for #{type}"
             cast_type.deserialize(default_value)
           end
         end
@@ -103,13 +93,14 @@ module DeclareSchema
         end
       end
 
-      attr_reader :sql_type
+      attr_reader :type
 
       def initialize(model, current_table_name, column)
         @model = model or raise ArgumentError, "must pass model"
         @current_table_name = current_table_name or raise ArgumentError, "must pass current_table_name"
         @column = column or raise ArgumentError, "must pass column"
-        @sql_type = self.class.sql_type(@column.type)
+        @type = @column.type
+        self.class.native_type?(@type) or raise UnknownTypeError, "#{@type.inspect}"
       end
 
       SCHEMA_KEYS = [:type, :limit, :precision, :scale, :null, :default].freeze
@@ -120,7 +111,7 @@ module DeclareSchema
           value =
             case key
             when :default
-              self.class.deserialize_default_value(@column, @sql_type, @column.default)
+              self.class.deserialize_default_value(@column, @type, @column.default)
             else
               col_value = @column.send(key)
               if col_value.nil? && (native_type = self.class.native_types[@column.type])

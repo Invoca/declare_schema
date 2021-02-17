@@ -7,7 +7,7 @@ end
 
 RSpec.describe DeclareSchema::Model::FieldSpec do
   let(:model) { double('model', table_options: {}) }
-  let(:col_spec) { double('col_spec', sql_type: 'varchar') }
+  let(:col_spec) { double('col_spec', type: :string) }
 
   before do
     load File.expand_path('prepare_testapp.rb', __dir__)
@@ -127,7 +127,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
     end
 
     describe 'default:' do
-      let(:col_spec) { double('col_spec', sql_type: :integer) }
+      let(:col_spec) { double('col_spec', type: :integer) }
 
       it 'typecasts default value' do
         allow(col_spec).to receive(:type_cast_from_database) { |default| Integer(default) }
