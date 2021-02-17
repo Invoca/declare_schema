@@ -4,6 +4,11 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - UNRELEASED
+### Removed
+- Removed `sql_type` that was confusing because it was actually the same as `type` (ex: :string) and not
+  in fact the SQL type (ex: ``varchar(255)'`).
+
 ## [0.7.1] - 2021-02-17
 ### Fixed
 - Exclude unknown options from FieldSpec#sql_options and #schema_attributes.
@@ -125,6 +130,7 @@ using the appropriate Rails configuration attributes.
 ### Added
 - Initial version from https://github.com/Invoca/hobo_fields v4.1.0.
 
+[0.8.0]: https://github.com/Invoca/declare_schema/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/Invoca/declare_schema/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/Invoca/declare_schema/compare/v0.6.3...v0.7.0
 [0.6.4]: https://github.com/Invoca/declare_schema/compare/v0.6.3...v0.6.4
