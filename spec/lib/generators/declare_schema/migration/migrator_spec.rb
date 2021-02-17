@@ -57,6 +57,20 @@ module Generators
           end
         end
 
+        describe '#default_text_limit' do
+          subject { described_class.default_text_limit }
+
+          context 'when not explicitly set' do
+            it { should eq(0xffff_ffff) }
+          end
+
+          context 'when explicitly set' do
+            before { described_class.default_text_limit = 0xffff }
+            after  { described_class.default_text_limit = described_class::DEFAULT_TEXT_LIMIT }
+            it     { should eq(0xffff) }
+          end
+        end
+
         describe 'load_rails_models' do
           before do
             expect(Rails.application).to receive(:eager_load!)
