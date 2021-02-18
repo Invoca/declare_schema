@@ -58,7 +58,7 @@ module DeclareSchema
         @position = position
         @options = options.dup
 
-        @options.has_key?(:null) or @options[:null] = false
+        @options.has_key?(:null) or Generators::DeclareSchema::Migration::Migrator.default_null
 
         case @type
         when :text

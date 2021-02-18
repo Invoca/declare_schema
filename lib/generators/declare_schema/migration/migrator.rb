@@ -13,6 +13,7 @@ module Generators
         DEFAULT_COLLATION     = "utf8mb4_bin"
         DEFAULT_TEXT_LIMIT    = 0xffff_ffff
         DEFAULT_STRING_LIMIT  = nil
+        DEFAULT_NULL          = false
 
         @ignore_models                        = []
         @ignore_tables                        = []
@@ -22,11 +23,11 @@ module Generators
         @default_collation                    = DEFAULT_COLLATION
         @default_text_limit                   = DEFAULT_TEXT_LIMIT
         @default_string_limit                 = DEFAULT_STRING_LIMIT
-
+        @default_null                         = DEFAULT_NULL
 
         class << self
           attr_accessor :ignore_models, :ignore_tables, :disable_indexing, :disable_constraints
-          attr_reader :active_record_class, :default_charset, :default_collation, :default_text_limit, :default_string_limit, :before_generating_migration_callback
+          attr_reader :active_record_class, :default_charset, :default_collation, :default_text_limit, :default_string_limit, :default_null, :before_generating_migration_callback
 
           def default_charset=(charset)
             charset.is_a?(String) or raise ArgumentError, "charset must be a string (got #{charset.inspect})"
@@ -46,6 +47,11 @@ module Generators
           def default_string_limit=(string_limit)
             string_limit.nil? or string_limit.is_a?(Integer) or raise ArgumentError, "string limit must be an integer (got #{string_limit.inspect})"
             @default_string_limit = string_limit
+          end
+
+          def default_null=(null)
+            [true, false].include? null or raise ArgumentError, "null must be either true, false, or nil (got #{null.inspect})"
+            @default_null = null
           end
 
           def active_record_class

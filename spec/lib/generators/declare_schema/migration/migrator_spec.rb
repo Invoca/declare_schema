@@ -85,6 +85,20 @@ module Generators
           end
         end
 
+        describe '#default_null' do
+          subject { described_class.default_null }
+
+          context 'when not explicitly set' do
+            it { should eq(false) }
+          end
+
+          context 'when explicitly set' do
+            before { described_class.default_null = true }
+            after  { described_class.default_null = described_class::DEFAULT_NULL }
+            it     { should eq(true) }
+          end
+        end
+
         describe 'load_rails_models' do
           before do
             expect(Rails.application).to receive(:eager_load!)
