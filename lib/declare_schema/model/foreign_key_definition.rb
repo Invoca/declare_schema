@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'index_definition'
+
 module DeclareSchema
   module Model
     class ForeignKeyDefinition
@@ -15,10 +17,10 @@ module DeclareSchema
         @child_table = model.table_name # unless a table rename, which would happen when a class is renamed??
         @parent_table_name = options[:parent_table]&.to_s
         @foreign_key_name = options[:foreign_key]&.to_s || @foreign_key
-        @index_name = options[:index_name]&.to_s || model.connection.index_name(model.table_name, column: @foreign_key_name)
 
-        # Empty constraint lets mysql generate the name
-        @constraint_name = options[:constraint_name]&.to_s || @index_name&.to_s || ''
+        @constraint_name = options[:constraint_name]&.to_s ||
+                             options[:index_name]&.to_s ||
+                             IndexDefinition.index_name(@foreign_key_name)
         @on_delete_cascade = options[:dependent] == :delete
       end
 

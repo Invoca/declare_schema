@@ -37,10 +37,6 @@ module DeclareSchema
         join_table
       end
 
-      def table_exists?
-        ActiveRecord::Migration.table_exists?(table_name)
-      end
-
       def field_specs
         foreign_keys.each_with_index.each_with_object({}) do |(v, position), result|
           result[v] = ::DeclareSchema::Model::FieldSpec.new(self, v, :integer, position: position, null: false)
@@ -51,7 +47,7 @@ module DeclareSchema
         false # no single-column primary key in database
       end
 
-      def declared_primary_key
+      def defined_primary_key
         false # no single-column primary key declared
       end
 
