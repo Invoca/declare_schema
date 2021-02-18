@@ -47,11 +47,9 @@ module DeclareSchema
       end
 
       def initialize(model, name, type, position: 0, **options)
-        # TODO: TECH-5116
-        # Invoca change - searching for the primary key was causing an additional database read on every model load.  Assume
-        # "id" which works for invoca.
-        # raise ArgumentError, "you cannot provide a field spec for the primary key" if name == model.primary_key
-        name == "id" and raise ArgumentError, "you cannot provide a field spec for the primary key"
+        defined_primary_key = model.defined_primary_key
+
+        name.to_s == defined_primary_key and raise ArgumentError, "you may not provide a field spec for the primary key #{name.inspect}"
 
         @model = model
         @name = name.to_sym
