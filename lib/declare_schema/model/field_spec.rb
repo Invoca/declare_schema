@@ -77,7 +77,7 @@ module DeclareSchema
           @options[:limit] = 8
         end
 
-        Column.native_type?(@type) or raise UnknownTypeError, "#{@type.inspect}"
+        Column.native_type?(@type) or raise UnknownTypeError, "#{@type.inspect} not found in #{Column.native_types.inspect} for adapter #{ActiveRecord::Base.connection.class.name}"
 
         if @type.in?([:string, :text, :binary, :varbinary, :integer, :enum])
           @options[:limit] ||= Column.native_types[@type][:limit]

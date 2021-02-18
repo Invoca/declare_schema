@@ -22,6 +22,12 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
       subject = described_class.new(model, :price, :integer, anonymize_using: 'x', null: false, position: 0, limit: 4)
       expect(subject.options.keys).to eq([:limit, :null, :anonymize_using])
     end
+
+    it 'raises exception on unknown field type' do
+      expect do
+        described_class.new(model, :location, :lat_long, position: 0)
+      end.to raise_exception(::DeclareSchema::UnknownTypeError, /:lat_long not found in /)
+    end
   end
 
   describe '#schema_attributes' do
