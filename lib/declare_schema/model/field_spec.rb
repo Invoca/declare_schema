@@ -104,7 +104,7 @@ module DeclareSchema
           end
         else
           @options[:charset]   and warn("charset may only given for :string and :text fields for SQL type #{@type} in field #{model}##{@name}")
-          @options[:collation] and warne("collation may only given for :string and :text fields for SQL type #{@type} in field #{model}##{@name}")
+          @options[:collation] and warn("collation may only given for :string and :text fields for SQL type #{@type} in field #{model}##{@name}")
         end
 
         @options = Hash[@options.sort_by { |k, _v| OPTION_INDEXES[k] || 9999 }]
