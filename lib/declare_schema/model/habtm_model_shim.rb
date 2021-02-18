@@ -42,10 +42,8 @@ module DeclareSchema
       end
 
       def field_specs
-        i = 0
-        foreign_keys.each_with_object({}) do |v, result|
-          result[v] = ::DeclareSchema::Model::FieldSpec.new(self, v, :integer, position: i, null: false)
-          i += 1
+        foreign_keys.each_with_index.each_with_object({}) do |(v, position), result|
+          result[v] = ::DeclareSchema::Model::FieldSpec.new(self, v, :integer, position: position, null: false)
         end
       end
 
