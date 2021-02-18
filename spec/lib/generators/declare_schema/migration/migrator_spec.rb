@@ -71,6 +71,20 @@ module Generators
           end
         end
 
+        describe '#default_string_limit' do
+          subject { described_class.default_string_limit }
+
+          context 'when not explicitly set' do
+            it { should eq(nil) }
+          end
+
+          context 'when explicitly set' do
+            before { described_class.default_string_limit = 225 }
+            after  { described_class.default_string_limit = described_class::DEFAULT_STRING_LIMIT }
+            it     { should eq(225) }
+          end
+        end
+
         describe 'load_rails_models' do
           before do
             expect(Rails.application).to receive(:eager_load!)

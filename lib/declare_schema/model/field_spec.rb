@@ -69,7 +69,7 @@ module DeclareSchema
             @options.delete(:limit)
           end
         when :string
-          @options[:limit] or raise "limit: must be given for :string field #{model}##{@name}: #{@options.inspect}; do you want `limit: 255`?"
+          @options[:limit] ||= Generators::DeclareSchema::Migration::Migrator.default_string_limit or raise "limit: must be given for :string field #{model}##{@name}: #{@options.inspect}; do you want `limit: 255`?"
         when :bigint
           @type = :integer
           @options[:limit] = 8
