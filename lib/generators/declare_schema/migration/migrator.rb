@@ -15,6 +15,7 @@ module Generators
         DEFAULT_STRING_LIMIT          = nil
         DEFAULT_NULL                  = false
         DEFAULT_GENERATE_FOREIGN_KEYS = true
+        DEFAULT_GENERATE_INDEXING     = true
 
         @ignore_models                        = []
         @ignore_tables                        = []
@@ -26,11 +27,12 @@ module Generators
         @default_string_limit                 = DEFAULT_STRING_LIMIT
         @default_null                         = DEFAULT_NULL
         @default_generate_foreign_keys        = DEFAULT_GENERATE_FOREIGN_KEYS
+        @default_generate_indexing            = DEFAULT_GENERATE_INDEXING
 
         class << self
           attr_accessor :ignore_models, :ignore_tables, :disable_indexing, :disable_constraints
           attr_reader :active_record_class, :default_charset, :default_collation, :default_text_limit, :default_string_limit, :default_null,
-                      :default_generate_foreign_keys, :before_generating_migration_callback
+                      :default_generate_foreign_keys, :default_generate_indexing, :before_generating_migration_callback
 
           def default_charset=(charset)
             charset.is_a?(String) or raise ArgumentError, "charset must be a string (got #{charset.inspect})"
@@ -63,8 +65,18 @@ module Generators
             toggle_disable_constraints
           end
 
+          def default_generate_indexing=(generate_indexing)
+            [true, false].include? generate_indexing or raise ArgumentError, "generate_indexing must be either true or false (got #{generate_indexing.inspect})"
+            @default_generate_indexing = generate_indexing
+            toggle_disable_indexing
+          end
+
           def toggle_disable_constraints
             @disable_constraints = !@default_generate_foreign_keys
+          end
+
+          def toggle_disable_indexing
+            @disable_indexing = !@default_generate_indexing
           end
 
           def active_record_class

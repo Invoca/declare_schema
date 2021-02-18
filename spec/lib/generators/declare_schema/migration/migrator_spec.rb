@@ -113,6 +113,20 @@ module Generators
           end
         end
 
+        describe '#default_generate_indexing' do
+          subject { described_class.default_generate_indexing }
+
+          context 'when not explicitly set' do
+            it { should eq(true) }
+          end
+
+          context 'when explicitly set' do
+            before { described_class.default_generate_indexing = false }
+            after  { described_class.default_generate_indexing = described_class::DEFAULT_GENERATE_INDEXING }
+            it     { should eq(false) }
+          end
+        end
+
         describe 'load_rails_models' do
           before do
             expect(Rails.application).to receive(:eager_load!)
