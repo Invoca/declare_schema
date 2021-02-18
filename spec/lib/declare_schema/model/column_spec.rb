@@ -37,6 +37,11 @@ RSpec.describe DeclareSchema::Model::Column do
           expect(described_class.native_type?(type)).to be_falsey
         end
       end
+
+      it "is truthy when there's a NullDbAdapter (like for assets:precompile) that doesn't have any native types" do
+        allow(described_class).to receive(:native_types).and_return({})
+        expect(described_class.native_type?(:integer)).to be_truthy
+      end
     end
 
     describe '.native_types' do

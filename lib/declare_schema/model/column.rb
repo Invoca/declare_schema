@@ -8,7 +8,7 @@ module DeclareSchema
     class Column
       class << self
         def native_type?(type)
-          type != :primary_key && native_types[type]
+          type != :primary_key && (native_types.empty? || native_types[type]) # empty will happen with NullDBAdapter used in assets:precompile
         end
 
         # MySQL example:

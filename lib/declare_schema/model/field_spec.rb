@@ -80,7 +80,7 @@ module DeclareSchema
         Column.native_type?(@type) or raise UnknownTypeError, "#{@type.inspect} not found in #{Column.native_types.inspect} for adapter #{ActiveRecord::Base.connection.class.name}"
 
         if @type.in?([:string, :text, :binary, :varbinary, :integer, :enum])
-          @options[:limit] ||= Column.native_types[@type][:limit]
+          @options[:limit] ||= Column.native_types.dig(@type, :limit)
         else
           @type != :decimal && @options.has_key?(:limit) and warn("unsupported limit: for SQL type #{@type} in field #{model}##{@name}")
           @options.delete(:limit)
