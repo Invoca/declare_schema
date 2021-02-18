@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'rails'
+
 require 'declare_schema/extensions/module'
 
 module DeclareSchema
@@ -96,6 +98,12 @@ module DeclareSchema
           index_definitions
         else
           index_definitions + [rails_default_primary_key]
+        end
+      end
+
+      if ::Rails::VERSION::MAJOR < 5
+        def primary_key
+          super || 'id'
         end
       end
 
