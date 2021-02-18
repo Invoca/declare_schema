@@ -55,7 +55,7 @@ module Generators
           end
 
           def default_null=(null)
-            [true, false].include? null or raise ArgumentError, "null must be either true, false, or nil (got #{null.inspect})"
+            [true, false, nil].include? null or raise ArgumentError, "null must be either true, false, or nil (got #{null.inspect})"
             @default_null = null
           end
 

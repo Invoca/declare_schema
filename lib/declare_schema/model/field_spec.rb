@@ -59,6 +59,7 @@ module DeclareSchema
         @options = options.dup
 
         @options.has_key?(:null) or @options[:null] = Generators::DeclareSchema::Migration::Migrator.default_null
+        @options[:null].nil? and raise "null: must be provided for field #{model}##{@name}: #{@options.inspect} since Generators::DeclareSchema::Migration::Migrator.default_null is set to 'nil'; do you want `null: false`?"
 
         case @type
         when :text

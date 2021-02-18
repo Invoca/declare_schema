@@ -184,5 +184,17 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
     it 'excludes non-sql options' do
       expect(subject.sql_options).to eq(limit: 4, null: true, default: 0)
     end
+
+    context ':null' do
+      subject { described_class.new(model, :price, :integer, limit: 4, default: 0, position: 2, encrypt_using: ->(field) { field }) }
+      it 'uses DEFAULT_NULL option when not explicitly set in field spec' do
+        expect(subject.sql_options).to eq(limit: 4, null: false, default: 0)
+      end
+
+      it 'raises error if DEFAULT_NULL is set to nil when not explicitly set in field spec' do
+        expect(Generators::DeclareSchema::Migration::Migrator).to receive(:default_null) { nil }
+        expect { subject.sql_options }.to raise_error(/null: must be provided for field/)
+      end
+    end
   end
 end
