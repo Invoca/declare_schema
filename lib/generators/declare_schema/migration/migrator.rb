@@ -309,7 +309,7 @@ module Generators
 
             #{table_options_definition.alter_table_statement unless ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)}
             #{create_indexes(model).join("\n")               unless Migrator.disable_indexing}
-            #{create_constraints(model).join("\n")           unless Migrator.disable_indexing}
+            #{create_constraints(model).join("\n")           unless Migrator.disable_constraints}
           EOS
         end
 
@@ -444,7 +444,7 @@ module Generators
         end
 
         def change_indexes(model, old_table_name, to_remove)
-          Migrator.disable_constraints and return [[], []]
+          Migrator.disable_indexing and return [[], []]
 
           new_table_name = model.table_name
           existing_indexes = ::DeclareSchema::Model::IndexDefinition.for_model(model, old_table_name)
@@ -485,7 +485,7 @@ module Generators
 
         def change_foreign_key_constraints(model, old_table_name)
           ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/) and raise ArgumentError, 'SQLite does not support foreign keys'
-          Migrator.disable_indexing and return [[], []]
+          Migrator.disable_constraints and return [[], []]
 
           new_table_name = model.table_name
           existing_fks = ::DeclareSchema::Model::ForeignKeyDefinition.for_model(model, old_table_name)
