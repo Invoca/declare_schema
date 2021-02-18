@@ -99,6 +99,20 @@ module Generators
           end
         end
 
+        describe '#default_generate_foreign_keys' do
+          subject { described_class.default_generate_foreign_keys }
+
+          context 'when not explicitly set' do
+            it { should eq(true) }
+          end
+
+          context 'when explicitly set' do
+            before { described_class.default_generate_foreign_keys = false }
+            after  { described_class.default_generate_foreign_keys = described_class::DEFAULT_GENERATE_FOREIGN_KEYS }
+            it     { should eq(false) }
+          end
+        end
+
         describe 'load_rails_models' do
           before do
             expect(Rails.application).to receive(:eager_load!)
