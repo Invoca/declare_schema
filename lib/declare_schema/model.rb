@@ -99,8 +99,23 @@ module DeclareSchema
         end
       end
 
-      def primary_key
-        super || 'id'
+      # returns the primary key (String) as declared with primary_key =
+      # unlike the `primary_key` method, DOES NOT query the database to find the actual primary key in use right now
+      # if no explicit primary key set, returns the default_defined_primary_key
+      def defined_primary_key
+        if defined?(@primary_key)
+          @primary_key&.to_s
+        end || default_defined_primary_key
+      end
+
+      # if this is a derived class, returns the base class's defined_primary_key
+      # otherwise, returns 'id'
+      def default_defined_primary_key
+        if self == base_class
+          'id'
+        else
+          base_class.defined_primary_key
+        end
       end
 
       private
