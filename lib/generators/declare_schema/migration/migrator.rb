@@ -60,6 +60,11 @@ module Generators
           def default_generate_foreign_keys=(generate_foreign_keys)
             [true, false].include? generate_foreign_keys or raise ArgumentError, "generate_foreign_keys must be either true or false (got #{generate_foreign_keys.inspect})"
             @default_generate_foreign_keys = generate_foreign_keys
+            toggle_disable_constraints
+          end
+
+          def toggle_disable_constraints
+            @disable_constraints = !@default_generate_foreign_keys
           end
 
           def active_record_class
