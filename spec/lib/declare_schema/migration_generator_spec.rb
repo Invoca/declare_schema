@@ -390,7 +390,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     class Category < ActiveRecord::Base; end
     class Advert < ActiveRecord::Base
-      fields { }
+      declare_schema { }
       belongs_to :category, foreign_key: "c_id", class_name: 'Category'
     end
 
@@ -412,7 +412,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     class Category < ActiveRecord::Base; end
     class Advert < ActiveRecord::Base
-      fields { }
+      declare_schema { }
       belongs_to :category, index: false
     end
 
@@ -432,7 +432,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     class Category < ActiveRecord::Base; end
     class Advert < ActiveRecord::Base
-      fields { }
+      declare_schema { }
       belongs_to :category, index: 'my_index'
     end
 
@@ -1099,7 +1099,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       before do
         unless defined?(AdCategory)
           class AdCategory < ActiveRecord::Base
-            fields { }
+            declare_schema { }
           end
         end
 
@@ -1117,7 +1117,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       it 'passes through optional: when given' do
         class AdvertBelongsTo < ActiveRecord::Base
           self.table_name = 'adverts'
-          fields { }
+          declare_schema { }
           reset_column_information
           belongs_to :ad_category, optional: true
         end
@@ -1128,7 +1128,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         it 'passes through optional: true, null: false' do
           class AdvertBelongsTo < ActiveRecord::Base
             self.table_name = 'adverts'
-            fields { }
+            declare_schema { }
             reset_column_information
             belongs_to :ad_category, optional: true, null: false
           end
@@ -1139,7 +1139,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         it 'passes through optional: false, null: true' do
           class AdvertBelongsTo < ActiveRecord::Base
             self.table_name = 'adverts'
-            fields { }
+            declare_schema { }
             reset_column_information
             belongs_to :ad_category, optional: false, null: true
           end
@@ -1153,7 +1153,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           it 'infers optional: from null:' do
             eval <<~EOS
               class AdvertBelongsTo < ActiveRecord::Base
-                fields { }
+                declare_schema { }
                 belongs_to :ad_category, null: #{nullable}
               end
             EOS
@@ -1164,7 +1164,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           it 'infers null: from optional:' do
             eval <<~EOS
               class AdvertBelongsTo < ActiveRecord::Base
-                fields { }
+                declare_schema { }
                 belongs_to :ad_category, optional: #{nullable}
               end
             EOS
