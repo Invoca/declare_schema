@@ -44,6 +44,8 @@ module DeclareSchema
             if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
               types[:text][:limit]    ||= 0xffff
               types[:binary][:limit]  ||= 0xffff
+
+              types[:varbinary] ||= { name: "varbinary" } # TODO: :varbinary is an Invoca addition to Rails; make it a configurable option
             end
           end
         end

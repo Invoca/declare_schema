@@ -83,37 +83,46 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
           expect(subject.schema_attributes(col_spec)).to eq(type: :text, null: true, default: 'none')
         end
       end
+    end
 
-      describe 'decimal' do
-        it 'allows precision: and scale:' do
-          subject = described_class.new(model, :quantity, :decimal, precision: 8, scale: 10, null: true, position: 3)
-          expect(subject.schema_attributes(col_spec)).to eq(type: :decimal, precision: 8, scale: 10, null: true)
-        end
-
-        it 'requires precision:' do
-          expect_any_instance_of(described_class).to receive(:warn).with(/precision: required for :decimal type/)
-          described_class.new(model, :quantity, :decimal, scale: 10, null: true, position: 3)
-        end
-
-        it 'requires scale:' do
-          expect_any_instance_of(described_class).to receive(:warn).with(/scale: required for :decimal type/)
-          described_class.new(model, :quantity, :decimal, precision: 8, null: true, position: 3)
+    if defined?(Mysql2)
+      describe 'varbinary' do # TODO: :varbinary is an Invoca addition to Rails; make it a configurable option
+        it 'is supported' do
+          subject = described_class.new(model, :binary_dump, :varbinary, limit: 200, null: false, position: 2)
+          expect(subject.schema_attributes(col_spec)).to eq(type: :varbinary, limit: 200, null: false)
         end
       end
+    end
 
-      [:integer, :bigint, :string, :text, :binary, :datetime, :date, :time].each do |t|
-        describe t.to_s do
-          let(:extra) { t == :string ? { limit: 100 } : {} }
+    describe 'decimal' do
+      it 'allows precision: and scale:' do
+        subject = described_class.new(model, :quantity, :decimal, precision: 8, scale: 10, null: true, position: 3)
+        expect(subject.schema_attributes(col_spec)).to eq(type: :decimal, precision: 8, scale: 10, null: true)
+      end
 
-          it 'does not allow precision:' do
-            expect_any_instance_of(described_class).to receive(:warn).with(/precision: only allowed for :decimal type/)
-            described_class.new(model, :quantity, t, { precision: 8, null: true, position: 3 }.merge(extra))
-          end unless t == :datetime
+      it 'requires precision:' do
+        expect_any_instance_of(described_class).to receive(:warn).with(/precision: required for :decimal type/)
+        described_class.new(model, :quantity, :decimal, scale: 10, null: true, position: 3)
+      end
 
-          it 'does not allow scale:' do
-            expect_any_instance_of(described_class).to receive(:warn).with(/scale: only allowed for :decimal type/)
-            described_class.new(model, :quantity, t, { scale: 10, null: true, position: 3 }.merge(extra))
-          end
+      it 'requires scale:' do
+        expect_any_instance_of(described_class).to receive(:warn).with(/scale: required for :decimal type/)
+        described_class.new(model, :quantity, :decimal, precision: 8, null: true, position: 3)
+      end
+    end
+
+    [:integer, :bigint, :string, :text, :binary, :datetime, :date, :time, (:varbinary if defined?(Mysql2))].compact.each do |t|
+      describe t.to_s do
+        let(:extra) { t == :string ? { limit: 100 } : {} }
+
+        it 'does not allow precision:' do
+          expect_any_instance_of(described_class).to receive(:warn).with(/precision: only allowed for :decimal type/)
+          described_class.new(model, :quantity, t, { precision: 8, null: true, position: 3 }.merge(extra))
+        end unless t == :datetime
+
+        it 'does not allow scale:' do
+          expect_any_instance_of(described_class).to receive(:warn).with(/scale: only allowed for :decimal type/)
+          described_class.new(model, :quantity, t, { scale: 10, null: true, position: 3 }.merge(extra))
         end
       end
     end
