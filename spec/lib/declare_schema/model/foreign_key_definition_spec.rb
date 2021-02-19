@@ -7,7 +7,7 @@ RSpec.describe DeclareSchema::Model::ForeignKeyDefinition do
     load File.expand_path('../prepare_testapp.rb', __dir__)
 
     class Network < ActiveRecord::Base
-      fields do
+      declare_schema do
         name :string, limit: 127, index: true
 
         timestamps
