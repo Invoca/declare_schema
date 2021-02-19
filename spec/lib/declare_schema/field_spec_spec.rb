@@ -61,6 +61,15 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
           expect(subject.schema_attributes(col_spec)).to eq(type: :string, limit: 100, null: true)
         end
       end
+
+      it 'raises error when DEFAULT_STRING_LIMIT option is nil when not explicitly set in field spec' do
+        if defined?(Mysql2)
+          expect(Generators::DeclareSchema::Migration::Migrator).to receive(:default_string_limit) { nil }
+          expect do
+            described_class.new(model, :title, :string, null: true, charset: 'utf8mb4', position: 0)
+          end.to raise_error(/limit: must be given for :string field/)
+        end
+      end
     end
 
     describe 'text' do
