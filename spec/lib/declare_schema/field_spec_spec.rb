@@ -111,6 +111,27 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
       end
     end
 
+    describe 'limit' do
+      it 'uses DEFAULT_TEXT_LIMIT option when not explicitly set in field spec' do
+        allow(Generators::DeclareSchema::Migration::Migrator).to receive(:default_text_limit) { 100 }
+        subject = described_class.new(model, :title, :text, null: true, charset: 'utf8mb4', position: 2)
+        if defined?(Mysql2)
+          expect(subject.schema_attributes(col_spec)).to eq(type: :text, limit: 255, null: true, charset: 'utf8mb4', collation: 'utf8mb4_bin')
+        else
+          expect(subject.schema_attributes(col_spec)).to eq(type: :text, null: true)
+        end
+      end
+
+      it 'raises error when DEFAULT_TEXT_LIMIT option is nil when not explicitly set in field spec' do
+        allow(Generators::DeclareSchema::Migration::Migrator).to receive(:default_text_limit) { nil }
+        if defined?(Mysql2)
+          expect do
+            described_class.new(model, :title, :text, null: true, charset: 'utf8mb4', position: 2)
+          end.to raise_error(/limit: must be provided for field/)
+        end
+      end
+    end
+
     [:integer, :bigint, :string, :text, :binary, :datetime, :date, :time, (:varbinary if defined?(Mysql2))].compact.each do |t|
       describe t.to_s do
         let(:extra) { t == :string ? { limit: 100 } : {} }
@@ -185,7 +206,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
       expect(subject.sql_options).to eq(limit: 4, null: true, default: 0)
     end
 
-    context ':null' do
+    describe 'null' do
       subject { described_class.new(model, :price, :integer, limit: 4, default: 0, position: 2, encrypt_using: ->(field) { field }) }
       it 'uses DEFAULT_NULL option when not explicitly set in field spec' do
         expect(subject.sql_options).to eq(limit: 4, null: false, default: 0)

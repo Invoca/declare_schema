@@ -45,12 +45,12 @@ module Generators
           end
 
           def default_text_limit=(text_limit)
-            text_limit.is_a?(Integer) or raise ArgumentError, "text limit must be an integer (got #{text_limit.inspect})"
+            text_limit.nil? or text_limit.is_a?(Integer) or raise ArgumentError, "text limit must be an integer or nil (got #{text_limit.inspect})"
             @default_text_limit = text_limit
           end
 
           def default_string_limit=(string_limit)
-            string_limit.nil? or string_limit.is_a?(Integer) or raise ArgumentError, "string limit must be an integer (got #{string_limit.inspect})"
+            string_limit.nil? or string_limit.is_a?(Integer) or raise ArgumentError, "string limit must be an integer or nil (got #{string_limit.inspect})"
             @default_string_limit = string_limit
           end
 
