@@ -30,7 +30,7 @@ module Generators
         @default_generate_indexing            = DEFAULT_GENERATE_INDEXING
 
         class << self
-          attr_accessor :ignore_models, :ignore_tables, :disable_indexing, :disable_constraints
+          attr_accessor :ignore_models, :ignore_tables
           attr_reader :active_record_class, :default_charset, :default_collation, :default_text_limit, :default_string_limit, :default_null,
                       :default_generate_foreign_keys, :default_generate_indexing, :before_generating_migration_callback
 
@@ -62,21 +62,11 @@ module Generators
           def default_generate_foreign_keys=(generate_foreign_keys)
             [true, false].include? generate_foreign_keys or raise ArgumentError, "generate_foreign_keys must be either true or false (got #{generate_foreign_keys.inspect})"
             @default_generate_foreign_keys = generate_foreign_keys
-            toggle_disable_constraints
           end
 
           def default_generate_indexing=(generate_indexing)
             [true, false].include? generate_indexing or raise ArgumentError, "generate_indexing must be either true or false (got #{generate_indexing.inspect})"
             @default_generate_indexing = generate_indexing
-            toggle_disable_indexing
-          end
-
-          def toggle_disable_constraints
-            @disable_constraints = !@default_generate_foreign_keys
-          end
-
-          def toggle_disable_indexing
-            @disable_indexing = !@default_generate_indexing
           end
 
           def active_record_class
@@ -325,8 +315,8 @@ module Generators
             end
 
             #{table_options_definition.alter_table_statement unless ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)}
-            #{create_indexes(model).join("\n")               unless Migrator.disable_indexing}
-            #{create_constraints(model).join("\n")           unless Migrator.disable_constraints}
+            #{create_indexes(model).join("\n")               if Migrator.default_generate_indexing}
+            #{create_constraints(model).join("\n")           if Migrator.default_generate_foreign_keys}
           EOS
         end
 
@@ -461,7 +451,7 @@ module Generators
         end
 
         def change_indexes(model, old_table_name, to_remove)
-          Migrator.disable_indexing and return [[], []]
+          Migrator.default_generate_indexing or return [[], []]
 
           new_table_name = model.table_name
           existing_indexes = ::DeclareSchema::Model::IndexDefinition.for_model(model, old_table_name)
@@ -502,7 +492,7 @@ module Generators
 
         def change_foreign_key_constraints(model, old_table_name)
           ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/) and raise ArgumentError, 'SQLite does not support foreign keys'
-          Migrator.disable_constraints and return [[], []]
+          Migrator.default_generate_foreign_keys or return [[], []]
 
           new_table_name = model.table_name
           existing_fks = ::DeclareSchema::Model::ForeignKeyDefinition.for_model(model, old_table_name)
