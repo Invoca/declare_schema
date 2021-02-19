@@ -6,6 +6,8 @@ require 'declare_schema/field_declaration_dsl'
 
 module DeclareSchema
   module FieldsDsl
+    deprecate :fields, deprecator: ActiveSupport::Deprecation.new('1.0', 'DeclareSchema')
+
     def fields(table_options = {}, &block)
       # Any model that calls 'fields' gets DeclareSchema::Model behavior
       DeclareSchema::Model.mix_in(self)
