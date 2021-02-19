@@ -136,6 +136,25 @@ class Comment < ActiveRecord::Base
 end
 ```
 
+## Addition Project Configurations
+Additional global configurations are available to match a developer's project conventions.
+Similar to setting the `character set` and `collation` at the global level you can also configure the
+default `text limit`, `string limit`, `null`, `generate foreign keys`, and `genereate indexing`.
+
+For example, adding the following to your `config/initializers` directory will set the default project configurations:
+
+**declare_schema.rb**
+```ruby
+# frozen_string_literal: true
+
+Generators::DeclareSchema::Migration::Migrator.default_text_limit            = 0xffff_ffff
+Generators::DeclareSchema::Migration::Migrator.default_string_limit          = nil
+Generators::DeclareSchema::Migration::Migrator.default_null                  = false
+Generators::DeclareSchema::Migration::Migrator.default_generate_foreign_keys = true
+Generators::DeclareSchema::Migration::Migrator.default_generate_indexing     = true
+```
+
+Note that a `nil` default for any field specification means that there is no default-- so every declaration must be explicit.
 ## Installing
 
 Install the `DeclareSchema` gem directly:
