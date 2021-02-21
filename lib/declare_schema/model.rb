@@ -129,7 +129,7 @@ module DeclareSchema
       private
 
       def rails_default_primary_key
-        ::DeclareSchema::Model::IndexDefinition.new(self, [primary_key.to_sym], unique: true, name: DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME)
+        ::DeclareSchema::Model::IndexDefinition.new(self, [(primary_key || :id).to_sym], unique: true, name: DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME)
       end
 
       # Extend belongs_to so that it creates a FieldSpec for the foreign key
