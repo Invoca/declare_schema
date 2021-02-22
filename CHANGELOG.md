@@ -4,8 +4,9 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.8.0] - UNRELEASED
+## [0.8.0] - 2021-02-22
 ### Removed
+- Removed assumption that primary key is named 'id'.
 - Removed `sql_type` that was confusing because it was actually the same as `type` (ex: :string) and not
   in fact the SQL type (ex: ``varchar(255)'`).
 
