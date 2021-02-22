@@ -38,7 +38,7 @@ module DeclareSchema
 
           # eval avoids the ruby 1.9.2 "super from singleton method ..." error
 
-          eval %(
+          eval <<~EOS
             def self.inherited(klass)
               unless klass.field_specs.has_key?(inheritance_column)
                 fields do |f|
@@ -48,7 +48,7 @@ module DeclareSchema
               end
               super
             end
-          )
+          EOS
         end
       end
     end
