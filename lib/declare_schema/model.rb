@@ -55,7 +55,7 @@ module DeclareSchema
 
     module ClassMethods
       def index(fields, options = {})
-        # don't double-index fields
+        # make index idempotent
         index_fields_s = Array.wrap(fields).map(&:to_s)
         unless index_definitions.any? { |index_spec| index_spec.fields == index_fields_s }
           index_definitions << ::DeclareSchema::Model::IndexDefinition.new(self, fields, options)
@@ -74,7 +74,7 @@ module DeclareSchema
       end
 
       # tell the migration generator to ignore the named index. Useful for existing indexes, or for indexes
-      # that can't be automatically generated (for example: an prefix index in MySQL)
+      # that can't be automatically generated (for example: a prefix index in MySQL)
       def ignore_index(index_name)
         ignore_indexes << index_name.to_s
       end
