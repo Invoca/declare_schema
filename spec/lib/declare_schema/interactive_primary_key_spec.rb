@@ -19,7 +19,7 @@ RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
     end
 
     generate_migrations '-n', '-m'
-    expect(Foo.primary_key).to eq('foo_id')
+    expect(Foo._defined_primary_key).to eq('foo_id')
 
     ### migrate from
     # rename from custom primary_key
@@ -31,7 +31,7 @@ RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
 
     puts "\n\e[45m Please enter 'id' (no quotes) at the next prompt \e[0m"
     generate_migrations '-n', '-m'
-    expect(Foo.primary_key).to eq('id')
+    expect(Foo._defined_primary_key).to eq('id')
 
     nuke_model_class(Foo)
 
@@ -47,7 +47,7 @@ RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
 
       puts "\n\e[45m Please enter 'drop id' (no quotes) at the next prompt \e[0m"
       generate_migrations '-n', '-m'
-      expect(Foo.primary_key).to eq('foo_id')
+      expect(Foo._defined_primary_key).to eq('foo_id')
 
       ### ensure it doesn't cause further migrations
 

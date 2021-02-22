@@ -88,13 +88,13 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
 
     describe '#primary_key' do
       it 'returns false' do
-        expect(subject.primary_key).to eq(false)
+        expect(subject._defined_primary_key).to eq(false)
       end
     end
 
-    describe '#defined_primary_key' do
+    describe '#_defined_primary_key' do
       it 'returns false' do
-        expect(subject.defined_primary_key).to eq(false)
+        expect(subject._defined_primary_key).to eq(false)
       end
     end
 

@@ -6,7 +6,7 @@ rescue LoadError
 end
 
 RSpec.describe DeclareSchema::Model::FieldSpec do
-  let(:model) { double('model', table_options: {}, defined_primary_key: 'id') }
+  let(:model) { double('model', table_options: {}, _defined_primary_key: 'id') }
   let(:col_spec) { double('col_spec', type: :string) }
 
   before do

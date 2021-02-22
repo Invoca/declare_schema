@@ -285,12 +285,13 @@ module Generators
         end
 
         def create_table_options(model, disable_auto_increment)
-          if model.primary_key.blank? || disable_auto_increment
+          primary_key = model._defined_primary_key
+          if primary_key.blank? || disable_auto_increment
             "id: false"
-          elsif model.primary_key == "id"
+          elsif primary_key == "id"
             "id: :bigint"
           else
-            "primary_key: :#{model.primary_key}"
+            "primary_key: :#{primary_key}"
           end
         end
 
@@ -323,18 +324,18 @@ module Generators
           new_table_name = model.table_name
 
           db_columns = model.connection.columns(current_table_name).index_by(&:name)
-          key_missing = db_columns[model.primary_key].nil? && model.primary_key.present?
-          if model.primary_key.present?
-            db_columns.delete(model.primary_key)
+          key_missing = db_columns[model._defined_primary_key].nil? && model._defined_primary_key.present?
+          if model._defined_primary_key.present?
+            db_columns.delete(model._defined_primary_key)
           end
 
           model_column_names = model.field_specs.keys.map(&:to_s)
           db_column_names = db_columns.keys.map(&:to_s)
 
           to_add = model_column_names - db_column_names
-          to_add += [model.primary_key] if key_missing && model.primary_key.present?
+          to_add += [model._defined_primary_key] if key_missing && model._defined_primary_key.present?
           to_remove = db_column_names - model_column_names
-          to_remove -= [model.primary_key.to_sym] if model.primary_key.present?
+          to_remove -= [model._defined_primary_key.to_sym] if model._defined_primary_key.present?
 
           to_rename = extract_column_renames!(to_add, to_remove, new_table_name)
 

@@ -47,7 +47,7 @@ module DeclareSchema
         false # no single-column primary key in database
       end
 
-      def defined_primary_key
+      def _defined_primary_key
         false # no single-column primary key declared
       end
 
