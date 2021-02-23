@@ -14,7 +14,7 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
     load File.expand_path('../prepare_testapp.rb', __dir__)
 
     class IndexDefinitionTestModel < ActiveRecord::Base
-      declare_schema do
+      fields do
         name :string, limit: 127, index: true
 
         timestamps
@@ -22,7 +22,7 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
     end
 
     class IndexDefinitionCompoundIndexModel < ActiveRecord::Base
-      declare_schema do
+      fields do
         fk1_id :integer
         fk2_id :integer
 

@@ -12,7 +12,7 @@ RSpec.describe DeclareSchema::Model::TableOptionsDefinition do
     load File.expand_path('../prepare_testapp.rb', __dir__)
 
     class TableOptionsDefinitionTestModel < ActiveRecord::Base
-      declare_schema do
+      fields do
         name :string, limit: 127, index: true
       end
     end

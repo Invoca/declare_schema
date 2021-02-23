@@ -7,7 +7,7 @@ RSpec.describe DeclareSchema::FieldDeclarationDsl do
     load File.expand_path('prepare_testapp.rb', __dir__)
 
     class TestModel < ActiveRecord::Base
-      declare_schema do
+      fields do
         name :string, limit: 127
 
         timestamps

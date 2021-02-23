@@ -13,7 +13,7 @@ RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
 
   it "allows alternate primary keys" do
     class Foo < ActiveRecord::Base
-      declare_schema do
+      fields do
       end
       self.primary_key = "foo_id"
     end
@@ -24,7 +24,7 @@ RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
     ### migrate from
     # rename from custom primary_key
     class Foo < ActiveRecord::Base
-      declare_schema do
+      fields do
       end
       self.primary_key = "id"
     end
@@ -40,7 +40,7 @@ RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
     if Rails::VERSION::MAJOR >= 5 && !defined?(Mysql2) # TODO TECH-4814 Put this test back for Mysql2
       # replace custom primary_key
       class Foo < ActiveRecord::Base
-        declare_schema do
+        fields do
         end
         self.primary_key = "foo_id"
       end

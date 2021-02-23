@@ -69,7 +69,7 @@ module DeclareSchema
             def declare_model_fields_and_associations
               buffer = ::DeclareSchema::Support::IndentedBuffer.new(indent: 2)
               buffer.newline!
-              buffer << 'declare_schema do'
+              buffer << 'fields do'
               buffer.indent! do
                 field_attributes.each do |attribute|
                   decl = "%-#{max_attribute_length}s" % attribute.name + ' ' +

@@ -4,10 +4,10 @@ Declare your Rails/active_record model schemas and have database migrations gene
 
 ## Example
 
-Make a model and declare your schema within a `declare_schema do ... end` block:
+Make a model and declare your schema within a `fields do ... end` block:
 ```ruby
 class Company < ActiveRecord::Base
-  declare_schema do
+  fields do
     company_name :string, limit: 100
     ticker_symbol :string, limit: 4, null: true, index: true, unique: true
     employee_count :integer
@@ -129,7 +129,7 @@ look like the following:
 # frozen_string_literal: true
 
 class Comment < ActiveRecord::Base
-  declare_schema do
+  fields do
     subject :string, limit: 255
     context :text,   limit: 0xffff_ffff, charset: "utf8mb4", collation: "utf8mb4_bin"
   end

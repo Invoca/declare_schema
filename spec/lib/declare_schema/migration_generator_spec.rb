@@ -72,7 +72,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     Advert.reset_column_information
 
     class Advert < ActiveRecord::Base
-      declare_schema do
+      fields do
         name :string, limit: 250, null: true
       end
     end
@@ -102,7 +102,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     end
 
     class Advert < ActiveRecord::Base
-      declare_schema do
+      fields do
         name :string, limit: 250, null: true
         body :text, null: true
         published_at :datetime, null: true
@@ -125,7 +125,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     Advert.field_specs.clear # not normally needed
     class Advert < ActiveRecord::Base
-      declare_schema do
+      fields do
         name :string, limit: 250, null: true
         body :text, null: true
       end
@@ -139,7 +139,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     nuke_model_class(Advert)
     class Advert < ActiveRecord::Base
-      declare_schema do
+      fields do
         title :string, limit: 250, null: true
         body :text, null: true
       end
@@ -165,7 +165,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     migrate
 
     class Advert < ActiveRecord::Base
-      declare_schema do
+      fields do
         title :text, null: true
         body :text, null: true
       end
@@ -178,7 +178,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     )
 
     class Advert < ActiveRecord::Base
-      declare_schema do
+      fields do
         title :string, default: "Untitled", limit: 250, null: true
         body :text, null: true
       end
@@ -196,7 +196,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     ### Limits
 
     class Advert < ActiveRecord::Base
-      declare_schema do
+      fields do
         price :integer, null: true, limit: 2
       end
     end
@@ -209,7 +209,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     ActiveRecord::Migration.class_eval(up)
     class Advert < ActiveRecord::Base
-      declare_schema do
+      fields do
         price :integer, null: true, limit: 3
       end
     end
@@ -225,7 +225,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     ActiveRecord::Migration.class_eval("remove_column :adverts, :price")
     class Advert < ActiveRecord::Base
-      declare_schema do
+      fields do
         price :decimal, precision: 4, scale: 1, null: true
       end
     end
@@ -240,7 +240,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     end
 
     class Advert < ActiveRecord::Base
-      declare_schema do
+      fields do
         notes :text
         description :text, limit: 30000
       end
@@ -264,7 +264,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       expect(::DeclareSchema::Model::FieldSpec.mysql_text_limits?).to be_truthy
 
       class Advert < ActiveRecord::Base
-        declare_schema do
+        fields do
           notes :text
           description :text, limit: 250
         end
@@ -283,7 +283,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       expect do
         class Advert < ActiveRecord::Base
-          declare_schema do
+          fields do
             notes :text
             description :text, limit: 0x1_0000_0000
           end
@@ -306,7 +306,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       # Now migrate to an unstated text limit:
 
       class Advert < ActiveRecord::Base
-        declare_schema do
+        fields do
           description :text
         end
       end
@@ -323,7 +323,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       # And migrate to a stated text limit that is the same as the unstated one:
 
       class Advert < ActiveRecord::Base
-        declare_schema do
+        fields do
           description :text, limit: 0xffffffff
         end
       end
@@ -342,7 +342,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     Advert.connection.schema_cache.clear!
     Advert.reset_column_information
     class Advert < ActiveRecord::Base
-      declare_schema do
+      fields do
         name :string, limit: 250, null: true
       end
     end
@@ -360,7 +360,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     class Category < ActiveRecord::Base; end
     class Advert < ActiveRecord::Base
-      declare_schema do
+      fields do
         name :string, limit: 250, null: true
       end
       belongs_to :category
@@ -390,7 +390,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     class Category < ActiveRecord::Base; end
     class Advert < ActiveRecord::Base
-      declare_schema { }
+      fields { }
       belongs_to :category, foreign_key: "c_id", class_name: 'Category'
     end
 
@@ -412,7 +412,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     class Category < ActiveRecord::Base; end
     class Advert < ActiveRecord::Base
-      declare_schema { }
+      fields { }
       belongs_to :category, index: false
     end
 
@@ -432,7 +432,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     class Category < ActiveRecord::Base; end
     class Advert < ActiveRecord::Base
-      declare_schema { }
+      fields { }
       belongs_to :category, index: 'my_index'
     end
 
@@ -456,7 +456,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     # Similarly, `lock_version` can be declared with the "shorthand" `optimimistic_lock`.
 
     class Advert < ActiveRecord::Base
-      declare_schema do
+      fields do
         timestamps
         optimistic_lock
       end
@@ -490,7 +490,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     # You can add an index to a field definition
 
     class Advert < ActiveRecord::Base
-      declare_schema do
+      fields do
         title :string, index: true, limit: 250, null: true
       end
     end
@@ -511,7 +511,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     # You can ask for a unique index
 
     class Advert < ActiveRecord::Base
-      declare_schema do
+      fields do
         title :string, index: true, unique: true, null: true, limit: 250
       end
     end
@@ -532,7 +532,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     # You can specify the name for the index
 
     class Advert < ActiveRecord::Base
-      declare_schema do
+      fields do
         title :string, index: 'my_index', limit: 250, null: true
       end
     end
@@ -617,7 +617,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     class Advert < ActiveRecord::Base
       self.table_name = "ads"
-      declare_schema do
+      fields do
         title :string, limit: 250, null: true
         body :text, null: true
       end
@@ -674,7 +674,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     nuke_model_class(Advert)
 
     class Advertisement < ActiveRecord::Base
-      declare_schema do
+      fields do
         title :string, limit: 250, null: true
         body :text, null: true
       end
@@ -735,7 +735,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     # Adding a subclass or two should introduce the 'type' column and no other changes
 
     class Advert < ActiveRecord::Base
-      declare_schema do
+      fields do
         body :text, null: true
         title :string, default: "Untitled", limit: 250, null: true
       end
@@ -789,7 +789,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     Advert.field_specs.clear
 
     class Advert < ActiveRecord::Base
-      declare_schema do
+      fields do
         name :string, default: "No Name", limit: 250, null: true
         body :text, null: true
       end
@@ -810,7 +810,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     nuke_model_class(Advert)
     class Ad < ActiveRecord::Base
-      declare_schema do
+      fields do
         title      :string, default: "Untitled", limit: 250
         body       :text, null: true
         created_at :datetime
@@ -833,7 +833,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     )
 
     class Advert < ActiveRecord::Base
-      declare_schema do
+      fields do
         body :text, null: true
         title :string, default: "Untitled", limit: 250, null: true
       end
@@ -846,7 +846,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     nuke_model_class(Ad)
 
     class Advert < ActiveRecord::Base
-      declare_schema do
+      fields do
         body :text, null: true
       end
       self.primary_key = "advert_id"
@@ -872,7 +872,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     # The DSL allows lambdas and constants
 
     class User < ActiveRecord::Base
-      declare_schema do
+      fields do
         company :string, limit: 250, ruby_default: -> { "BigCorp" }
       end
     end
@@ -891,7 +891,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     end
     expect(Ad).to receive(:validates).with(:company, presence: true, uniqueness: { case_sensitive: false })
     class Ad < ActiveRecord::Base
-      declare_schema do
+      fields do
         company :string, limit: 250, index: true, unique: true, validates: { presence: true, uniqueness: { case_sensitive: false } }
       end
       self.primary_key = "advert_id"
@@ -919,7 +919,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     describe 'untyped' do
       it 'allows serialize: true' do
         class Ad < ActiveRecord::Base
-          declare_schema do
+          fields do
             allow_list :text, limit: 0xFFFF, serialize: true
           end
         end
@@ -929,7 +929,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       it 'converts defaults with .to_yaml' do
         class Ad < ActiveRecord::Base
-          declare_schema do
+          fields do
             allow_list :string, limit: 250, serialize: true, null: true, default: []
             allow_hash :string, limit: 250, serialize: true, null: true, default: {}
             allow_string :string, limit: 250, serialize: true, null: true, default: ['abc']
@@ -947,7 +947,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     describe 'Array' do
       it 'allows serialize: Array' do
         class Ad < ActiveRecord::Base
-          declare_schema do
+          fields do
             allow_list :string, limit: 250, serialize: Array, null: true
           end
         end
@@ -957,7 +957,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       it 'allows Array defaults' do
         class Ad < ActiveRecord::Base
-          declare_schema do
+          fields do
             allow_list :string, limit: 250, serialize: Array, null: true, default: [2]
             allow_string :string, limit: 250, serialize: Array, null: true, default: ['abc']
             allow_empty :string, limit: 250, serialize: Array, null: true, default: []
@@ -975,7 +975,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     describe 'Hash' do
       it 'allows serialize: Hash' do
         class Ad < ActiveRecord::Base
-          declare_schema do
+          fields do
             allow_list :string, limit: 250, serialize: Hash, null: true
           end
         end
@@ -985,7 +985,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       it 'allows Hash defaults' do
         class Ad < ActiveRecord::Base
-          declare_schema do
+          fields do
             allow_loc :string, limit: 250, serialize: Hash, null: true, default: { 'state' => 'CA' }
             allow_hash :string, limit: 250, serialize: Hash, null: true, default: {}
             allow_null :string, limit: 250, serialize: Hash, null: true, default: nil
@@ -1001,7 +1001,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     describe 'JSON' do
       it 'allows serialize: JSON' do
         class Ad < ActiveRecord::Base
-          declare_schema do
+          fields do
             allow_list :string, limit: 250, serialize: JSON
           end
         end
@@ -1011,7 +1011,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       it 'allows JSON defaults' do
         class Ad < ActiveRecord::Base
-          declare_schema do
+          fields do
             allow_hash :string, limit: 250, serialize: JSON, null: true, default: { 'state' => 'CA' }
             allow_empty_array :string, limit: 250, serialize: JSON, null: true, default: []
             allow_empty_hash :string, limit: 250, serialize: JSON, null: true, default: {}
@@ -1051,7 +1051,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     describe 'custom coder' do
       it 'allows serialize: ValueClass' do
         class Ad < ActiveRecord::Base
-          declare_schema do
+          fields do
             allow_list :string, limit: 250, serialize: ValueClass
           end
         end
@@ -1061,7 +1061,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       it 'allows ValueClass defaults' do
         class Ad < ActiveRecord::Base
-          declare_schema do
+          fields do
             allow_hash :string, limit: 250, serialize: ValueClass, null: true, default: ValueClass.new([2])
             allow_empty_array :string, limit: 250, serialize: ValueClass, null: true, default: ValueClass.new([])
             allow_null :string, limit: 250, serialize: ValueClass, null: true, default: nil
@@ -1077,7 +1077,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     it 'disallows serialize: with a non-string column type' do
       expect do
         class Ad < ActiveRecord::Base
-          declare_schema do
+          fields do
             allow_list :integer, limit: 8, serialize: true
           end
         end
@@ -1099,12 +1099,12 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       before do
         unless defined?(AdCategory)
           class AdCategory < ActiveRecord::Base
-            declare_schema { }
+            fields { }
           end
         end
 
         class Advert < ActiveRecord::Base
-          declare_schema do
+          fields do
             name :string, limit: 250, null: true
             category_id :integer, limit: 8
             nullable_category_id :integer, limit: 8, null: true
@@ -1117,7 +1117,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       it 'passes through optional: when given' do
         class AdvertBelongsTo < ActiveRecord::Base
           self.table_name = 'adverts'
-          declare_schema { }
+          fields { }
           reset_column_information
           belongs_to :ad_category, optional: true
         end
@@ -1128,7 +1128,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         it 'passes through optional: true, null: false' do
           class AdvertBelongsTo < ActiveRecord::Base
             self.table_name = 'adverts'
-            declare_schema { }
+            fields { }
             reset_column_information
             belongs_to :ad_category, optional: true, null: false
           end
@@ -1139,7 +1139,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         it 'passes through optional: false, null: true' do
           class AdvertBelongsTo < ActiveRecord::Base
             self.table_name = 'adverts'
-            declare_schema { }
+            fields { }
             reset_column_information
             belongs_to :ad_category, optional: false, null: true
           end
@@ -1153,7 +1153,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           it 'infers optional: from null:' do
             eval <<~EOS
               class AdvertBelongsTo < ActiveRecord::Base
-                declare_schema { }
+                fields { }
                 belongs_to :ad_category, null: #{nullable}
               end
             EOS
@@ -1164,7 +1164,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           it 'infers null: from optional:' do
             eval <<~EOS
               class AdvertBelongsTo < ActiveRecord::Base
-                declare_schema { }
+                fields { }
                 belongs_to :ad_category, optional: #{nullable}
               end
             EOS
@@ -1179,7 +1179,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
   describe 'migration base class' do
     it 'adapts to Rails 4' do
       class Advert < active_record_base_class.constantize
-        declare_schema do
+        fields do
           title :string, limit: 100
         end
       end
@@ -1200,7 +1200,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     it 'for aliased fields bigint -> integer limit 8' do
       if Rails::VERSION::MAJOR >= 5 || !ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
         class Advert < active_record_base_class.constantize
-          declare_schema do
+          fields do
             price :bigint
           end
         end
@@ -1215,7 +1215,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         end
 
         class Advert < active_record_base_class.constantize
-          declare_schema do
+          fields do
             price :integer, limit: 8
           end
         end

@@ -102,7 +102,7 @@ RSpec.describe DeclareSchema::Model::Column do
   describe 'instance methods' do
     before do
       class ColumnTestModel < ActiveRecord::Base
-        declare_schema do
+        fields do
           title :string, limit: 127, null: false
           count :integer, null: false
         end
