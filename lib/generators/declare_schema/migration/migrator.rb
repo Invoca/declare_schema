@@ -9,25 +9,17 @@ module Generators
       class Migrator
         class Error < RuntimeError; end
 
-        DEFAULT_CHARSET               = "utf8mb4"
-        DEFAULT_COLLATION             = "utf8mb4_bin"
-        DEFAULT_TEXT_LIMIT            = 0xffff_ffff
-        DEFAULT_STRING_LIMIT          = nil
-        DEFAULT_NULL                  = false
-        DEFAULT_GENERATE_FOREIGN_KEYS = true
-        DEFAULT_GENERATE_INDEXING     = true
-
         @ignore_models                        = []
         @ignore_tables                        = []
         @before_generating_migration_callback = nil
         @active_record_class                  = ActiveRecord::Base
-        @default_charset                      = DEFAULT_CHARSET
-        @default_collation                    = DEFAULT_COLLATION
-        @default_text_limit                   = DEFAULT_TEXT_LIMIT
-        @default_string_limit                 = DEFAULT_STRING_LIMIT
-        @default_null                         = DEFAULT_NULL
-        @default_generate_foreign_keys        = DEFAULT_GENERATE_FOREIGN_KEYS
-        @default_generate_indexing            = DEFAULT_GENERATE_INDEXING
+        @default_charset                      = "utf8mb4"
+        @default_collation                    = "utf8mb4_bin"
+        @default_text_limit                   = 0xffff_ffff
+        @default_string_limit                 = nil
+        @default_null                         = false
+        @default_generate_foreign_keys        = true
+        @default_generate_indexing            = true
 
         class << self
           attr_accessor :ignore_models, :ignore_tables

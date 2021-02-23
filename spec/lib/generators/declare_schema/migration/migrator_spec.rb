@@ -38,7 +38,7 @@ module Generators
 
           context 'when explicitly set' do
             before { described_class.default_charset = "utf8" }
-            after  { described_class.default_charset = described_class::DEFAULT_CHARSET }
+            after  { described_class.default_charset = "utf8mb4" }
             it     { should eq("utf8") }
           end
         end
@@ -52,7 +52,7 @@ module Generators
 
           context 'when explicitly set' do
             before { described_class.default_collation = "utf8mb4_general_ci" }
-            after  { described_class.default_collation = described_class::DEFAULT_COLLATION }
+            after  { described_class.default_collation = "utf8mb4_bin" }
             it     { should eq("utf8mb4_general_ci") }
           end
         end
@@ -66,7 +66,7 @@ module Generators
 
           context 'when explicitly set' do
             before { described_class.default_text_limit = 0xffff }
-            after  { described_class.default_text_limit = described_class::DEFAULT_TEXT_LIMIT }
+            after  { described_class.default_text_limit = 0xffff_ffff }
             it     { should eq(0xffff) }
           end
         end
@@ -80,7 +80,7 @@ module Generators
 
           context 'when explicitly set' do
             before { described_class.default_string_limit = 225 }
-            after  { described_class.default_string_limit = described_class::DEFAULT_STRING_LIMIT }
+            after  { described_class.default_string_limit = nil }
             it     { should eq(225) }
           end
         end
@@ -94,7 +94,7 @@ module Generators
 
           context 'when explicitly set' do
             before { described_class.default_null = true }
-            after  { described_class.default_null = described_class::DEFAULT_NULL }
+            after  { described_class.default_null = false }
             it     { should eq(true) }
           end
         end
@@ -108,7 +108,7 @@ module Generators
 
           context 'when explicitly set' do
             before { described_class.default_generate_foreign_keys = false }
-            after  { described_class.default_generate_foreign_keys = described_class::DEFAULT_GENERATE_FOREIGN_KEYS }
+            after  { described_class.default_generate_foreign_keys = true }
             it     { should eq(false) }
           end
         end
@@ -122,7 +122,7 @@ module Generators
 
           context 'when explicitly set' do
             before { described_class.default_generate_indexing = false }
-            after  { described_class.default_generate_indexing = described_class::DEFAULT_GENERATE_INDEXING }
+            after  { described_class.default_generate_indexing = true }
             it     { should eq(false) }
           end
         end
