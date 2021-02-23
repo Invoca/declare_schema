@@ -67,7 +67,7 @@ module DeclareSchema
             @options[:default].nil? or raise MysqlTextMayNotHaveDefault, "when using MySQL, non-nil default may not be given for :text field #{model}##{@name}"
             @options[:limit] = self.class.round_up_mysql_text_limit(
               @options[:limit] ||
-              Generators::DeclareSchema::Migration::Migrator.default_text_limit ||
+              Generators::DeclareSchema::Migration::Migrator.default_text_limit or
               raise("limit: must be provided for :text field #{model}##{@name}: #{@options.inspect} since Generators::DeclareSchema::Migration::Migrator#default_text_limit is set to 'nil'; do you want `limit: 0xffff_ffff`?"))
           else
             @options.delete(:limit)

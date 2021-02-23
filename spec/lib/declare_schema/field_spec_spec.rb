@@ -62,7 +62,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
         end
       end
 
-      it 'raises error when DEFAULT_STRING_LIMIT option is nil when not explicitly set in field spec' do
+      it 'raises error when default_string_limit option is nil when not explicitly set in field spec' do
         if defined?(Mysql2)
           expect(Generators::DeclareSchema::Migration::Migrator).to receive(:default_string_limit) { nil }
           expect do
@@ -121,7 +121,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
     end
 
     describe 'limit' do
-      it 'uses DEFAULT_TEXT_LIMIT option when not explicitly set in field spec' do
+      it 'uses default_text_limit option when not explicitly set in field spec' do
         allow(Generators::DeclareSchema::Migration::Migrator).to receive(:default_text_limit) { 100 }
         subject = described_class.new(model, :title, :text, null: true, charset: 'utf8mb4', position: 2)
         if defined?(Mysql2)
@@ -131,12 +131,12 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
         end
       end
 
-      it 'raises error when DEFAULT_TEXT_LIMIT option is nil when not explicitly set in field spec' do
-        allow(Generators::DeclareSchema::Migration::Migrator).to receive(:default_text_limit) { nil }
+      it 'raises error when default_text_limit option is nil when not explicitly set in field spec' do
         if defined?(Mysql2)
+          expect(Generators::DeclareSchema::Migration::Migrator).to receive(:default_text_limit) { nil }
           expect do
             described_class.new(model, :title, :text, null: true, charset: 'utf8mb4', position: 2)
-          end.to raise_error(/limit: must be provided for field/)
+          end.to raise_error(/limit: must be provided for :text field/)
         end
       end
     end
@@ -217,11 +217,11 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
 
     describe 'null' do
       subject { described_class.new(model, :price, :integer, limit: 4, default: 0, position: 2, encrypt_using: ->(field) { field }) }
-      it 'uses DEFAULT_NULL option when not explicitly set in field spec' do
+      it 'uses default_null option when not explicitly set in field spec' do
         expect(subject.sql_options).to eq(limit: 4, null: false, default: 0)
       end
 
-      it 'raises error if DEFAULT_NULL is set to nil when not explicitly set in field spec' do
+      it 'raises error if default_null is set to nil when not explicitly set in field spec' do
         expect(Generators::DeclareSchema::Migration::Migrator).to receive(:default_null) { nil }
         expect { subject.sql_options }.to raise_error(/null: must be provided for field/)
       end

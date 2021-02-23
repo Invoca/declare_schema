@@ -55,17 +55,17 @@ module Generators
           end
 
           def default_null=(null)
-            [true, false, nil].include? null or raise ArgumentError, "null must be either true, false, or nil (got #{null.inspect})"
+            [true, false, nil].include?(null) or raise ArgumentError, "null must be either true, false, or nil (got #{null.inspect})"
             @default_null = null
           end
 
           def default_generate_foreign_keys=(generate_foreign_keys)
-            [true, false].include? generate_foreign_keys or raise ArgumentError, "generate_foreign_keys must be either true or false (got #{generate_foreign_keys.inspect})"
+            [true, false].include?(generate_foreign_keys) or raise ArgumentError, "generate_foreign_keys must be either true or false (got #{generate_foreign_keys.inspect})"
             @default_generate_foreign_keys = generate_foreign_keys
           end
 
           def default_generate_indexing=(generate_indexing)
-            [true, false].include? generate_indexing or raise ArgumentError, "generate_indexing must be either true or false (got #{generate_indexing.inspect})"
+            [true, false].include?(generate_indexing) or raise ArgumentError, "generate_indexing must be either true or false (got #{generate_indexing.inspect})"
             @default_generate_indexing = generate_indexing
           end
 
