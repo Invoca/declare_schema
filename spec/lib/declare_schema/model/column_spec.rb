@@ -115,30 +115,30 @@ RSpec.describe DeclareSchema::Model::Column do
     subject { described_class.new(model, current_table_name, column) }
 
     context 'Using fields' do
-      before do
-        class ColumnTestModel < ActiveRecord::Base
-          fields do
-            title :string, limit: 127, null: false
-            count :integer, null: false
-          end
+    before do
+      class ColumnTestModel < ActiveRecord::Base
+        fields do
+          title :string, limit: 127, null: false
+          count :integer, null: false
         end
       end
+    end
 
-      describe '#sql_type' do
-        it 'returns sql type' do
-          expect(subject.sql_type).to match(/int/)
-        end
+    describe '#sql_type' do
+      it 'returns sql type' do
+        expect(subject.sql_type).to match(/int/)
       end
+    end
 
-      describe '#schema_attributes' do
-        it 'returns a hash with relevant key/values' do
-          if defined?(Mysql2)
-            expect(subject.schema_attributes).to eq(type: :integer, null: false, limit: 4)
-          else
-            expect(subject.schema_attributes).to eq(type: :integer, null: false)
-          end
+    describe '#schema_attributes' do
+      it 'returns a hash with relevant key/values' do
+        if defined?(Mysql2)
+          expect(subject.schema_attributes).to eq(type: :integer, null: false, limit: 4)
+        else
+          expect(subject.schema_attributes).to eq(type: :integer, null: false)
         end
       end
+    end
     end
 
     context 'Using declare_schema' do
