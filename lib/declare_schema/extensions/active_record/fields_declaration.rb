@@ -26,7 +26,7 @@ module DeclareSchema
       end
     end
 
-      def declare_schema(table_options = {}, &block)
+    def declare_schema(table_options = {}, &block)
       # Any model that calls 'fields' gets DeclareSchema::Model behavior
       DeclareSchema::Model.mix_in(self)
 
