@@ -100,14 +100,6 @@ RSpec.describe DeclareSchema::Model::Column do
   end
 
   describe 'instance methods' do
-    before do
-      class ColumnTestModel < ActiveRecord::Base
-        fields do
-          title :string, limit: 127, null: false
-          count :integer, null: false
-        end
-      end
-    end
     let(:model) { ColumnTestModel }
     let(:current_table_name) { model.table_name }
     let(:column) { double("ActiveRecord Column",
@@ -122,18 +114,56 @@ RSpec.describe DeclareSchema::Model::Column do
                           sql_type_metadata: {}) }
     subject { described_class.new(model, current_table_name, column) }
 
-    describe '#sql_type' do
-      it 'returns sql type' do
-        expect(subject.sql_type).to match(/int/)
+    context 'Using fields' do
+      before do
+        class ColumnTestModel < ActiveRecord::Base
+          fields do
+            title :string, limit: 127, null: false
+            count :integer, null: false
+          end
+        end
+      end
+
+      describe '#sql_type' do
+        it 'returns sql type' do
+          expect(subject.sql_type).to match(/int/)
+        end
+      end
+
+      describe '#schema_attributes' do
+        it 'returns a hash with relevant key/values' do
+          if defined?(Mysql2)
+            expect(subject.schema_attributes).to eq(type: :integer, null: false, limit: 4)
+          else
+            expect(subject.schema_attributes).to eq(type: :integer, null: false)
+          end
+        end
       end
     end
 
-    describe '#schema_attributes' do
-      it 'returns a hash with relevant key/values' do
-        if defined?(Mysql2)
-          expect(subject.schema_attributes).to eq(type: :integer, null: false, limit: 4)
-        else
-          expect(subject.schema_attributes).to eq(type: :integer, null: false)
+    context 'Using declare_schema' do
+      before do
+        class ColumnTestModel < ActiveRecord::Base
+          declare_schema do
+            string :title, limit: 127, null: false
+            integer :count, null: false
+          end
+        end
+      end
+
+      describe '#sql_type' do
+        it 'returns sql type' do
+          expect(subject.sql_type).to match(/int/)
+        end
+      end
+
+      describe '#schema_attributes' do
+        it 'returns a hash with relevant key/values' do
+          if defined?(Mysql2)
+            expect(subject.schema_attributes).to eq(type: :integer, null: false, limit: 4)
+          else
+            expect(subject.schema_attributes).to eq(type: :integer, null: false)
+          end
         end
       end
     end
