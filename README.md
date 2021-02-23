@@ -152,7 +152,6 @@ Generators::DeclareSchema::Migration::Migrator.default_generate_foreign_keys = f
 The character set and collation for all tables and fields can be set at the global level
 using the `Generators::DeclareSchema::Migrator.default_charset=` and
 `Generators::DeclareSchema::Migrator.default_collation=` configuration methods.
-    - These values default to `"utf8mb4"` and `"utf8mb4_bin"` if not set.
 
 For example, adding the following to your `config/initializers` directory will
 turn all tables into `utf8mb4` supporting tables:
