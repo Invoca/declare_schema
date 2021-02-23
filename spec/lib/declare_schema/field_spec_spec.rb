@@ -67,7 +67,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
           expect(Generators::DeclareSchema::Migration::Migrator).to receive(:default_string_limit) { nil }
           expect do
             described_class.new(model, :title, :string, null: true, charset: 'utf8mb4', position: 0)
-          end.to raise_error(/limit: must be given for :string field/)
+          end.to raise_error(/limit: must be provided for :string field/)
         end
       end
     end
