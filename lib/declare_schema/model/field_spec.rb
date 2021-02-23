@@ -68,7 +68,7 @@ module DeclareSchema
             @options[:limit] = self.class.round_up_mysql_text_limit(
               @options[:limit] ||
               Generators::DeclareSchema::Migration::Migrator.default_text_limit ||
-              raise("limit: must be provided for field #{model}##{@name}: #{@options.inspect} since Generators::DeclareSchema::Migration::Migrator#default_text_limit is set to 'nil'; do you want `limit: 0xffff_ffff`?"))
+              raise("limit: must be provided for :text field #{model}##{@name}: #{@options.inspect} since Generators::DeclareSchema::Migration::Migrator#default_text_limit is set to 'nil'; do you want `limit: 0xffff_ffff`?"))
           else
             @options.delete(:limit)
           end
