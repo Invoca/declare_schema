@@ -70,21 +70,89 @@ DeclareSchema::Migration::Migrator.before_generating_migration do
 end
 ```
 
-## Declaring Character Set and Collation
-_Note: This feature currently only works for MySQL database configurations._
-
-MySQL originally supported UTF-8 in the range of 1-3 bytes (`mb3` or "multi-byte 3")
-which covered the full set of Unicode code points at the time: U+0000 - U+FFFF.
-But later, Unicode was extended beyond U+FFFF to make room for emojis, and with that
-UTF-8 require 1-4 bytes (`mb4` or "multi-byte 4"). With this addition, there has
-come a need to dynamically define the character set and collation for individual
-tables and columns in the database. With `declare_schema` this can be configured
-at three separate levels
-
 ### Global Configuration
+Configurations can be set at the global level to customize default declaration for the following values:
+
+#### Text Limit
+The default text limit can be set using the `Generators::DeclareSchema::Migration::Migrator.default_text_limit=` method.
+Note that a `nil` default means that there is no default-- so every declaration must be explicit.
+This will `raise` a `limit: must be provided for field :text...` error when the default value is `nil` and there is no explicit
+declaration.
+
+For example, adding the following to your `config/initializers` directory will
+set the default `text limit` value to `0xffff_ffff`:
+ 
+**declare_schema.rb**
+```ruby
+# frozen_string_literal: true
+
+Generators::DeclareSchema::Migration::Migrator.default_text_limit = 0xffff_ffff
+```
+
+#### String Limit
+The default string limit can be set using the `Generators::DeclareSchema::Migration::Migrator.default_string_limit=` method.
+Note that a `nil` default means that there is no default-- so every declaration must be explicit.
+This will `raise` a `limit: must be provided for field :string...` error when the default value is `nil` and there is no explicit
+declaration.
+
+For example, adding the following to your `config/initializers` directory will
+set the default `string limit` value to `nil`:
+ 
+**declare_schema.rb**
+```ruby
+# frozen_string_literal: true
+
+Generators::DeclareSchema::Migration::Migrator.default_string_limit = nil
+```
+
+#### Null
+The default null value can be set using the `Generators::DeclareSchema::Migration::Migrator.default_null=` method.
+Note that a `nil` default means that there is no default-- so every declaration must be explicit.
+This will `raise` a `null: must be provided for field...` error when the default value is `nil` and there is no explicit
+declaration.
+
+For example, adding the following to your `config/initializers` directory will
+set the default `null` value to `false`:
+ 
+**declare_schema.rb**
+```ruby
+# frozen_string_literal: true
+
+Generators::DeclareSchema::Migration::Migrator.default_null = false
+```
+
+#### Generate Foreign Keys
+The default value for generate foreign keys can be set using the `Generators::DeclareSchema::Migration::Migrator.default_generate_foreign_keys=` method.
+This value defaults to `true` and can only be set at the global level.
+
+For example, adding the following to your `config/initializers` directory will
+generate foreign keys:
+ 
+**declare_schema.rb**
+```ruby
+# frozen_string_literal: true
+
+Generators::DeclareSchema::Migration::Migrator.default_generate_foreign_keys = false
+```
+
+#### Generate Indexing
+The default value for generate indexing can be set using the `Generators::DeclareSchema::Migration::Migrator.default_generate_indexing=` method.
+This value defaults to `true` and can only be set at the global level.
+
+For example, adding the following to your `config/initializers` directory will
+generate indexing:
+ 
+**declare_schema.rb**
+```ruby
+# frozen_string_literal: true
+
+Generators::DeclareSchema::Migration::Migrator.default_generate_foreign_keys = false
+```
+#### Character Set and Collation
 The character set and collation for all tables and fields can be set at the global level
 using the `Generators::DeclareSchema::Migrator.default_charset=` and
 `Generators::DeclareSchema::Migrator.default_collation=` configuration methods.
+    - These values default to `"utf8mb4"` and `"utf8mb4_bin"` if not set.
 
 For example, adding the following to your `config/initializers` directory will
 turn all tables into `utf8mb4` supporting tables:
@@ -96,6 +164,17 @@ turn all tables into `utf8mb4` supporting tables:
 Generators::DeclareSchema::Migration::Migrator.default_charset   = "utf8mb4"
 Generators::DeclareSchema::Migration::Migrator.default_collation = "utf8mb4_bin"
 ```
+
+## Declaring Character Set and Collation
+_Note: This feature currently only works for MySQL database configurations._
+
+MySQL originally supported UTF-8 in the range of 1-3 bytes (`mb3` or "multi-byte 3")
+which covered the full set of Unicode code points at the time: U+0000 - U+FFFF.
+But later, Unicode was extended beyond U+FFFF to make room for emojis, and with that
+UTF-8 require 1-4 bytes (`mb4` or "multi-byte 4"). With this addition, there has
+come a need to dynamically define the character set and collation for individual
+tables and columns in the database. With `declare_schema` this can be configured
+at three separate levels
 
 ### Table Configuration
 In order to configure a table's default character set and collation, the `charset` and
@@ -136,25 +215,6 @@ class Comment < ActiveRecord::Base
 end
 ```
 
-## Addition Project Configurations
-Additional global configurations are available to match a developer's project conventions.
-Similar to setting the `character set` and `collation` at the global level you can also configure the
-default `text limit`, `string limit`, `null`, `generate foreign keys`, and `genereate indexing`.
-
-For example, adding the following to your `config/initializers` directory will set the default project configurations:
-
-**declare_schema.rb**
-```ruby
-# frozen_string_literal: true
-
-Generators::DeclareSchema::Migration::Migrator.default_text_limit            = 0xffff_ffff
-Generators::DeclareSchema::Migration::Migrator.default_string_limit          = nil
-Generators::DeclareSchema::Migration::Migrator.default_null                  = false
-Generators::DeclareSchema::Migration::Migrator.default_generate_foreign_keys = true
-Generators::DeclareSchema::Migration::Migrator.default_generate_indexing     = true
-```
-
-Note that a `nil` default for any field specification means that there is no default-- so every declaration must be explicit.
 ## Installing
 
 Install the `DeclareSchema` gem directly:
