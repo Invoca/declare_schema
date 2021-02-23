@@ -6,69 +6,6 @@ require 'active_record/connection_adapters/abstract_adapter'
 module Generators
   module DeclareSchema
     module Migration
-      HabtmModelShim = Struct.new(:join_table, :foreign_keys, :foreign_key_classes, :connection) do
-        class << self
-          def from_reflection(refl)
-            join_table = refl.join_table
-            foreign_keys_and_classes = [
-              [refl.foreign_key.to_s, refl.active_record],
-              [refl.association_foreign_key.to_s, refl.class_name.constantize]
-            ].sort { |a, b| a.first <=> b.first }
-            foreign_keys = foreign_keys_and_classes.map(&:first)
-            foreign_key_classes = foreign_keys_and_classes.map(&:last)
-            # this may fail in weird ways if HABTM is running across two DB connections (assuming that's even supported)
-            # figure that anybody who sets THAT up can deal with their own migrations...
-            connection = refl.active_record.connection
-
-            new(join_table, foreign_keys, foreign_key_classes, connection)
-          end
-        end
-
-        def table_options
-          {}
-        end
-
-        def table_name
-          join_table
-        end
-
-        def table_exists?
-          ActiveRecord::Migration.table_exists? table_name
-        end
-
-        def field_specs
-          i = 0
-          foreign_keys.each_with_object({}) do |v, result|
-            result[v] = ::DeclareSchema::Model::FieldSpec.new(self, v, :integer, position: i, null: false)
-            i += 1
-          end
-        end
-
-        def primary_key
-          false # no single-column primary key
-        end
-
-        def index_definitions_with_primary_key
-          [
-            ::DeclareSchema::Model::IndexDefinition.new(self, foreign_keys, unique: true, name: ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME),
-            ::DeclareSchema::Model::IndexDefinition.new(self, foreign_keys.last) # not unique by itself; combines with primary key to be unique
-          ]
-        end
-
-        alias_method :index_definitions, :index_definitions_with_primary_key
-
-        def ignore_indexes
-          []
-        end
-
-        def constraint_specs
-          [
-            ::DeclareSchema::Model::ForeignKeyDefinition.new(self, foreign_keys.first, parent_table: foreign_key_classes.first.table_name, constraint_name: "#{join_table}_FK1", dependent: :delete),
-            ::DeclareSchema::Model::ForeignKeyDefinition.new(self, foreign_keys.last, parent_table: foreign_key_classes.last.table_name, constraint_name: "#{join_table}_FK2", dependent: :delete)
-          ]
-        end
-      end
-
       class Migrator
         class Error < RuntimeError; end
 
@@ -266,7 +203,7 @@ module Generators
           end
           # generate shims for HABTM models
           habtm_tables.each do |name, refls|
-            models_by_table_name[name] = HabtmModelShim.from_reflection(refls.first)
+            models_by_table_name[name] = ::DeclareSchema::Model::HabtmModelShim.from_reflection(refls.first)
           end
           model_table_names = models_by_table_name.keys
 
@@ -328,7 +265,7 @@ module Generators
         end
 
         def create_table(model)
-          longest_field_name       = model.field_specs.values.map { |f| f.sql_type.to_s.length }.max
+          longest_field_name       = model.field_specs.values.map { |f| f.type.to_s.length }.max
           disable_auto_increment   = model.respond_to?(:disable_auto_increment) && model.disable_auto_increment
           table_options_definition = ::DeclareSchema::Model::TableOptionsDefinition.new(model.table_name, table_options_for_model(model))
           field_definitions        = [
@@ -348,12 +285,13 @@ module Generators
         end
 
         def create_table_options(model, disable_auto_increment)
-          if model.primary_key.blank? || disable_auto_increment
+          primary_key = model._defined_primary_key
+          if primary_key.blank? || disable_auto_increment
             "id: false"
-          elsif model.primary_key == "id"
+          elsif primary_key == "id"
             "id: :bigint"
           else
-            "primary_key: :#{model.primary_key}"
+            "primary_key: :#{primary_key}"
           end
         end
 
@@ -379,25 +317,25 @@ module Generators
         def create_field(field_spec, field_name_width)
           options = field_spec.sql_options.merge(fk_field_options(field_spec.model, field_spec.name))
           args = [field_spec.name.inspect] + format_options(options.compact)
-          format("t.%-*s %s", field_name_width, field_spec.sql_type, args.join(', '))
+          format("t.%-*s %s", field_name_width, field_spec.type, args.join(', '))
         end
 
         def change_table(model, current_table_name)
           new_table_name = model.table_name
 
           db_columns = model.connection.columns(current_table_name).index_by(&:name)
-          key_missing = db_columns[model.primary_key].nil? && model.primary_key.present?
-          if model.primary_key.present?
-            db_columns.delete(model.primary_key)
+          key_missing = db_columns[model._defined_primary_key].nil? && model._defined_primary_key.present?
+          if model._defined_primary_key.present?
+            db_columns.delete(model._defined_primary_key)
           end
 
           model_column_names = model.field_specs.keys.map(&:to_s)
           db_column_names = db_columns.keys.map(&:to_s)
 
           to_add = model_column_names - db_column_names
-          to_add += [model.primary_key] if key_missing && model.primary_key.present?
+          to_add += [model._defined_primary_key] if key_missing && model._defined_primary_key.present?
           to_remove = db_column_names - model_column_names
-          to_remove -= [model.primary_key.to_sym] if model.primary_key.present?
+          to_remove -= [model._defined_primary_key.to_sym] if model._defined_primary_key.present?
 
           to_rename = extract_column_renames!(to_add, to_remove, new_table_name)
 
@@ -417,7 +355,7 @@ module Generators
             args =
               if (spec = model.field_specs[c])
                 options = spec.sql_options.merge(fk_field_options(model, c))
-                [":#{spec.sql_type}", *format_options(options.compact)]
+                [":#{spec.type}", *format_options(options.compact)]
               else
                 [":integer"]
               end
@@ -444,12 +382,12 @@ module Generators
             spec_attrs         = spec.schema_attributes(column)
             column_declaration = ::DeclareSchema::Model::Column.new(model, current_table_name, column)
             col_attrs          = column_declaration.schema_attributes
-            if !::DeclareSchema::Model::Column.equivalent_schema_attributes?(spec_attrs, col_attrs)
-              normalized_schema_attributes = spec_attrs.merge(fk_field_options(model, col_name_to_change))
+            normalized_schema_attrs = spec_attrs.merge(fk_field_options(model, col_name_to_change))
 
-              type = normalized_schema_attributes.delete(:type) or raise "no :type found in #{normalized_schema_attributes.inspect}"
+            if !::DeclareSchema::Model::Column.equivalent_schema_attributes?(normalized_schema_attrs, col_attrs)
+              type = normalized_schema_attrs.delete(:type) or raise "no :type found in #{normalized_schema_attrs.inspect}"
               changes << ["change_column #{new_table_name.to_sym.inspect}", col_name_to_change.to_sym.inspect,
-                          type.to_sym.inspect, *format_options(normalized_schema_attributes)].join(", ")
+                          type.to_sym.inspect, *format_options(normalized_schema_attrs)].join(", ")
               undo_changes << change_column_back(model, current_table_name, orig_col_name)
             end
           end

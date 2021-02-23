@@ -6,8 +6,8 @@ rescue LoadError
 end
 
 RSpec.describe DeclareSchema::Model::FieldSpec do
-  let(:model) { double('model', table_options: {}) }
-  let(:col_spec) { double('col_spec', sql_type: 'varchar') }
+  let(:model) { double('model', table_options: {}, _defined_primary_key: 'id') }
+  let(:col_spec) { double('col_spec', type: :string) }
 
   before do
     load File.expand_path('prepare_testapp.rb', __dir__)
@@ -21,6 +21,12 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
     it 'normalizes option order' do
       subject = described_class.new(model, :price, :integer, anonymize_using: 'x', null: false, position: 0, limit: 4)
       expect(subject.options.keys).to eq([:limit, :null, :anonymize_using])
+    end
+
+    it 'raises exception on unknown field type' do
+      expect do
+        described_class.new(model, :location, :lat_long, position: 0)
+      end.to raise_exception(::DeclareSchema::UnknownTypeError, /:lat_long not found in /)
     end
   end
 
@@ -77,37 +83,46 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
           expect(subject.schema_attributes(col_spec)).to eq(type: :text, null: true, default: 'none')
         end
       end
+    end
 
-      describe 'decimal' do
-        it 'allows precision: and scale:' do
-          subject = described_class.new(model, :quantity, :decimal, precision: 8, scale: 10, null: true, position: 3)
-          expect(subject.schema_attributes(col_spec)).to eq(type: :decimal, precision: 8, scale: 10, null: true)
-        end
-
-        it 'requires precision:' do
-          expect_any_instance_of(described_class).to receive(:warn).with(/precision: required for :decimal type/)
-          described_class.new(model, :quantity, :decimal, scale: 10, null: true, position: 3)
-        end
-
-        it 'requires scale:' do
-          expect_any_instance_of(described_class).to receive(:warn).with(/scale: required for :decimal type/)
-          described_class.new(model, :quantity, :decimal, precision: 8, null: true, position: 3)
+    if defined?(Mysql2)
+      describe 'varbinary' do # TODO: :varbinary is an Invoca addition to Rails; make it a configurable option
+        it 'is supported' do
+          subject = described_class.new(model, :binary_dump, :varbinary, limit: 200, null: false, position: 2)
+          expect(subject.schema_attributes(col_spec)).to eq(type: :varbinary, limit: 200, null: false)
         end
       end
+    end
 
-      [:integer, :bigint, :string, :text, :binary, :datetime, :date, :time].each do |t|
-        describe t.to_s do
-          let(:extra) { t == :string ? { limit: 100 } : {} }
+    describe 'decimal' do
+      it 'allows precision: and scale:' do
+        subject = described_class.new(model, :quantity, :decimal, precision: 8, scale: 10, null: true, position: 3)
+        expect(subject.schema_attributes(col_spec)).to eq(type: :decimal, precision: 8, scale: 10, null: true)
+      end
 
-          it 'does not allow precision:' do
-            expect_any_instance_of(described_class).to receive(:warn).with(/precision: only allowed for :decimal type/)
-            described_class.new(model, :quantity, t, { precision: 8, null: true, position: 3 }.merge(extra))
-          end unless t == :datetime
+      it 'requires precision:' do
+        expect_any_instance_of(described_class).to receive(:warn).with(/precision: required for :decimal type/)
+        described_class.new(model, :quantity, :decimal, scale: 10, null: true, position: 3)
+      end
 
-          it 'does not allow scale:' do
-            expect_any_instance_of(described_class).to receive(:warn).with(/scale: only allowed for :decimal type/)
-            described_class.new(model, :quantity, t, { scale: 10, null: true, position: 3 }.merge(extra))
-          end
+      it 'requires scale:' do
+        expect_any_instance_of(described_class).to receive(:warn).with(/scale: required for :decimal type/)
+        described_class.new(model, :quantity, :decimal, precision: 8, null: true, position: 3)
+      end
+    end
+
+    [:integer, :bigint, :string, :text, :binary, :datetime, :date, :time, (:varbinary if defined?(Mysql2))].compact.each do |t|
+      describe t.to_s do
+        let(:extra) { t == :string ? { limit: 100 } : {} }
+
+        it 'does not allow precision:' do
+          expect_any_instance_of(described_class).to receive(:warn).with(/precision: only allowed for :decimal type/)
+          described_class.new(model, :quantity, t, { precision: 8, null: true, position: 3 }.merge(extra))
+        end unless t == :datetime
+
+        it 'does not allow scale:' do
+          expect_any_instance_of(described_class).to receive(:warn).with(/scale: only allowed for :decimal type/)
+          described_class.new(model, :quantity, t, { scale: 10, null: true, position: 3 }.merge(extra))
         end
       end
     end
@@ -127,7 +142,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
     end
 
     describe 'default:' do
-      let(:col_spec) { double('col_spec', sql_type: :integer) }
+      let(:col_spec) { double('col_spec', type: :integer) }
 
       it 'typecasts default value' do
         allow(col_spec).to receive(:type_cast_from_database) { |default| Integer(default) }
@@ -149,8 +164,8 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
       end
     end
 
-    it 'returns the attributes except name, position' do
-      subject = described_class.new(model, :price, :bigint, null: true, default: 0, position: 2)
+    it 'returns the attributes except name, position, and non-SQL options' do
+      subject = described_class.new(model, :price, :bigint, null: true, default: 0, ruby_default: -> { }, encrypt_using: -> { }, position: 2)
       expect(subject.schema_attributes(col_spec)).to eq(type: :integer, limit: 8, null: true, default: 0)
     end
 
@@ -161,6 +176,13 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
       expected_attributes = { type: :integer, limit: 8, null: false }
       expect(int8.schema_attributes(col_spec)).to eq(expected_attributes)
       expect(bigint.schema_attributes(col_spec)).to eq(expected_attributes)
+    end
+  end
+
+  describe '#sql_options' do
+    subject { described_class.new(model, :price, :integer, limit: 4, null: true, default: 0, position: 2, encrypt_using: ->(field) { field }) }
+    it 'excludes non-sql options' do
+      expect(subject.sql_options).to eq(limit: 4, null: true, default: 0)
     end
   end
 end

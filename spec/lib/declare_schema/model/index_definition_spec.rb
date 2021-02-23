@@ -59,7 +59,17 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
     end
   end
 
-  describe 'class << self' do
+  describe 'class methods' do
+    describe 'index_name' do
+      it 'works with a single column' do
+        expect(described_class.index_name('parent_id')).to eq('on_parent_id')
+      end
+
+      it 'works with many columns' do
+        expect(described_class.index_name(['a', 'b', 'c'])).to eq('on_a_and_b_and_c')
+      end
+    end
+
     context 'with a migrated database' do
       before do
         ActiveRecord::Base.connection.execute <<~EOS

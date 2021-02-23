@@ -4,16 +4,28 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.7.0] - 2020-02-14
+## [0.8.0] - 2021-02-22
+### Removed
+- Removed assumption that primary key is named 'id'.
+- Removed `sql_type` that was confusing because it was actually the same as `type` (ex: :string) and not
+  in fact the SQL type (ex: ``varchar(255)'`).
+
+## [0.7.1] - 2021-02-17
+### Fixed
+- Exclude unknown options from FieldSpec#sql_options and #schema_attributes.
+- Fixed a bug where fk_field_options were getting merged into spec_attrs after checking for equivalence,
+  leading to phantom migrations with no changes, or missing migrations when just the fk_field_options changed.
+
+## [0.7.0] - 2021-02-14
 ### Changed
 - Use `schema_attributes` for generating both up and down change migrations, so they are guaranteed to be symmetrical.
   Note: Rails schema dumper is still used for the down migration to replace a model that has been dropped.
 
-## [0.6.4] - 2020-02-08
+## [0.6.4] - 2021-02-08
 - Fixed a bug where the generated call to add_foreign_key() was not setting `column:`,
   so it only worked in cases where Rails could infer the foreign key by convention.
 
-## [0.6.3] - 2020-01-21
+## [0.6.3] - 2021-01-21
 ### Added
 - Added `add_foreign_key` native rails call in `DeclareSchema::Model::ForeignKeyDefinition#to_add_statement`.
 
@@ -119,6 +131,8 @@ using the appropriate Rails configuration attributes.
 ### Added
 - Initial version from https://github.com/Invoca/hobo_fields v4.1.0.
 
+[0.8.0]: https://github.com/Invoca/declare_schema/compare/v0.7.1...v0.8.0
+[0.7.1]: https://github.com/Invoca/declare_schema/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/Invoca/declare_schema/compare/v0.6.3...v0.7.0
 [0.6.4]: https://github.com/Invoca/declare_schema/compare/v0.6.3...v0.6.4
 [0.6.3]: https://github.com/Invoca/declare_schema/compare/v0.6.2...v0.6.3

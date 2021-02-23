@@ -33,7 +33,7 @@ module DeclareSchema
         end
       end
 
-      attr_reader :model, :name, :type, :sql_type, :position, :options, :sql_options
+      attr_reader :model, :name, :type, :position, :options, :sql_options
 
       TYPE_SYNONYMS = { timestamp: :datetime }.freeze # TODO: drop this synonym. -Colin
 
@@ -47,11 +47,9 @@ module DeclareSchema
       end
 
       def initialize(model, name, type, position: 0, **options)
-        # TODO: TECH-5116
-        # Invoca change - searching for the primary key was causing an additional database read on every model load.  Assume
-        # "id" which works for invoca.
-        # raise ArgumentError, "you cannot provide a field spec for the primary key" if name == model.primary_key
-        name == "id" and raise ArgumentError, "you cannot provide a field spec for the primary key"
+        _defined_primary_key = model._defined_primary_key
+
+        name.to_s == _defined_primary_key and raise ArgumentError, "you may not provide a field spec for the primary key #{name.inspect}"
 
         @model = model
         @name = name.to_sym
@@ -62,13 +60,13 @@ module DeclareSchema
 
         @options.has_key?(:null) or @options[:null] = false
 
-        case type
+        case @type
         when :text
           if self.class.mysql_text_limits?
             @options[:default].nil? or raise MysqlTextMayNotHaveDefault, "when using MySQL, non-nil default may not be given for :text field #{model}##{@name}"
             @options[:limit] = self.class.round_up_mysql_text_limit(@options[:limit] || MYSQL_LONGTEXT_LIMIT)
           else
-            @options[:limit] = nil
+            @options.delete(:limit)
           end
         when :string
           @options[:limit] or raise "limit: must be given for :string field #{model}##{@name}: #{@options.inspect}; do you want `limit: 255`?"
@@ -77,24 +75,23 @@ module DeclareSchema
           @options[:limit] = 8
         end
 
-        # TODO: Do we really need to support a :sql_type option? Ideally, drop it. -Colin
-        @sql_type = @options.delete(:sql_type) || Column.sql_type(@type)
+        Column.native_type?(@type) or raise UnknownTypeError, "#{@type.inspect} not found in #{Column.native_types.inspect} for adapter #{ActiveRecord::Base.connection.class.name}"
 
-        if @sql_type.in?([:string, :text, :binary, :varbinary, :integer, :enum])
-          @options[:limit] ||= Column.native_types[@sql_type][:limit]
+        if @type.in?([:string, :text, :binary, :varbinary, :integer, :enum])
+          @options[:limit] ||= Column.native_types.dig(@type, :limit)
         else
-          @sql_type != :decimal && @options.has_key?(:limit) and warn("unsupported limit: for SQL type #{@sql_type} in field #{model}##{@name}")
+          @type != :decimal && @options.has_key?(:limit) and warn("unsupported limit: for SQL type #{@type} in field #{model}##{@name}")
           @options.delete(:limit)
         end
 
-        if @sql_type == :decimal
+        if @type == :decimal
           @options[:precision] or warn("precision: required for :decimal type in field #{model}##{@name}")
           @options[:scale] or warn("scale: required for :decimal type in field #{model}##{@name}")
         else
-          if @sql_type != :datetime
-            @options.has_key?(:precision) and warn("precision: only allowed for :decimal type or :datetime for SQL type #{@sql_type} in field #{model}##{@name}")
+          if @type != :datetime
+            @options.has_key?(:precision) and warn("precision: only allowed for :decimal type or :datetime for SQL type #{@type} in field #{model}##{@name}")
           end
-          @options.has_key?(:scale) and warn("scale: only allowed for :decimal type for SQL type #{@sql_type} in field #{model}##{@name}")
+          @options.has_key?(:scale) and warn("scale: only allowed for :decimal type for SQL type #{@type} in field #{model}##{@name}")
         end
 
         if @type.in?([:text, :string])
@@ -106,21 +103,21 @@ module DeclareSchema
             @options.delete(:collation)
           end
         else
-          @options[:charset]   and warn("charset may only given for :string and :text fields for SQL type #{@sql_type} in field #{model}##{@name}")
-          @options[:collation] and warne("collation may only given for :string and :text fields for SQL type #{@sql_type} in field #{model}##{@name}")
+          @options[:charset]   and warn("charset may only given for :string and :text fields for SQL type #{@type} in field #{model}##{@name}")
+          @options[:collation] and warne("collation may only given for :string and :text fields for SQL type #{@type} in field #{model}##{@name}")
         end
 
         @options = Hash[@options.sort_by { |k, _v| OPTION_INDEXES[k] || 9999 }]
 
-        @sql_options = @options.except(*NON_SQL_OPTIONS)
+        @sql_options = @options.slice(*SQL_OPTIONS)
       end
 
       # returns the attributes for schema migrations as a Hash
       # omits name and position since those are meta-data above the schema
       # omits keys with nil values
       def schema_attributes(col_spec)
-        @options.merge(type: @type).tap do |attrs|
-          attrs[:default] = Column.deserialize_default_value(col_spec, @sql_type, attrs[:default])
+        @sql_options.merge(type: @type).tap do |attrs|
+          attrs[:default] = Column.deserialize_default_value(col_spec, @type, attrs[:default])
         end.compact
       end
     end

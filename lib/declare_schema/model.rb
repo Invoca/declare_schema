@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'rails'
+
 require 'declare_schema/extensions/module'
 
 module DeclareSchema
@@ -36,7 +38,7 @@ module DeclareSchema
 
           # eval avoids the ruby 1.9.2 "super from singleton method ..." error
 
-          eval %(
+          eval <<~EOS
             def self.inherited(klass)
               unless klass.field_specs.has_key?(inheritance_column)
                 fields do |f|
@@ -46,14 +48,14 @@ module DeclareSchema
               end
               super
             end
-          )
+          EOS
         end
       end
     end
 
     module ClassMethods
       def index(fields, options = {})
-        # don't double-index fields
+        # make index idempotent
         index_fields_s = Array.wrap(fields).map(&:to_s)
         unless index_definitions.any? { |index_spec| index_spec.fields == index_fields_s }
           index_definitions << ::DeclareSchema::Model::IndexDefinition.new(self, fields, options)
@@ -72,7 +74,7 @@ module DeclareSchema
       end
 
       # tell the migration generator to ignore the named index. Useful for existing indexes, or for indexes
-      # that can't be automatically generated (for example: an prefix index in MySQL)
+      # that can't be automatically generated (for example: a prefix index in MySQL)
       def ignore_index(index_name)
         ignore_indexes << index_name.to_s
       end
@@ -81,13 +83,12 @@ module DeclareSchema
       # arguments. The arguments are forwarded to the #field_added
       # callback, allowing custom metadata to be added to field
       # declarations.
-      def declare_field(name, type, *args)
-        options = args.extract_options!
+      def declare_field(name, type, *args, **options)
         try(:field_added, name, type, args, options)
-        add_serialize_for_field(name, type, options)
-        add_formatting_for_field(name, type)
-        add_validations_for_field(name, type, args, options)
-        add_index_for_field(name, args, options)
+        _add_serialize_for_field(name, type, options)
+        _add_formatting_for_field(name, type)
+        _add_validations_for_field(name, type, args, options)
+        _add_index_for_field(name, args, options)
         field_specs[name] = ::DeclareSchema::Model::FieldSpec.new(self, name, type, position: field_specs.size, **options)
         attr_order << name unless attr_order.include?(name)
       end
@@ -96,18 +97,8 @@ module DeclareSchema
         if index_definitions.any?(&:primary_key?)
           index_definitions
         else
-          index_definitions + [rails_default_primary_key]
+          index_definitions + [_rails_default_primary_key]
         end
-      end
-
-      def primary_key
-        super || 'id'
-      end
-
-      private
-
-      def rails_default_primary_key
-        ::DeclareSchema::Model::IndexDefinition.new(self, [primary_key.to_sym], unique: true, name: DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME)
       end
 
       # Extend belongs_to so that it creates a FieldSpec for the foreign key
@@ -150,7 +141,7 @@ module DeclareSchema
         declare_field(fkey.to_sym, :integer, column_options)
         if refl.options[:polymorphic]
           foreign_type = options[:foreign_type] || "#{name}_type"
-          declare_polymorphic_type_field(foreign_type, column_options)
+          _declare_polymorphic_type_field(foreign_type, column_options)
           index([foreign_type, fkey], index_options) if index_options[:name] != false
         else
           index(fkey, index_options) if index_options[:name] != false
@@ -158,26 +149,49 @@ module DeclareSchema
         end
       end
 
+      if ::Rails::VERSION::MAJOR < 5
+        def primary_key
+          super || 'id'
+        end
+      end
+
+      # returns the primary key (String) as declared with primary_key =
+      # unlike the `primary_key` method, DOES NOT query the database to find the actual primary key in use right now
+      # if no explicit primary key set, returns the default_defined_primary_key
+      def _defined_primary_key
+        if defined?(@primary_key)
+          @primary_key&.to_s
+        end || _default_defined_primary_key
+      end
+
+      private
+
+      # if this is a derived class, returns the base class's _defined_primary_key
+      # otherwise, returns 'id'
+      def _default_defined_primary_key
+        if self == base_class
+          'id'
+        else
+          base_class._defined_primary_key
+        end
+      end
+
+      def _rails_default_primary_key
+        ::DeclareSchema::Model::IndexDefinition.new(self, [_defined_primary_key.to_sym], unique: true, name: DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME)
+      end
+
       # Declares the "foo_type" field that accompanies the "foo_id"
       # field for a polymorphic belongs_to
-      def declare_polymorphic_type_field(foreign_type, column_options)
+      def _declare_polymorphic_type_field(foreign_type, column_options)
         declare_field(foreign_type, :string, column_options.merge(limit: 255))
         # FIXME: Before declare_schema was extracted, this used to now do:
         # never_show(type_col)
         # That needs doing somewhere
       end
 
-      # Declare a rich-type for any attribute (i.e. getter method). This
-      # does not effect the attribute in any way - it just records the
-      # metadata.
-      def declare_attr_type(name, type, options = {})
-        attr_types[name] = klass = DeclareSchema.to_class(type)
-        klass.try(:declared, self, name, options)
-      end
-
       # Add field validations according to arguments in the
       # field declaration
-      def add_validations_for_field(name, type, args, options)
+      def _add_validations_for_field(name, type, args, options)
         validates_presence_of   name if :required.in?(args)
         validates_uniqueness_of name, allow_nil: !:required.in?(args) if :unique.in?(args)
 
@@ -196,18 +210,18 @@ module DeclareSchema
         end
       end
 
-      def add_serialize_for_field(name, type, options)
+      def _add_serialize_for_field(name, type, options)
         if (serialize_class = options.delete(:serialize))
           type == :string || type == :text or raise ArgumentError, "serialize field type must be :string or :text"
           serialize_args = Array((serialize_class unless serialize_class == true))
           serialize(name, *serialize_args)
           if options.has_key?(:default)
-            options[:default] = serialized_default(name, serialize_class == true ? Object : serialize_class, options[:default])
+            options[:default] = _serialized_default(name, serialize_class == true ? Object : serialize_class, options[:default])
           end
         end
       end
 
-      def serialized_default(attr_name, class_name_or_coder, default)
+      def _serialized_default(attr_name, class_name_or_coder, default)
         # copied from https://github.com/rails/rails/blob/7d6cb950e7c0e31c2faaed08c81743439156c9f5/activerecord/lib/active_record/attribute_methods/serialization.rb#L70-L76
         coder = if class_name_or_coder == ::JSON
                   ActiveRecord::Coders::JSON
@@ -226,7 +240,7 @@ module DeclareSchema
         end
       end
 
-      def add_formatting_for_field(name, type)
+      def _add_formatting_for_field(name, type)
         if (type_class = DeclareSchema.to_class(type))
           if "format".in?(type_class.instance_methods)
             before_validation do |record|
@@ -236,7 +250,7 @@ module DeclareSchema
         end
       end
 
-      def add_index_for_field(name, args, options)
+      def _add_index_for_field(name, args, options)
         if (to_name = options.delete(:index))
           index_opts =
             {
@@ -265,13 +279,13 @@ module DeclareSchema
               refl
             end
           end ||
-          if (col = column(name.to_s))
+          if (col = _column(name.to_s))
             DeclareSchema::PLAIN_TYPES[col.type] || col.klass
           end
       end
 
       # Return the entry from #columns for the named column
-      def column(name)
+      def _column(name)
         defined?(@table_exists) or @table_exists = table_exists?
         if @table_exists
           columns_hash[name.to_s]

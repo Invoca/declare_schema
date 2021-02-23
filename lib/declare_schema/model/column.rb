@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
 module DeclareSchema
-  class UnknownSqlTypeError < RuntimeError; end
+  class UnknownTypeError < RuntimeError; end
 
   module Model
     # This class is a wrapper for the ActiveRecord::...::Column class
     class Column
       class << self
         def native_type?(type)
-          type != :primary_key && native_types.has_key?(type)
+          type != :primary_key && (native_types.empty? || native_types[type]) # empty will happen with NullDBAdapter used in assets:precompile
         end
 
         # MySQL example:
@@ -44,73 +44,65 @@ module DeclareSchema
             if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
               types[:text][:limit]    ||= 0xffff
               types[:binary][:limit]  ||= 0xffff
+
+              types[:varbinary] ||= { name: "varbinary" } # TODO: :varbinary is an Invoca addition to Rails; make it a configurable option
             end
           end
         end
 
-        def sql_type(type)
-          if native_type?(type)
-            type
-          else
-            if (field_class = DeclareSchema.to_class(type))
-              field_class::COLUMN_TYPE
-            end or raise UnknownSqlTypeError, "#{type.inspect} for type #{type.inspect}"
-          end
-        end
-
-        def deserialize_default_value(column, sql_type, default_value)
-          sql_type or raise ArgumentError, "must pass sql_type; got #{sql_type.inspect}"
+        def deserialize_default_value(column, type, default_value)
+          type or raise ArgumentError, "must pass type; got #{type.inspect}"
 
           case Rails::VERSION::MAJOR
           when 4
             # TODO: Delete this Rails 4 support ASAP! This could be wrong, since it's using the type of the old column...which
-            # might be getting migrated to a new type. We should be using just sql_type as below. -Colin
+            # might be getting migrated to a new type. We should be using just type as below. -Colin
             column.type_cast_from_database(default_value)
           else
-            cast_type = ActiveRecord::Base.connection.send(:lookup_cast_type, sql_type) or
-              raise "cast_type not found for #{sql_type}"
+            cast_type = ActiveRecord::Base.connection.send(:lookup_cast_type, type) or
+              raise "cast_type not found for #{type}"
             cast_type.deserialize(default_value)
           end
         end
 
-        # Normalizes schema attributes for the specific database adapter that is currently running
+        # Normalizes schema attributes for the given database adapter name.
         # Note that the un-normalized attributes are still useful for generating migrations because those
         # may be run with a different adapter.
-        # This method never mutates its argument. In fact it freezes it to be certain.
-        def normalize_schema_attributes(schema_attributes)
-          schema_attributes[:type] or raise ArgumentError, ":type key not found; keys: #{schema_attributes.keys.inspect}"
-          schema_attributes.freeze
-
-          case ActiveRecord::Base.connection.class.name
-          when /mysql/i
-            schema_attributes
-          when /sqlite/i
-            case schema_attributes[:type]
-            when :text
-              schema_attributes = schema_attributes.merge(limit: nil)
-            when :integer
-              schema_attributes = schema_attributes.dup
-              schema_attributes[:limit] ||= 8
-            end
-            schema_attributes
-          else
-            schema_attributes
-          end
+        # This method never mutates its argument.
+        def normalize_schema_attributes(schema_attributes, db_adapter_name)
+          case schema_attributes[:type]
+          when :boolean
+            schema_attributes.reverse_merge(limit: 1)
+          when :integer
+            schema_attributes.reverse_merge(limit: 8) if db_adapter_name.match?(/sqlite/i)
+          when :float
+            schema_attributes.except(:limit)
+          when :text
+            schema_attributes.except(:limit)          if db_adapter_name.match?(/sqlite/i)
+          when :datetime
+            schema_attributes.reverse_merge(precision: 0)
+          when NilClass
+            raise ArgumentError, ":type key not found; keys: #{schema_attributes.keys.inspect}"
+          end || schema_attributes
         end
 
         def equivalent_schema_attributes?(schema_attributes_lhs, schema_attributes_rhs)
-          normalize_schema_attributes(schema_attributes_lhs) == normalize_schema_attributes(schema_attributes_rhs)
+          db_adapter_name = ActiveRecord::Base.connection.class.name
+          normalized_lhs = normalize_schema_attributes(schema_attributes_lhs, db_adapter_name)
+          normalized_rhs = normalize_schema_attributes(schema_attributes_rhs, db_adapter_name)
+
+          normalized_lhs == normalized_rhs
         end
       end
+
+      attr_reader :type
 
       def initialize(model, current_table_name, column)
         @model = model or raise ArgumentError, "must pass model"
         @current_table_name = current_table_name or raise ArgumentError, "must pass current_table_name"
         @column = column or raise ArgumentError, "must pass column"
-      end
-
-      def sql_type
-        @sql_type ||= self.class.sql_type(@column.type)
+        @type = @column.type
+        self.class.native_type?(@type) or raise UnknownTypeError, "#{@type.inspect}"
       end
 
       SCHEMA_KEYS = [:type, :limit, :precision, :scale, :null, :default].freeze
@@ -121,7 +113,7 @@ module DeclareSchema
           value =
             case key
             when :default
-              self.class.deserialize_default_value(@column, sql_type, @column.default)
+              self.class.deserialize_default_value(@column, @type, @column.default)
             else
               col_value = @column.send(key)
               if col_value.nil? && (native_type = self.class.native_types[@column.type])

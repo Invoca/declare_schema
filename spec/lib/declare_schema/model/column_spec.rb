@@ -37,6 +37,11 @@ RSpec.describe DeclareSchema::Model::Column do
           expect(described_class.native_type?(type)).to be_falsey
         end
       end
+
+      it "is truthy when there's a NullDbAdapter (like for assets:precompile) that doesn't have any native types" do
+        allow(described_class).to receive(:native_types).and_return({})
+        expect(described_class.native_type?(:integer)).to be_truthy
+      end
     end
 
     describe '.native_types' do
@@ -56,26 +61,6 @@ RSpec.describe DeclareSchema::Model::Column do
 
       it 'returns the native type for :datetime' do
         expect(subject.dig(:datetime, :name)).to eq('datetime')
-      end
-    end
-
-    describe '.sql_type' do
-      it 'returns the sql type for :string' do
-        expect(described_class.sql_type(:string)).to eq(:string)
-      end
-
-      it 'returns the sql type for :integer' do
-        expect(described_class.sql_type(:integer)).to match(:integer)
-      end
-
-      it 'returns the sql type for :datetime' do
-        expect(described_class.sql_type(:datetime)).to eq(:datetime)
-      end
-
-      it 'raises UnknownSqlType' do
-        expect do
-          described_class.sql_type(:email)
-        end.to raise_exception(::DeclareSchema::UnknownSqlTypeError, /:email for type :email/)
       end
     end
 
@@ -101,10 +86,11 @@ RSpec.describe DeclareSchema::Model::Column do
 
   describe 'instance methods' do
     let(:model) { ColumnTestModel }
+    let(:type) { :integer }
     let(:current_table_name) { model.table_name }
     let(:column) { double("ActiveRecord Column",
                           name: 'count',
-                          type: :integer,
+                          type: type,
                           limit: nil,
                           precision: nil,
                           scale: nil,
@@ -124,9 +110,9 @@ RSpec.describe DeclareSchema::Model::Column do
       end
     end
 
-    describe '#sql_type' do
-      it 'returns sql type' do
-        expect(subject.sql_type).to match(/int/)
+    describe '#type' do
+      it 'returns type' do
+        expect(subject.type).to eq(type)
       end
     end
 
@@ -151,9 +137,9 @@ RSpec.describe DeclareSchema::Model::Column do
         end
       end
 
-      describe '#sql_type' do
-        it 'returns sql type' do
-          expect(subject.sql_type).to match(/int/)
+      describe '#type' do
+        it 'returns type' do
+          expect(subject.type).to eq(type)
         end
       end
 
