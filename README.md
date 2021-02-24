@@ -80,13 +80,13 @@ This will `raise` a `limit: must be provided for field :text...` error when the 
 declaration.
 
 For example, adding the following to your `config/initializers` directory will
-set the default `text limit` value to `0xffff_ffff`:
+set the default `text limit` value to `0xffff`:
  
 **declare_schema.rb**
 ```ruby
 # frozen_string_literal: true
 
-Generators::DeclareSchema::Migration::Migrator.default_text_limit = 0xffff_ffff
+Generators::DeclareSchema::Migration::Migrator.default_text_limit = 0xffff
 ```
 
 #### String Limit
@@ -96,13 +96,13 @@ This will `raise` a `limit: must be provided for field :string...` error when th
 declaration.
 
 For example, adding the following to your `config/initializers` directory will
-set the default `string limit` value to `nil`:
+set the default `string limit` value to `255`:
  
 **declare_schema.rb**
 ```ruby
 # frozen_string_literal: true
 
-Generators::DeclareSchema::Migration::Migrator.default_string_limit = nil
+Generators::DeclareSchema::Migration::Migrator.default_string_limit = 255
 ```
 
 #### Null
@@ -112,21 +112,21 @@ This will `raise` a `null: must be provided for field...` error when the default
 declaration.
 
 For example, adding the following to your `config/initializers` directory will
-set the default `null` value to `false`:
+set the default `null` value to `true`:
  
 **declare_schema.rb**
 ```ruby
 # frozen_string_literal: true
 
-Generators::DeclareSchema::Migration::Migrator.default_null = false
+Generators::DeclareSchema::Migration::Migrator.default_null = true
 ```
 
 #### Generate Foreign Keys
 The default value for generate foreign keys can be set using the `Generators::DeclareSchema::Migration::Migrator.default_generate_foreign_keys=` method.
 This value defaults to `true` and can only be set at the global level.
 
-For example, adding the following to your `config/initializers` directory will
-generate foreign keys:
+For example, adding the following to your `config/initializers` directory will set
+the default `generate foreign keys` value to `false`:
  
 **declare_schema.rb**
 ```ruby
@@ -140,13 +140,13 @@ The default value for generate indexing can be set using the `Generators::Declar
 This value defaults to `true` and can only be set at the global level.
 
 For example, adding the following to your `config/initializers` directory will
-generate indexing:
+set the default `generate indexing` value to `false`:
  
 **declare_schema.rb**
 ```ruby
 # frozen_string_literal: true
 
-Generators::DeclareSchema::Migration::Migrator.default_generate_foreign_keys = false
+Generators::DeclareSchema::Migration::Migrator.default_generate_indexing = false
 ```
 #### Character Set and Collation
 The character set and collation for all tables and fields can be set at the global level
