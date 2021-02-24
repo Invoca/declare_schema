@@ -58,8 +58,8 @@ module DeclareSchema
         @position = position
         @options = options.dup
 
-        @options.has_key?(:null) or @options[:null] = Generators::DeclareSchema::Migration::Migrator.default_null
-        @options[:null].nil? and raise "null: must be provided for field #{model}##{@name}: #{@options.inspect} since Generators::DeclareSchema::Migration::Migrator#default_null is set to 'nil'; do you want `null: false`?"
+        @options.has_key?(:null) or @options[:null] = ::DeclareSchema.default_null
+        @options[:null].nil? and raise "null: must be provided for field #{model}##{@name}: #{@options.inspect} since ::DeclareSchema#default_null is set to 'nil'; do you want `null: false`?"
 
         case @type
         when :text
@@ -72,7 +72,7 @@ module DeclareSchema
             @options.delete(:limit)
           end
         when :string
-          @options[:limit] ||= Generators::DeclareSchema::Migration::Migrator.default_string_limit or raise "limit: must be provided for :string field #{model}##{@name}: #{@options.inspect} since Generators::DeclareSchema::Migration::Migrator#default_string_limit is set to 'nil'; do you want `limit: 255`?"
+          @options[:limit] ||= ::DeclareSchema.default_string_limit or raise "limit: must be provided for :string field #{model}##{@name}: #{@options.inspect} since ::DeclareSchema#default_string_limit is set to 'nil'; do you want `limit: 255`?"
         when :bigint
           @type = :integer
           @options[:limit] = 8
@@ -99,8 +99,8 @@ module DeclareSchema
 
         if @type.in?([:text, :string])
           if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
-            @options[:charset]   ||= model.table_options[:charset]   || Generators::DeclareSchema::Migration::Migrator.default_charset
-            @options[:collation] ||= model.table_options[:collation] || Generators::DeclareSchema::Migration::Migrator.default_collation
+            @options[:charset]   ||= model.table_options[:charset]   || ::DeclareSchema.default_charset
+            @options[:collation] ||= model.table_options[:collation] || ::DeclareSchema.default_collation
           else
             @options.delete(:charset)
             @options.delete(:collation)

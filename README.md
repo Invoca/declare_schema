@@ -90,7 +90,7 @@ DeclareSchema.default_text_limit = 0xffff
 ```
 
 #### String Limit
-The default string limit can be set using the `Generators::DeclareSchema::Migration::Migrator.default_string_limit=` method.
+The default string limit can be set using the `DeclareSchema.default_string_limit=` method.
 Note that a `nil` default means that there is no default-- so every declaration must be explicit.
 This will `raise` a `limit: must be provided for field :string...` error when the default value is `nil` and there is no explicit
 declaration.
@@ -102,11 +102,11 @@ set the default `string limit` value to `255`:
 ```ruby
 # frozen_string_literal: true
 
-Generators::DeclareSchema::Migration::Migrator.default_string_limit = 255
+DeclareSchema.default_string_limit = 255
 ```
 
 #### Null
-The default null value can be set using the `Generators::DeclareSchema::Migration::Migrator.default_null=` method.
+The default null value can be set using the `DeclareSchema.default_null=` method.
 Note that a `nil` default means that there is no default-- so every declaration must be explicit.
 This will `raise` a `null: must be provided for field...` error when the default value is `nil` and there is no explicit
 declaration.
@@ -118,11 +118,11 @@ set the default `null` value to `true`:
 ```ruby
 # frozen_string_literal: true
 
-Generators::DeclareSchema::Migration::Migrator.default_null = true
+DeclareSchema.default_null = true
 ```
 
 #### Generate Foreign Keys
-The default value for generate foreign keys can be set using the `Generators::DeclareSchema::Migration::Migrator.default_generate_foreign_keys=` method.
+The default value for generate foreign keys can be set using the `DeclareSchema.default_generate_foreign_keys=` method.
 This value defaults to `true` and can only be set at the global level.
 
 For example, adding the following to your `config/initializers` directory will set
@@ -132,11 +132,11 @@ the default `generate foreign keys` value to `false`:
 ```ruby
 # frozen_string_literal: true
 
-Generators::DeclareSchema::Migration::Migrator.default_generate_foreign_keys = false
+DeclareSchema.default_generate_foreign_keys = false
 ```
 
 #### Generate Indexing
-The default value for generate indexing can be set using the `Generators::DeclareSchema::Migration::Migrator.default_generate_indexing=` method.
+The default value for generate indexing can be set using the `DeclareSchema.default_generate_indexing=` method.
 This value defaults to `true` and can only be set at the global level.
 
 For example, adding the following to your `config/initializers` directory will
@@ -146,7 +146,7 @@ set the default `generate indexing` value to `false`:
 ```ruby
 # frozen_string_literal: true
 
-Generators::DeclareSchema::Migration::Migrator.default_generate_indexing = false
+DeclareSchema.default_generate_indexing = false
 ```
 #### Character Set and Collation
 The character set and collation for all tables and fields can be set at the global level
@@ -160,8 +160,8 @@ turn all tables into `utf8mb4` supporting tables:
 ```ruby
 # frozen_string_literal: true
 
-Generators::DeclareSchema::Migration::Migrator.default_charset   = "utf8mb4"
-Generators::DeclareSchema::Migration::Migrator.default_collation = "utf8mb4_bin"
+DeclareSchema.default_charset   = "utf8mb4"
+DeclareSchema.default_collation = "utf8mb4_bin"
 ```
 
 ## Declaring Character Set and Collation

@@ -57,62 +57,6 @@ module Generators
           end
         end
 
-        describe '#default_string_limit' do
-          subject { described_class.default_string_limit }
-
-          context 'when not explicitly set' do
-            it { should eq(nil) }
-          end
-
-          context 'when explicitly set' do
-            before { described_class.default_string_limit = 225 }
-            after  { described_class.default_string_limit = nil }
-            it     { should eq(225) }
-          end
-        end
-
-        describe '#default_null' do
-          subject { described_class.default_null }
-
-          context 'when not explicitly set' do
-            it { should eq(false) }
-          end
-
-          context 'when explicitly set' do
-            before { described_class.default_null = true }
-            after  { described_class.default_null = false }
-            it     { should eq(true) }
-          end
-        end
-
-        describe '#default_generate_foreign_keys' do
-          subject { described_class.default_generate_foreign_keys }
-
-          context 'when not explicitly set' do
-            it { should eq(true) }
-          end
-
-          context 'when explicitly set' do
-            before { described_class.default_generate_foreign_keys = false }
-            after  { described_class.default_generate_foreign_keys = true }
-            it     { should eq(false) }
-          end
-        end
-
-        describe '#default_generate_indexing' do
-          subject { described_class.default_generate_indexing }
-
-          context 'when not explicitly set' do
-            it { should eq(true) }
-          end
-
-          context 'when explicitly set' do
-            before { described_class.default_generate_indexing = false }
-            after  { described_class.default_generate_indexing = true }
-            it     { should eq(false) }
-          end
-        end
-
         describe 'load_rails_models' do
           before do
             expect(Rails.application).to receive(:eager_load!)

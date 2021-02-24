@@ -15,15 +15,10 @@ module Generators
         @active_record_class                  = ActiveRecord::Base
         @default_charset                      = "utf8mb4"
         @default_collation                    = "utf8mb4_bin"
-        @default_string_limit                 = nil
-        @default_null                         = false
-        @default_generate_foreign_keys        = true
-        @default_generate_indexing            = true
 
         class << self
           attr_accessor :ignore_models, :ignore_tables
-          attr_reader :active_record_class, :default_charset, :default_collation, :default_string_limit, :default_null,
-                      :default_generate_foreign_keys, :default_generate_indexing, :before_generating_migration_callback
+          attr_reader :active_record_class, :default_charset, :default_collation, :before_generating_migration_callback
 
           def default_charset=(charset)
             charset.is_a?(String) or raise ArgumentError, "charset must be a string (got #{charset.inspect})"
@@ -33,26 +28,6 @@ module Generators
           def default_collation=(collation)
             collation.is_a?(String) or raise ArgumentError, "collation must be a string (got #{collation.inspect})"
             @default_collation = collation
-          end
-
-          def default_string_limit=(string_limit)
-            string_limit.nil? or string_limit.is_a?(Integer) or raise ArgumentError, "string limit must be an integer or nil (got #{string_limit.inspect})"
-            @default_string_limit = string_limit
-          end
-
-          def default_null=(null)
-            null.in?([true, false, nil]) or raise ArgumentError, "null must be either true, false, or nil (got #{null.inspect})"
-            @default_null = null
-          end
-
-          def default_generate_foreign_keys=(generate_foreign_keys)
-            generate_foreign_keys.in?([true, false]) or raise ArgumentError, "generate_foreign_keys must be either true or false (got #{generate_foreign_keys.inspect})"
-            @default_generate_foreign_keys = generate_foreign_keys
-          end
-
-          def default_generate_indexing=(generate_indexing)
-            [true, false].include?(generate_indexing) or raise ArgumentError, "generate_indexing must be either true or false (got #{generate_indexing.inspect})"
-            @default_generate_indexing = generate_indexing
           end
 
           def active_record_class
@@ -301,8 +276,8 @@ module Generators
             end
 
             #{table_options_definition.alter_table_statement unless ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)}
-            #{create_indexes(model).join("\n")               if Migrator.default_generate_indexing}
-            #{create_constraints(model).join("\n")           if Migrator.default_generate_foreign_keys}
+            #{create_indexes(model).join("\n")               if ::DeclareSchema.default_generate_indexing}
+            #{create_constraints(model).join("\n")           if ::DeclareSchema.default_generate_foreign_keys}
           EOS
         end
 
@@ -322,8 +297,8 @@ module Generators
             {}
           else
             {
-              charset:   model.table_options[:charset] || Migrator.default_charset,
-              collation: model.table_options[:collation] || Migrator.default_collation
+              charset:   model.table_options[:charset] || ::DeclareSchema.default_charset,
+              collation: model.table_options[:collation] || ::DeclareSchema.default_collation
             }
           end
         end
@@ -437,7 +412,7 @@ module Generators
         end
 
         def change_indexes(model, old_table_name, to_remove)
-          Migrator.default_generate_indexing or return [[], []]
+          ::DeclareSchema.default_generate_indexing or return [[], []]
 
           new_table_name = model.table_name
           existing_indexes = ::DeclareSchema::Model::IndexDefinition.for_model(model, old_table_name)
@@ -478,7 +453,7 @@ module Generators
 
         def change_foreign_key_constraints(model, old_table_name)
           ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/) and raise ArgumentError, 'SQLite does not support foreign keys'
-          Migrator.default_generate_foreign_keys or return [[], []]
+          ::DeclareSchema.default_generate_foreign_keys or return [[], []]
 
           new_table_name = model.table_name
           existing_fks = ::DeclareSchema::Model::ForeignKeyDefinition.for_model(model, old_table_name)
@@ -607,8 +582,8 @@ module Generators
         # TODO: rewrite this method to use charset and collation variables rather than manipulating strings. -Colin
         def fix_mysql_charset_and_collation(dumped_schema)
           if !dumped_schema['options: ']
-            dumped_schema.sub!('",', "\", options: \"DEFAULT CHARSET=#{Generators::DeclareSchema::Migration::Migrator.default_charset} "+
-              "COLLATE=#{Generators::DeclareSchema::Migration::Migrator.default_collation}\",")
+            dumped_schema.sub!('",', "\", options: \"DEFAULT CHARSET=#{::DeclareSchema.default_charset} "+
+              "COLLATE=#{::DeclareSchema.default_collation}\",")
           end
           default_charset   = dumped_schema[/CHARSET=(\w+)/, 1]   or raise "unable to find charset in #{dumped_schema.inspect}"
           default_collation = dumped_schema[/COLLATE=(\w+)/, 1] || default_collation_from_charset(default_charset) or

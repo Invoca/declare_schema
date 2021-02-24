@@ -64,7 +64,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
 
       it 'raises error when default_string_limit option is nil when not explicitly set in field spec' do
         if defined?(Mysql2)
-          expect(Generators::DeclareSchema::Migration::Migrator).to receive(:default_string_limit) { nil }
+          expect(::DeclareSchema).to receive(:default_string_limit) { nil }
           expect do
             described_class.new(model, :title, :string, null: true, charset: 'utf8mb4', position: 0)
           end.to raise_error(/limit: must be provided for :string field/)
@@ -122,7 +122,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
 
     describe 'limit' do
       it 'uses default_text_limit option when not explicitly set in field spec' do
-        allow(DeclareSchema).to receive(:default_text_limit) { 100 }
+        allow(::DeclareSchema).to receive(:default_text_limit) { 100 }
         subject = described_class.new(model, :title, :text, null: true, charset: 'utf8mb4', position: 2)
         if defined?(Mysql2)
           expect(subject.schema_attributes(col_spec)).to eq(type: :text, limit: 255, null: true, charset: 'utf8mb4', collation: 'utf8mb4_bin')
@@ -222,7 +222,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
       end
 
       it 'raises error if default_null is set to nil when not explicitly set in field spec' do
-        expect(Generators::DeclareSchema::Migration::Migrator).to receive(:default_null) { nil }
+        expect(::DeclareSchema).to receive(:default_null) { nil }
         expect { subject.sql_options }.to raise_error(/null: must be provided for field/)
       end
     end
