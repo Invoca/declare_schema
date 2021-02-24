@@ -92,6 +92,27 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
           expect(subject.schema_attributes(col_spec)).to eq(type: :text, null: true, default: 'none')
         end
       end
+
+      describe 'limit' do
+        it 'uses default_text_limit option when not explicitly set in field spec' do
+          allow(::DeclareSchema).to receive(:default_text_limit) { 100 }
+          subject = described_class.new(model, :title, :text, null: true, charset: 'utf8mb4', position: 2)
+          if defined?(Mysql2)
+            expect(subject.schema_attributes(col_spec)).to eq(type: :text, limit: 255, null: true, charset: 'utf8mb4', collation: 'utf8mb4_bin')
+          else
+            expect(subject.schema_attributes(col_spec)).to eq(type: :text, null: true)
+          end
+        end
+
+        it 'raises error when default_text_limit option is nil when not explicitly set in field spec' do
+          if defined?(Mysql2)
+            expect(::DeclareSchema).to receive(:default_text_limit) { nil }
+            expect do
+              described_class.new(model, :title, :text, null: true, charset: 'utf8mb4', position: 2)
+            end.to raise_error(/limit: must be provided for :text field/)
+          end
+        end
+      end
     end
 
     if defined?(Mysql2)
@@ -117,27 +138,6 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
       it 'requires scale:' do
         expect_any_instance_of(described_class).to receive(:warn).with(/scale: required for :decimal type/)
         described_class.new(model, :quantity, :decimal, precision: 8, null: true, position: 3)
-      end
-    end
-
-    describe 'limit' do
-      it 'uses default_text_limit option when not explicitly set in field spec' do
-        allow(::DeclareSchema).to receive(:default_text_limit) { 100 }
-        subject = described_class.new(model, :title, :text, null: true, charset: 'utf8mb4', position: 2)
-        if defined?(Mysql2)
-          expect(subject.schema_attributes(col_spec)).to eq(type: :text, limit: 255, null: true, charset: 'utf8mb4', collation: 'utf8mb4_bin')
-        else
-          expect(subject.schema_attributes(col_spec)).to eq(type: :text, null: true)
-        end
-      end
-
-      it 'raises error when default_text_limit option is nil when not explicitly set in field spec' do
-        if defined?(Mysql2)
-          expect(::DeclareSchema).to receive(:default_text_limit) { nil }
-          expect do
-            described_class.new(model, :title, :text, null: true, charset: 'utf8mb4', position: 2)
-          end.to raise_error(/limit: must be provided for :text field/)
-        end
       end
     end
 
