@@ -122,7 +122,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
 
     describe 'limit' do
       it 'uses default_text_limit option when not explicitly set in field spec' do
-        allow(Generators::DeclareSchema::Migration::Migrator).to receive(:default_text_limit) { 100 }
+        allow(DeclareSchema).to receive(:default_text_limit) { 100 }
         subject = described_class.new(model, :title, :text, null: true, charset: 'utf8mb4', position: 2)
         if defined?(Mysql2)
           expect(subject.schema_attributes(col_spec)).to eq(type: :text, limit: 255, null: true, charset: 'utf8mb4', collation: 'utf8mb4_bin')
@@ -133,7 +133,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
 
       it 'raises error when default_text_limit option is nil when not explicitly set in field spec' do
         if defined?(Mysql2)
-          expect(Generators::DeclareSchema::Migration::Migrator).to receive(:default_text_limit) { nil }
+          expect(::DeclareSchema).to receive(:default_text_limit) { nil }
           expect do
             described_class.new(model, :title, :text, null: true, charset: 'utf8mb4', position: 2)
           end.to raise_error(/limit: must be provided for :text field/)

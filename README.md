@@ -74,7 +74,7 @@ end
 Configurations can be set at the global level to customize default declaration for the following values:
 
 #### Text Limit
-The default text limit can be set using the `Generators::DeclareSchema::Migration::Migrator.default_text_limit=` method.
+The default text limit can be set using the `DeclareSchema.default_text_limit=` method.
 Note that a `nil` default means that there is no default-- so every declaration must be explicit.
 This will `raise` a `limit: must be provided for field :text...` error when the default value is `nil` and there is no explicit
 declaration.
@@ -86,7 +86,7 @@ set the default `text limit` value to `0xffff`:
 ```ruby
 # frozen_string_literal: true
 
-Generators::DeclareSchema::Migration::Migrator.default_text_limit = 0xffff
+DeclareSchema.default_text_limit = 0xffff
 ```
 
 #### String Limit

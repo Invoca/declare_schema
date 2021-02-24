@@ -21,7 +21,11 @@ module DeclareSchema
     text:     String
   }.freeze
 
+  @default_text_limit = 0xffff_ffff
+
   class << self
+    attr_reader :default_text_limit
+
     def to_class(type)
       case type
       when Class
@@ -31,6 +35,11 @@ module DeclareSchema
       else
         raise ArgumentError, "expected Class or Symbol or String: got #{type.inspect}"
       end
+    end
+
+    def default_text_limit=(text_limit)
+      text_limit.nil? or text_limit.is_a?(Integer) or raise ArgumentError, "text limit must be an integer or nil (got #{text_limit.inspect})"
+      @default_text_limit = text_limit
     end
   end
 end

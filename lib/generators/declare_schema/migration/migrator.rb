@@ -15,7 +15,6 @@ module Generators
         @active_record_class                  = ActiveRecord::Base
         @default_charset                      = "utf8mb4"
         @default_collation                    = "utf8mb4_bin"
-        @default_text_limit                   = 0xffff_ffff
         @default_string_limit                 = nil
         @default_null                         = false
         @default_generate_foreign_keys        = true
@@ -23,7 +22,7 @@ module Generators
 
         class << self
           attr_accessor :ignore_models, :ignore_tables
-          attr_reader :active_record_class, :default_charset, :default_collation, :default_text_limit, :default_string_limit, :default_null,
+          attr_reader :active_record_class, :default_charset, :default_collation, :default_string_limit, :default_null,
                       :default_generate_foreign_keys, :default_generate_indexing, :before_generating_migration_callback
 
           def default_charset=(charset)
@@ -34,11 +33,6 @@ module Generators
           def default_collation=(collation)
             collation.is_a?(String) or raise ArgumentError, "collation must be a string (got #{collation.inspect})"
             @default_collation = collation
-          end
-
-          def default_text_limit=(text_limit)
-            text_limit.nil? or text_limit.is_a?(Integer) or raise ArgumentError, "text limit must be an integer or nil (got #{text_limit.inspect})"
-            @default_text_limit = text_limit
           end
 
           def default_string_limit=(string_limit)
