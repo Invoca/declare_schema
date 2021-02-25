@@ -7,8 +7,6 @@ require 'declare_schema/field_declaration_dsl'
 
 module DeclareSchema
   module Macros
-    deprecate :fields, deprecator: ActiveSupport::Deprecation.new('1.0', 'DeclareSchema')
-
     def fields(table_options = {}, &block)
       # Any model that calls 'fields' gets DeclareSchema::Model behavior
       DeclareSchema::Model.mix_in(self)
@@ -25,6 +23,7 @@ module DeclareSchema
         end
       end
     end
+    deprecate :fields, deprecator: ActiveSupport::Deprecation.new('1.0', 'DeclareSchema')
 
     def declare_schema(table_options = {}, &block)
       # Any model that calls 'fields' gets DeclareSchema::Model behavior
