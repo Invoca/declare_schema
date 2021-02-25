@@ -13,22 +13,10 @@ module Generators
         @ignore_tables                        = []
         @before_generating_migration_callback = nil
         @active_record_class                  = ActiveRecord::Base
-        @default_charset                      = "utf8mb4"
-        @default_collation                    = "utf8mb4_bin"
 
         class << self
           attr_accessor :ignore_models, :ignore_tables
-          attr_reader :active_record_class, :default_charset, :default_collation, :before_generating_migration_callback
-
-          def default_charset=(charset)
-            charset.is_a?(String) or raise ArgumentError, "charset must be a string (got #{charset.inspect})"
-            @default_charset = charset
-          end
-
-          def default_collation=(collation)
-            collation.is_a?(String) or raise ArgumentError, "collation must be a string (got #{collation.inspect})"
-            @default_collation = collation
-          end
+          attr_reader :active_record_class, :before_generating_migration_callback
 
           def active_record_class
             @active_record_class.is_a?(Class) or @active_record_class = @active_record_class.to_s.constantize
@@ -55,6 +43,9 @@ module Generators
             block or raise ArgumentError, 'A block is required when setting the before_generating_migration callback'
             @before_generating_migration_callback = block
           end
+
+          delegate :default_charset=, :default_collation=, :default_charset, :default_collation, to: ::DeclareSchema
+          deprecate :default_charset=, :default_collation=, :default_charset, :default_collation, deprecator: ActiveSupport::Deprecation.new('1.0', 'declare_schema')
         end
 
         def initialize(ambiguity_resolver = {})
