@@ -4,6 +4,15 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - Unreleased
+### Added
+- Added configurable default settings for `default_text_limit`, `default_string_limit`, `default_null`,
+`default_generate_foreign_keys` and `default_generate_indexing` to allow developers to adhere to project conventions.
+
+### Changed
+- Moved and deprecated default settings for `default_charset` and `default_collation` from
+`Generators::DeclareSchema::Migration::Migrator`to `::DeclareSchema`
+
 ## [0.8.0] - 2021-02-22
 ### Removed
 - Removed assumption that primary key is named 'id'.
@@ -131,6 +140,7 @@ using the appropriate Rails configuration attributes.
 ### Added
 - Initial version from https://github.com/Invoca/hobo_fields v4.1.0.
 
+[0.9.0]: https://github.com/Invoca/declare_schema/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/Invoca/declare_schema/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/Invoca/declare_schema/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/Invoca/declare_schema/compare/v0.6.3...v0.7.0
