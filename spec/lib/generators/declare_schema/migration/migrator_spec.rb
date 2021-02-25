@@ -41,6 +41,11 @@ module Generators
             after  { described_class.default_charset = "utf8mb4" }
             it     { should eq("utf8") }
           end
+
+          it 'should output deprecation warning' do
+            expect { described_class.default_charset = "utf8mb4" }.to output(/DEPRECATION WARNING: default_charset= is deprecated/).to_stderr
+            expect { subject }.to output(/DEPRECATION WARNING: default_charset is deprecated/).to_stderr
+          end
         end
 
         describe '#default_collation' do
@@ -54,6 +59,11 @@ module Generators
             before { described_class.default_collation = "utf8mb4_general_ci" }
             after  { described_class.default_collation = "utf8mb4_bin" }
             it     { should eq("utf8mb4_general_ci") }
+          end
+
+          it 'should output deprecation warning' do
+            expect { described_class.default_collation = "utf8mb4_bin" }.to output(/DEPRECATION WARNING: default_collation= is deprecated/).to_stderr
+            expect { subject }.to output(/DEPRECATION WARNING: default_collation is deprecated/).to_stderr
           end
         end
 
