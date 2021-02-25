@@ -11,7 +11,7 @@ Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0
 
 ### Changed
 - Moved and deprecated default settings for `default_charset` and `default_collation` from
-`Generators::DeclareSchema::Migration::Migrator`to `::DeclareSchema`
+`Generators::DeclareSchema::Migration::Migrator` to `::DeclareSchema`
 
 ## [0.8.0] - 2021-02-22
 ### Removed
