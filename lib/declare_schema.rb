@@ -75,7 +75,7 @@ module DeclareSchema
     end
 
     def default_generate_indexing=(generate_indexing)
-      [true, false].include?(generate_indexing) or raise ArgumentError, "generate_indexing must be either true or false (got #{generate_indexing.inspect})"
+      generate_indexing.in?([true, false]) or raise ArgumentError, "generate_indexing must be either true or false (got #{generate_indexing.inspect})"
       @default_generate_indexing = generate_indexing
     end
   end
