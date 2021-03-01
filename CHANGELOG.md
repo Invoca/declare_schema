@@ -4,7 +4,7 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.9.0] - Unreleased
+## [0.9.0] - 2021-03-01
 ### Added
 - Added configurable default settings for `default_text_limit`, `default_string_limit`, `default_null`,
 `default_generate_foreign_keys` and `default_generate_indexing` to allow developers to adhere to project conventions.
