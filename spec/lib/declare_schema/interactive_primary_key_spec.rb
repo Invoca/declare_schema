@@ -12,7 +12,7 @@ RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
   end
 
   context 'Using fields' do
-    it "allows alternate primary keys" do
+    xit "allows alternate primary keys" do
       class Foo < ActiveRecord::Base
         fields do
         end
