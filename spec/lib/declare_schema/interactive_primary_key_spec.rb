@@ -34,11 +34,11 @@ RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
       generate_migrations '-n', '-m'
       expect(Foo._defined_primary_key).to eq('id')
 
-      nuke_model_class(Foo)
-
       ### migrate to
 
       if Rails::VERSION::MAJOR >= 5 && !defined?(Mysql2) # TODO TECH-4814 Put this test back for Mysql2
+        nuke_model_class(Foo)
+
         # replace custom primary_key
         class Foo < ActiveRecord::Base
           fields do
@@ -82,11 +82,11 @@ RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
       generate_migrations '-n', '-m'
       expect(Foo.primary_key).to eq('id')
 
-      nuke_model_class(Foo)
-
       ### migrate to
 
       if Rails::VERSION::MAJOR >= 5 && !defined?(Mysql2) # TODO TECH-4814 Put this test back for Mysql2
+        nuke_model_class(Foo)
+
         # replace custom primary_key
         class Foo < ActiveRecord::Base
           declare_schema do
