@@ -7,7 +7,7 @@ rescue LoadError
 end
 
 RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
-  before do
+  before :all do
     load File.expand_path('prepare_testapp.rb', __dir__)
   end
 
@@ -60,8 +60,7 @@ RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
   end
 
   context 'Using declare_schema' do
-    # TODO: Unskip these tests after updating the generator to use declare_schema
-    xit "allows alternate primary keys" do
+    it "allows alternate primary keys" do
       class Foo < ActiveRecord::Base
         declare_schema do
         end
