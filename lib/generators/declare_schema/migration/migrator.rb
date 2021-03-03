@@ -9,29 +9,14 @@ module Generators
       class Migrator
         class Error < RuntimeError; end
 
-        DEFAULT_CHARSET   = "utf8mb4"
-        DEFAULT_COLLATION = "utf8mb4_bin"
-
         @ignore_models                        = []
         @ignore_tables                        = []
         @before_generating_migration_callback = nil
         @active_record_class                  = ActiveRecord::Base
-        @default_charset                      = DEFAULT_CHARSET
-        @default_collation                    = DEFAULT_COLLATION
 
         class << self
-          attr_accessor :ignore_models, :ignore_tables, :disable_indexing, :disable_constraints
-          attr_reader :active_record_class, :default_charset, :default_collation, :before_generating_migration_callback
-
-          def default_charset=(charset)
-            charset.is_a?(String) or raise ArgumentError, "charset must be a string (got #{charset.inspect})"
-            @default_charset = charset
-          end
-
-          def default_collation=(collation)
-            collation.is_a?(String) or raise ArgumentError, "collation must be a string (got #{collation.inspect})"
-            @default_collation = collation
-          end
+          attr_accessor :ignore_models, :ignore_tables
+          attr_reader :active_record_class, :before_generating_migration_callback
 
           def active_record_class
             @active_record_class.is_a?(Class) or @active_record_class = @active_record_class.to_s.constantize
@@ -58,6 +43,9 @@ module Generators
             block or raise ArgumentError, 'A block is required when setting the before_generating_migration callback'
             @before_generating_migration_callback = block
           end
+
+          delegate :default_charset=, :default_collation=, :default_charset, :default_collation, to: ::DeclareSchema
+          deprecate :default_charset=, :default_collation=, :default_charset, :default_collation, deprecator: ActiveSupport::Deprecation.new('1.0', 'declare_schema')
         end
 
         def initialize(ambiguity_resolver = {})
@@ -279,8 +267,8 @@ module Generators
             end
 
             #{table_options_definition.alter_table_statement unless ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)}
-            #{create_indexes(model).join("\n")               unless Migrator.disable_indexing}
-            #{create_constraints(model).join("\n")           unless Migrator.disable_indexing}
+            #{create_indexes(model).join("\n")               if ::DeclareSchema.default_generate_indexing}
+            #{create_constraints(model).join("\n")           if ::DeclareSchema.default_generate_foreign_keys}
           EOS
         end
 
@@ -300,8 +288,8 @@ module Generators
             {}
           else
             {
-              charset:   model.table_options[:charset] || Migrator.default_charset,
-              collation: model.table_options[:collation] || Migrator.default_collation
+              charset:   model.table_options[:charset] || ::DeclareSchema.default_charset,
+              collation: model.table_options[:collation] || ::DeclareSchema.default_collation
             }
           end
         end
@@ -415,7 +403,7 @@ module Generators
         end
 
         def change_indexes(model, old_table_name, to_remove)
-          Migrator.disable_constraints and return [[], []]
+          ::DeclareSchema.default_generate_indexing or return [[], []]
 
           new_table_name = model.table_name
           existing_indexes = ::DeclareSchema::Model::IndexDefinition.for_model(model, old_table_name)
@@ -456,7 +444,7 @@ module Generators
 
         def change_foreign_key_constraints(model, old_table_name)
           ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/) and raise ArgumentError, 'SQLite does not support foreign keys'
-          Migrator.disable_indexing and return [[], []]
+          ::DeclareSchema.default_generate_foreign_keys or return [[], []]
 
           new_table_name = model.table_name
           existing_fks = ::DeclareSchema::Model::ForeignKeyDefinition.for_model(model, old_table_name)
@@ -585,8 +573,8 @@ module Generators
         # TODO: rewrite this method to use charset and collation variables rather than manipulating strings. -Colin
         def fix_mysql_charset_and_collation(dumped_schema)
           if !dumped_schema['options: ']
-            dumped_schema.sub!('",', "\", options: \"DEFAULT CHARSET=#{Generators::DeclareSchema::Migration::Migrator.default_charset} "+
-              "COLLATE=#{Generators::DeclareSchema::Migration::Migrator.default_collation}\",")
+            dumped_schema.sub!('",', "\", options: \"DEFAULT CHARSET=#{::DeclareSchema.default_charset} "+
+              "COLLATE=#{::DeclareSchema.default_collation}\",")
           end
           default_charset   = dumped_schema[/CHARSET=(\w+)/, 1]   or raise "unable to find charset in #{dumped_schema.inspect}"
           default_collation = dumped_schema[/COLLATE=(\w+)/, 1] || default_collation_from_charset(default_charset) or

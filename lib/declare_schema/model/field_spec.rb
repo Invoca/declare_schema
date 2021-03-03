@@ -58,18 +58,21 @@ module DeclareSchema
         @position = position
         @options = options.dup
 
-        @options.has_key?(:null) or @options[:null] = false
+        @options.has_key?(:null) or @options[:null] = ::DeclareSchema.default_null
+        @options[:null].nil? and raise "null: must be provided for field #{model}##{@name}: #{@options.inspect} since ::DeclareSchema#default_null is set to 'nil'; do you want `null: false`?"
 
         case @type
         when :text
           if self.class.mysql_text_limits?
             @options[:default].nil? or raise MysqlTextMayNotHaveDefault, "when using MySQL, non-nil default may not be given for :text field #{model}##{@name}"
-            @options[:limit] = self.class.round_up_mysql_text_limit(@options[:limit] || MYSQL_LONGTEXT_LIMIT)
+            @options[:limit] ||= ::DeclareSchema.default_text_limit or
+                  raise("limit: must be provided for :text field #{model}##{@name}: #{@options.inspect} since ::DeclareSchema#default_text_limit is set to 'nil'; do you want `limit: 0xffff_ffff`?")
+            @options[:limit] = self.class.round_up_mysql_text_limit(@options[:limit])
           else
             @options.delete(:limit)
           end
         when :string
-          @options[:limit] or raise "limit: must be given for :string field #{model}##{@name}: #{@options.inspect}; do you want `limit: 255`?"
+          @options[:limit] ||= ::DeclareSchema.default_string_limit or raise "limit: must be provided for :string field #{model}##{@name}: #{@options.inspect} since ::DeclareSchema#default_string_limit is set to 'nil'; do you want `limit: 255`?"
         when :bigint
           @type = :integer
           @options[:limit] = 8
@@ -96,15 +99,15 @@ module DeclareSchema
 
         if @type.in?([:text, :string])
           if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
-            @options[:charset]   ||= model.table_options[:charset]   || Generators::DeclareSchema::Migration::Migrator.default_charset
-            @options[:collation] ||= model.table_options[:collation] || Generators::DeclareSchema::Migration::Migrator.default_collation
+            @options[:charset]   ||= model.table_options[:charset]   || ::DeclareSchema.default_charset
+            @options[:collation] ||= model.table_options[:collation] || ::DeclareSchema.default_collation
           else
             @options.delete(:charset)
             @options.delete(:collation)
           end
         else
           @options[:charset]   and warn("charset may only given for :string and :text fields for SQL type #{@type} in field #{model}##{@name}")
-          @options[:collation] and warne("collation may only given for :string and :text fields for SQL type #{@type} in field #{model}##{@name}")
+          @options[:collation] and warn("collation may only given for :string and :text fields for SQL type #{@type} in field #{model}##{@name}")
         end
 
         @options = Hash[@options.sort_by { |k, _v| OPTION_INDEXES[k] || 9999 }]

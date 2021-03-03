@@ -15,7 +15,7 @@ module DeclareSchema
       @table_options        = table_options
 
       if block
-        dsl = DeclareSchema::FieldDeclarationDsl.new(self, null: false)
+        dsl = DeclareSchema::FieldDeclarationDsl.new(self)
         if block.arity == 1
           yield dsl
         else

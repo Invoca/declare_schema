@@ -61,6 +61,15 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
           expect(subject.schema_attributes(col_spec)).to eq(type: :string, limit: 100, null: true)
         end
       end
+
+      it 'raises error when default_string_limit option is nil when not explicitly set in field spec' do
+        if defined?(Mysql2)
+          expect(::DeclareSchema).to receive(:default_string_limit) { nil }
+          expect do
+            described_class.new(model, :title, :string, null: true, charset: 'utf8mb4', position: 0)
+          end.to raise_error(/limit: must be provided for :string field/)
+        end
+      end
     end
 
     describe 'text' do
@@ -81,6 +90,27 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
         else
           subject = described_class.new(model, :title, :text, limit: 200, null: true, default: 'none', charset: 'utf8mb4', position: 2)
           expect(subject.schema_attributes(col_spec)).to eq(type: :text, null: true, default: 'none')
+        end
+      end
+
+      describe 'limit' do
+        it 'uses default_text_limit option when not explicitly set in field spec' do
+          allow(::DeclareSchema).to receive(:default_text_limit) { 100 }
+          subject = described_class.new(model, :title, :text, null: true, charset: 'utf8mb4', position: 2)
+          if defined?(Mysql2)
+            expect(subject.schema_attributes(col_spec)).to eq(type: :text, limit: 255, null: true, charset: 'utf8mb4', collation: 'utf8mb4_bin')
+          else
+            expect(subject.schema_attributes(col_spec)).to eq(type: :text, null: true)
+          end
+        end
+
+        it 'raises error when default_text_limit option is nil when not explicitly set in field spec' do
+          if defined?(Mysql2)
+            expect(::DeclareSchema).to receive(:default_text_limit) { nil }
+            expect do
+              described_class.new(model, :title, :text, null: true, charset: 'utf8mb4', position: 2)
+            end.to raise_error(/limit: must be provided for :text field/)
+          end
         end
       end
     end
@@ -183,6 +213,18 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
     subject { described_class.new(model, :price, :integer, limit: 4, null: true, default: 0, position: 2, encrypt_using: ->(field) { field }) }
     it 'excludes non-sql options' do
       expect(subject.sql_options).to eq(limit: 4, null: true, default: 0)
+    end
+
+    describe 'null' do
+      subject { described_class.new(model, :price, :integer, limit: 4, default: 0, position: 2, encrypt_using: ->(field) { field }) }
+      it 'uses default_null option when not explicitly set in field spec' do
+        expect(subject.sql_options).to eq(limit: 4, null: false, default: 0)
+      end
+
+      it 'raises error if default_null is set to nil when not explicitly set in field spec' do
+        expect(::DeclareSchema).to receive(:default_null) { nil }
+        expect { subject.sql_options }.to raise_error(/null: must be provided for field/)
+      end
     end
   end
 end
