@@ -262,7 +262,7 @@ module Generators
           ].compact
 
           <<~EOS.strip
-            create_table :#{model.table_name}, #{create_table_options(model, disable_auto_increment)} do |t|
+            create_table #{model.table_name.to_sym.inspect}, #{create_table_options(model, disable_auto_increment)} do |t|
               #{field_definitions.join("\n")}
             end
 
@@ -343,7 +343,7 @@ module Generators
             args =
               if (spec = model.field_specs[c])
                 options = spec.sql_options.merge(fk_field_options(model, c))
-                [":#{spec.type}", *format_options(options.compact)]
+                ["#{spec.type.to_sym.inspect}", *format_options(options.compact)]
               else
                 [":integer"]
               end
