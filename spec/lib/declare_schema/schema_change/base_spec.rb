@@ -27,6 +27,16 @@ RSpec.describe DeclareSchema::SchemaChange::Base do
     end
   end
 
+  describe 'class methods' do
+    describe 'format_options' do
+      subject { { limit: 8, 'key' => 'value' } }
+
+      it 'formats using Ruby 2.0 symbol notation' do
+        expect(described_class.format_options(subject)).to eq(['limit: 8', '"key" => "value"'])
+      end
+    end
+  end
+
   describe 'instance methods' do
     describe '#up/#down' do
       context 'with single-line commands' do
