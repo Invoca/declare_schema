@@ -11,11 +11,11 @@ module DeclareSchema
       end
 
       def up_command
-        "rename_table :#{@old_name}, :#{@new_name}"
+        "rename_table #{@old_name.to_sym.inspect}, #{@new_name.to_sym.inspect}"
       end
 
       def down_command
-        "rename_table :#{@new_name}, :#{@old_name}"
+        "rename_table #{@new_name.to_sym.inspect}, #{@old_name.to_sym.inspect}"
       end
     end
   end

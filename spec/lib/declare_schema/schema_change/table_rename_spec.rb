@@ -7,11 +7,11 @@ RSpec.describe DeclareSchema::SchemaChange::TableRename do
     load File.expand_path('../prepare_testapp.rb', __dir__)
   end
 
-  describe '#up/down' do
-    let(:old_name) { 'networks' }
-    let(:new_name) { 'customers' }
-    subject { described_class.new(old_name, new_name) }
+  let(:old_name) { 'networks' }
+  let(:new_name) { 'customers' }
+  subject { described_class.new(old_name, new_name) }
 
+  describe '#up/down' do
     describe '#up' do
       it 'responds with command' do
         expect(subject.up).to eq("rename_table :#{old_name}, :#{new_name}\n")
