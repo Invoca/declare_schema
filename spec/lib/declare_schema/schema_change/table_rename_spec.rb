@@ -14,13 +14,13 @@ RSpec.describe DeclareSchema::SchemaChange::TableRename do
 
     describe '#up' do
       it 'responds with command' do
-        expect(subject.up).to eq("rename_table :#{old_name}, :#{new_name}")
+        expect(subject.up).to eq("rename_table :#{old_name}, :#{new_name}\n")
       end
     end
 
     describe '#down' do
       it 'responds with command' do
-        expect(subject.down).to eq("rename_table :#{new_name}, :#{old_name}")
+        expect(subject.down).to eq("rename_table :#{new_name}, :#{old_name}\n")
       end
     end
   end
