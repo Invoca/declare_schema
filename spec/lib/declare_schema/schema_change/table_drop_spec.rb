@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative '../../../../lib/declare_schema/schema_change/table_rename'
+require_relative '../../../../lib/declare_schema/schema_change/table_drop'
 
 RSpec.describe DeclareSchema::SchemaChange::TableDrop do
   before do
