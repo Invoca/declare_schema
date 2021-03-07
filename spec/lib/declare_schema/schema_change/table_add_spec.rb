@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require_relative '../../../../lib/declare_schema/schema_change/table_create'
+require_relative '../../../../lib/declare_schema/schema_change/table_add'
 
-RSpec.describe DeclareSchema::SchemaChange::TableCreate do
+RSpec.describe DeclareSchema::SchemaChange::TableAdd do
   before do
     load File.expand_path('../prepare_testapp.rb', __dir__)
   end

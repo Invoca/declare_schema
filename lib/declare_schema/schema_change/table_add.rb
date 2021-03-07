@@ -4,7 +4,7 @@ require_relative 'base'
 
 module DeclareSchema
   module SchemaChange
-    class TableCreate < Base
+    class TableAdd < Base
       def initialize(table_name, create_table)
         @table_name = table_name
         @create_table = create_table
