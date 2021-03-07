@@ -470,6 +470,7 @@ module Generators
           "remove_foreign_key(#{old_table_name.inspect}, name: #{fk_name.to_s.inspect})"
         end
 
+        # TODO: drop as part of TECH-5338
         def format_options(options)
           options.map do |k, v|
             if k.is_a?(Symbol)
