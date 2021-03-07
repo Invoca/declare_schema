@@ -4,7 +4,7 @@ require_relative 'column_add'
 
 module DeclareSchema
   module SchemaChange
-    class ColumnDrop < ColumnAdd
+    class ColumnRemove < ColumnAdd
       alias column_add_up_command up_command
       alias column_add_down_command down_command
 

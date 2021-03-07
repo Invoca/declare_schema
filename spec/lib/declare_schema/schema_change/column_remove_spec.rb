@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require_relative '../../../../lib/declare_schema/schema_change/column_drop'
+require_relative '../../../../lib/declare_schema/schema_change/column_remove'
 
-RSpec.describe DeclareSchema::SchemaChange::ColumnDrop do
+RSpec.describe DeclareSchema::SchemaChange::ColumnRemove do
   before do
     load File.expand_path('../prepare_testapp.rb', __dir__)
   end
