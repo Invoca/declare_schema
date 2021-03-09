@@ -205,12 +205,9 @@ module Generators
             ::DeclareSchema::SchemaChange::TableRename.new(old_name, new_name)
           end
 
-          drops = to_drop.map do |t|
-            "drop_table :#{t}"
-          end * "\n"
-          undo_drops = to_drop.map do |t|
-            add_table_back(t)
-          end * "\n\n"
+          drops = undo_drops = to_drop.map do |t|
+            ::DeclareSchema::SchemaChange::TableRemove.new(t, add_table_back(t))
+          end
 
           creates = to_create.map do |t|
             create_table(models_by_table_name[t])
