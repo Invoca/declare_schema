@@ -667,7 +667,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       .and migrate_down(<<~EOS.strip)
         remove_column :advertisements, :title
         remove_column :advertisements, :body
-        add_column :adverts, :name, :string, limit: 250, null: true#{charset_and_collation}
+        add_column :advertisements, :name, :string, limit: 250, null: true#{charset_and_collation}
         rename_table :advertisements, :adverts
         #{if defined?(SQLite3)
             "add_index :adverts, [:id], unique: true, name: 'PRIMARY'"
