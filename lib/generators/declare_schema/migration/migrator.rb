@@ -359,18 +359,14 @@ module Generators
 
           to_add.sort_by! { |c| model.field_specs[c]&.position || 0 }
 
-          adds = to_add.map do |c|
-            args =
+          adds = undo_adds = to_add.map do |c|
+            type, options =
               if (spec = model.field_specs[c])
-                options = spec.sql_options.merge(fk_field_options(model, c))
-                ["#{spec.type.to_sym.inspect}", *format_options(options.compact)]
+                [spec.type, spec.sql_options.merge(fk_field_options(model, c)).compact]
               else
-                [":integer"]
+                [:integer, {}]
               end
-            ["add_column :#{new_table_name}, :#{c}", *args].join(', ')
-          end
-          undo_adds = to_add.map do |c|
-            "remove_column :#{new_table_name}, :#{c}"
+            ::DeclareSchema::SchemaChange::ColumnAdd.new(new_table_name, c, type, options)
           end
 
           removes = to_remove.map do |c|
