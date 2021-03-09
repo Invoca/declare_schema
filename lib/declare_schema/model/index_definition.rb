@@ -93,6 +93,7 @@ module DeclareSchema
         name == PRIMARY_KEY_NAME
       end
 
+      # TODO: TECH-5338 drop this code now that it's in SchemaChange::...
       def to_add_statement(new_table_name, existing_primary_key = nil)
         if primary_key? && !ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
           to_add_primary_key_statement(new_table_name, existing_primary_key)

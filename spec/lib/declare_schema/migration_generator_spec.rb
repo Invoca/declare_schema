@@ -369,12 +369,12 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       migrate_up(<<~EOS.strip)
         add_column :adverts, :category_id, :integer, limit: 8, null: false
         add_index :adverts, [:category_id], name: 'on_category_id'
-        #{"add_foreign_key(\"adverts\", \"categories\", column: \"category_id\", name: \"on_category_id\")\n" if defined?(Mysql2)}
+        #{"add_foreign_key :adverts, :categories, column: :category_id, name: :on_category_id\n" if defined?(Mysql2)}
       EOS
       .and migrate_down(<<~EOS.strip)
         remove_column :adverts, :category_id
         remove_index :adverts, name: :on_category_id rescue ActiveRecord::StatementInvalid
-        #{"remove_foreign_key(\"adverts\", name: \"on_category_id\")\n" if defined?(Mysql2)}
+        #{"remove_foreign_key :adverts, name: :on_category_id\n" if defined?(Mysql2)}
       EOS
     )
 
@@ -393,8 +393,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       migrate_up(<<~EOS.strip)
         add_column :adverts, :c_id, :integer, limit: 8, null: false
         add_index :adverts, [:c_id], name: 'on_c_id'
-        #{"add_foreign_key(\"adverts\", \"categories\", column: \"category_id\", name: \"on_category_id\")\n" +
-          "add_foreign_key(\"adverts\", \"categories\", column: \"c_id\", name: \"on_c_id\")" if defined?(Mysql2)}
+        #{"add_foreign_key :adverts, :categories, column: :category_id, name: :on_category_id\n" +
+          "add_foreign_key :adverts, :categories, column: :c_id, name: :on_c_id" if defined?(Mysql2)}
       EOS
     )
 
@@ -412,8 +412,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     expect(Generators::DeclareSchema::Migration::Migrator.run).to(
       migrate_up(<<~EOS.strip)
         add_column :adverts, :category_id, :integer, limit: 8, null: false
-        #{"add_foreign_key(\"adverts\", \"categories\", column: \"category_id\", name: \"on_category_id\")\n" +
-          "add_foreign_key(\"adverts\", \"categories\", column: \"c_id\", name: \"on_c_id\")" if defined?(Mysql2)}
+        #{"add_foreign_key :adverts, :categories, column: :category_id, name: :on_category_id\n" +
+          "add_foreign_key :adverts, :categories, column: :c_id, name: :on_c_id" if defined?(Mysql2)}
       EOS
     )
 
@@ -432,8 +432,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       migrate_up(<<~EOS.strip)
         add_column :adverts, :category_id, :integer, limit: 8, null: false
         add_index :adverts, [:category_id], name: 'my_index'
-        #{"add_foreign_key(\"adverts\", \"categories\", column: \"category_id\", name: \"on_category_id\")\n" +
-          "add_foreign_key(\"adverts\", \"categories\", column: \"c_id\", name: \"on_c_id\")" if defined?(Mysql2)}
+        #{"add_foreign_key :adverts, :categories, column: :category_id, name: :on_category_id\n" +
+          "add_foreign_key :adverts, :categories, column: :c_id, name: :on_c_id" if defined?(Mysql2)}
       EOS
     )
 
@@ -457,15 +457,15 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         add_column :adverts, :created_at, :datetime, null: true
         add_column :adverts, :updated_at, :datetime, null: true
         add_column :adverts, :lock_version, :integer#{lock_version_limit}, null: false, default: 1
-        #{"add_foreign_key(\"adverts\", \"categories\", column: \"category_id\", name: \"on_category_id\")\n" +
-          "add_foreign_key(\"adverts\", \"categories\", column: \"c_id\", name: \"on_c_id\")" if defined?(Mysql2)}
+        #{"add_foreign_key :adverts, :categories, column: :category_id, name: :on_category_id\n" +
+          "add_foreign_key :adverts, :categories, column: :c_id, name: :on_c_id" if defined?(Mysql2)}
       EOS
       .and migrate_down(<<~EOS.strip)
         remove_column :adverts, :created_at
         remove_column :adverts, :updated_at
         remove_column :adverts, :lock_version
-        #{"remove_foreign_key(\"adverts\", name: \"on_category_id\")\n" +
-          "remove_foreign_key(\"adverts\", name: \"on_c_id\")" if defined?(Mysql2)}
+        #{"remove_foreign_key :adverts, name: :on_category_id\n" +
+          "remove_foreign_key :adverts, name: :on_c_id" if defined?(Mysql2)}
       EOS
     )
 
@@ -487,8 +487,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       migrate_up(<<~EOS.strip)
         add_column :adverts, :title, :string, limit: 250, null: true#{charset_and_collation}
         add_index :adverts, [:title], name: 'on_title'
-        #{"add_foreign_key(\"adverts\", \"categories\", column: \"category_id\", name: \"on_category_id\")\n" +
-          "add_foreign_key(\"adverts\", \"categories\", column: \"c_id\", name: \"on_c_id\")" if defined?(Mysql2)}
+        #{"add_foreign_key :adverts, :categories, column: :category_id, name: :on_category_id\n" +
+          "add_foreign_key :adverts, :categories, column: :c_id, name: :on_c_id" if defined?(Mysql2)}
       EOS
     )
 
@@ -506,8 +506,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       migrate_up(<<~EOS.strip)
         add_column :adverts, :title, :string, limit: 250, null: true#{charset_and_collation}
         add_index :adverts, [:title], unique: true, name: 'on_title'
-        #{"add_foreign_key(\"adverts\", \"categories\", column: \"category_id\", name: \"on_category_id\")\n" +
-          "add_foreign_key(\"adverts\", \"categories\", column: \"c_id\", name: \"on_c_id\")" if defined?(Mysql2)}
+        #{"add_foreign_key :adverts, :categories, column: :category_id, name: :on_category_id\n" +
+          "add_foreign_key :adverts, :categories, column: :c_id, name: :on_c_id" if defined?(Mysql2)}
       EOS
     )
 
@@ -525,8 +525,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       migrate_up(<<~EOS.strip)
         add_column :adverts, :title, :string, limit: 250, null: true#{charset_and_collation}
         add_index :adverts, [:title], name: 'my_index'
-        #{"add_foreign_key(\"adverts\", \"categories\", column: \"category_id\", name: \"on_category_id\")\n" +
-          "add_foreign_key(\"adverts\", \"categories\", column: \"c_id\", name: \"on_c_id\")" if defined?(Mysql2)}
+        #{"add_foreign_key :adverts, :categories, column: :category_id, name: :on_category_id\n" +
+          "add_foreign_key :adverts, :categories, column: :c_id, name: :on_c_id" if defined?(Mysql2)}
       EOS
     )
 
@@ -542,8 +542,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       migrate_up(<<~EOS.strip)
         add_column :adverts, :title, :string, limit: 250, null: true#{charset_and_collation}
         add_index :adverts, [:title], name: 'on_title'
-        #{"add_foreign_key(\"adverts\", \"categories\", column: \"category_id\", name: \"on_category_id\")\n" +
-          "add_foreign_key(\"adverts\", \"categories\", column: \"c_id\", name: \"on_c_id\")" if defined?(Mysql2)}
+        #{"add_foreign_key :adverts, :categories, column: :category_id, name: :on_category_id\n" +
+          "add_foreign_key :adverts, :categories, column: :c_id, name: :on_c_id" if defined?(Mysql2)}
       EOS
     )
 
@@ -559,8 +559,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       migrate_up(<<~EOS.strip)
         add_column :adverts, :title, :string, limit: 250, null: true#{charset_and_collation}
         add_index :adverts, [:title], unique: true, name: 'my_index'
-        #{"add_foreign_key(\"adverts\", \"categories\", column: \"category_id\", name: \"on_category_id\")\n" +
-          "add_foreign_key(\"adverts\", \"categories\", column: \"c_id\", name: \"on_c_id\")" if defined?(Mysql2)}
+        #{"add_foreign_key :adverts, :categories, column: :category_id, name: :on_category_id\n" +
+          "add_foreign_key :adverts, :categories, column: :c_id, name: :on_c_id" if defined?(Mysql2)}
       EOS
     )
 
@@ -576,8 +576,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       migrate_up(<<~EOS.strip)
         add_column :adverts, :title, :string, limit: 250, null: true#{charset_and_collation}
         add_index :adverts, [:title, :category_id], name: 'on_title_and_category_id'
-        #{"add_foreign_key(\"adverts\", \"categories\", column: \"category_id\", name: \"on_category_id\")\n" +
-          "add_foreign_key(\"adverts\", \"categories\", column: \"c_id\", name: \"on_c_id\")" if defined?(Mysql2)}
+        #{"add_foreign_key :adverts, :categories, column: :category_id, name: :on_category_id\n" +
+          "add_foreign_key :adverts, :categories, column: :c_id, name: :on_c_id" if defined?(Mysql2)}
       EOS
     )
 
@@ -611,8 +611,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
             "add_index :ads, [:id], unique: true, name: 'PRIMARY'\n"
           elsif defined?(Mysql2)
             "execute \"ALTER TABLE ads DROP PRIMARY KEY, ADD PRIMARY KEY (id)\"\n" +
-            "add_foreign_key(\"adverts\", \"categories\", column: \"category_id\", name: \"on_category_id\")\n" +
-            "add_foreign_key(\"adverts\", \"categories\", column: \"c_id\", name: \"on_c_id\")"
+            "add_foreign_key :adverts, :categories, column: :category_id, name: :on_category_id\n" +
+            "add_foreign_key :adverts, :categories, column: :c_id, name: :on_c_id"
           end}
       EOS
       .and migrate_down(<<~EOS.strip)
@@ -623,8 +623,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
             "add_index :adverts, [:id], unique: true, name: 'PRIMARY'\n"
           elsif defined?(Mysql2)
             "execute \"ALTER TABLE adverts DROP PRIMARY KEY, ADD PRIMARY KEY (id)\"\n" +
-            "remove_foreign_key(\"adverts\", name: \"on_category_id\")\n" +
-            "remove_foreign_key(\"adverts\", name: \"on_c_id\")"
+            "remove_foreign_key :adverts, name: :on_category_id\n" +
+            "remove_foreign_key :adverts, name: :on_c_id"
           end}
       EOS
     )
@@ -724,7 +724,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         EOS
         .and migrate_down(<<~EOS.strip)
           remove_column :adverts, :type
-          remove_index :adverts, name: :on_type rescue ActiveRecord::StatementInvalid
+          remove_index :adverts, name: :on_type
         EOS
       )
     end

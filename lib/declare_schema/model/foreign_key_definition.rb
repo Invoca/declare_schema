@@ -7,14 +7,15 @@ module DeclareSchema
     class ForeignKeyDefinition
       include Comparable
 
-      attr_reader :constraint_name, :model, :foreign_key, :foreign_key_name, :options, :on_delete_cascade
+      attr_reader :constraint_name, :model, :foreign_key, :foreign_key_name, :parent_table_name, :child_table_name, :options, :on_delete_cascade
+
 
       def initialize(model, foreign_key, options = {})
         @model = model
         @foreign_key = foreign_key.to_s.presence
         @options = options
 
-        @child_table = model.table_name # unless a table rename, which would happen when a class is renamed??
+        @child_table_name = model.table_name # unless a table rename, which would happen when a class is renamed??
         @parent_table_name = options[:parent_table]&.to_s
         @foreign_key_name = options[:foreign_key]&.to_s || @foreign_key
 
@@ -62,7 +63,7 @@ module DeclareSchema
       end
 
       def to_add_statement
-        "add_foreign_key(#{@child_table.inspect}, #{parent_table_name.inspect}, " +
+        "add_foreign_key(#{@child_table_name.inspect}, #{parent_table_name.inspect}, " +
           "column: #{@foreign_key_name.inspect}, name: #{@constraint_name.inspect})"
       end
 
@@ -75,7 +76,7 @@ module DeclareSchema
       private
 
       def key
-        @key ||= [@child_table, parent_table_name, @foreign_key_name, @on_delete_cascade].map(&:to_s)
+        @key ||= [@child_table_name, parent_table_name, @foreign_key_name, @on_delete_cascade].map(&:to_s)
       end
 
       def hash

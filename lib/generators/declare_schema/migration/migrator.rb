@@ -435,7 +435,7 @@ module Generators
             i.name == ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME &&
               !i.fields.all? { |f| to_remove.include?(f) } # if we're removing the primary key column(s), the primary key index will be removed too
           end
-          model_has_primary_key    = model_indexes.any?    { |i| i.name == ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME }
+          model_has_primary_key = model_indexes.any? { |i| i.name == ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME }
 
           undo_add_indexes = []
           add_indexes = (model_indexes - existing_indexes).map do |i|
@@ -466,24 +466,18 @@ module Generators
           existing_fks = ::DeclareSchema::Model::ForeignKeyDefinition.for_model(model, old_table_name)
           model_fks = model.constraint_specs
 
-          undo_add_fks = []
-          add_fks = (model_fks - existing_fks).map do |fk|
+          add_fks = undo_add_fks = (model_fks - existing_fks).map do |fk|
             # next if fk.parent.constantize.abstract_class || fk.parent == fk.model.class_name
-            undo_add_fks << remove_foreign_key(old_table_name, fk.constraint_name)
-            fk.to_add_statement
+            ::DeclareSchema::SchemaChange::ForeignKeyAdd.new(fk.child_table_name, fk.parent_table_name,
+                                                             column_name: fk.foreign_key_name, name: fk.constraint_name)
           end
 
-          undo_drop_fks = []
-          drop_fks = (existing_fks - model_fks).map do |fk|
-            undo_drop_fks << fk.to_add_statement
-            remove_foreign_key(new_table_name, fk.constraint_name)
+          drop_fks = undo_drop_fks = (existing_fks - model_fks).map do |fk|
+            ::DeclareSchema::SchemaChange::ForeignKeyRemove.new(fk.child_table_name, fk.parent_table_name,
+                                                                column_name: fk.foreign_key_name, name: fk.constraint_name)
           end
 
           [drop_fks + add_fks, undo_add_fks + undo_drop_fks]
-        end
-
-        def remove_foreign_key(old_table_name, fk_name)
-          "remove_foreign_key(#{old_table_name.inspect}, name: #{fk_name.to_s.inspect})"
         end
 
         # TODO: drop as part of TECH-5338
