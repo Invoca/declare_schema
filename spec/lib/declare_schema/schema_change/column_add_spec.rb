@@ -23,7 +23,7 @@ RSpec.describe DeclareSchema::SchemaChange::ColumnAdd do
 
     describe '#down' do
       it 'responds with command' do
-        expect(subject.down).to eq("drop_column :#{table_name}, :#{column_name}\n")
+        expect(subject.down).to eq("remove_column :#{table_name}, :#{column_name}\n")
       end
     end
   end

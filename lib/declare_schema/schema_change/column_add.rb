@@ -20,7 +20,7 @@ module DeclareSchema
       end
 
       def down_command
-        "drop_column #{@table_name.to_sym.inspect}, #{@column_name.to_sym.inspect}"
+        "remove_column #{@table_name.to_sym.inspect}, #{@column_name.to_sym.inspect}"
       end
     end
   end
