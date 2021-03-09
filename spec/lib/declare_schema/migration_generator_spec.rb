@@ -150,8 +150,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         remove_column :adverts, :name
       EOS
       .and migrate_down(<<~EOS.strip)
-        remove_column :adverts, :title
         add_column :adverts, :name, :string, limit: 250, null: true#{charset_and_collation}
+        remove_column :adverts, :title
       EOS
     )
 
@@ -665,9 +665,9 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           end}
       EOS
       .and migrate_down(<<~EOS.strip)
+        add_column :advertisements, :name, :string, limit: 250, null: true#{charset_and_collation}
         remove_column :advertisements, :title
         remove_column :advertisements, :body
-        add_column :advertisements, :name, :string, limit: 250, null: true#{charset_and_collation}
         rename_table :advertisements, :adverts
         #{if defined?(SQLite3)
             "add_index :adverts, [:id], unique: true, name: 'PRIMARY'"
@@ -767,8 +767,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         change_column :adverts, :name, :string, limit: 250, null: true, default: "No Name"#{charset_and_collation}
       EOS
       .and migrate_down(<<~EOS.strip)
+        change_column :adverts, :name, :string, limit: 250, null: true, default: "Untitled"#{charset_and_collation}
         rename_column :adverts, :name, :title
-        change_column :adverts, :title, :string, limit: 250, null: true, default: "Untitled"#{charset_and_collation}
       EOS
     )
 

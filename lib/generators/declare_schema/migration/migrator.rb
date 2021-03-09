@@ -370,8 +370,8 @@ module Generators
           end
 
           removes = undo_removes = to_remove.map do |c|
-            type, options = add_column_back(model, current_table_name, c)
-            ::DeclareSchema::SchemaChange::ColumnRemove.new(new_table_name, c, type, options)
+            old_type, old_options = add_column_back(model, current_table_name, c)
+            ::DeclareSchema::SchemaChange::ColumnRemove.new(new_table_name, c, old_type, old_options)
           end
 
           old_names = to_rename.invert
@@ -388,9 +388,11 @@ module Generators
 
             if !::DeclareSchema::Model::Column.equivalent_schema_attributes?(normalized_schema_attrs, col_attrs)
               type = normalized_schema_attrs.delete(:type) or raise "no :type found in #{normalized_schema_attrs.inspect}"
-              changes << ["change_column #{new_table_name.to_sym.inspect}", col_name_to_change.to_sym.inspect,
-                          type.to_sym.inspect, *format_options(normalized_schema_attrs)].join(", ")
-              undo_changes << change_column_back(model, current_table_name, orig_col_name)
+              old_type, old_options = change_column_back(model, current_table_name, orig_col_name)
+              changes << ::DeclareSchema::SchemaChange::ColumnChange.new(new_table_name, col_name_to_change,
+                                                                         new_type: type, new_options: normalized_schema_attrs,
+                                                                         old_type: old_type, old_options: old_options)
+              undo_changes << changes.last
             end
           end
 
@@ -407,7 +409,7 @@ module Generators
                                                               end
 
           [(renames + adds + removes + changes),
-           (undo_renames + undo_adds + undo_removes + undo_changes),
+           (undo_changes + undo_removes + undo_adds + undo_renames),
            index_changes,
            undo_index_changes,
            fk_changes,
@@ -553,7 +555,7 @@ module Generators
             col_spec = ::DeclareSchema::Model::Column.new(model, current_table_name, column)
             schema_attributes = col_spec.schema_attributes
             type = schema_attributes.delete(:type) or raise "no :type found in #{schema_attributes.inspect}"
-            ["change_column #{current_table_name.to_sym.inspect}", col_name.to_sym.inspect, type.to_sym.inspect, *format_options(schema_attributes)].join(', ')
+            [type, schema_attributes]
           end
         end
 
