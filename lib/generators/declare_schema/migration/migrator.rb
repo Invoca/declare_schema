@@ -2,6 +2,7 @@
 
 require 'active_record'
 require 'active_record/connection_adapters/abstract_adapter'
+require 'declare_schema/schema_change/all'
 
 module Generators
   module DeclareSchema
@@ -200,12 +201,9 @@ module Generators
           to_change = model_table_names
           to_rename = extract_table_renames!(to_create, to_drop)
 
-          renames = to_rename.map do |old_name, new_name|
-            "rename_table :#{old_name}, :#{new_name}"
-          end * "\n"
-          undo_renames = to_rename.map do |old_name, new_name|
-            "rename_table :#{new_name}, :#{old_name}"
-          end * "\n"
+          renames = undo_renames = to_rename.map do |old_name, new_name|
+            ::DeclareSchema::SchemaChange::TableRename.new(old_name, new_name)
+          end
 
           drops = to_drop.map do |t|
             "drop_table :#{t}"
