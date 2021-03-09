@@ -11,10 +11,6 @@ module Generators
   module DeclareSchema
     module Migration
       RSpec.describe Migrator do
-        before do
-          ActiveRecord::Base.connection.tables
-        end
-
         subject { described_class.new }
 
         describe 'format_options' do

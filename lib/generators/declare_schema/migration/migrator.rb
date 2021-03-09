@@ -246,10 +246,39 @@ module Generators
             end
           end
 
-          up = [renames, drops, creates, changes, index_changes, fk_changes, table_options_changes].flatten.reject(&:blank?) * "\n\n"
-          down = [undo_changes, undo_renames, undo_drops, undo_creates, undo_index_changes, undo_fk_changes, undo_table_options_changes].flatten.reject(&:blank?) * "\n\n"
+          flatten_up_and_down_migrations([renames, drops, creates, changes, index_changes, fk_changes, table_options_changes],
+                                         [undo_changes, undo_renames, undo_drops, undo_creates, undo_index_changes, undo_fk_changes, undo_table_options_changes])
+        end
 
-          [up, down]
+        private
+
+        def flatten_up_and_down_migrations(up_commands, down_commands)
+          flattened_up = up_commands.flatten.map do |command|
+            case command
+            when String
+              command
+            when ::DeclareSchema::SchemaChange::Base
+              command.up
+            else
+              raise ArgumentError, "unexpected command #{command.inspect}"
+            end
+          end
+
+          up = flattened_up.select(&:present?)
+          flattened_down = down_commands.flatten.map do |command|
+            case command
+            when String
+              command
+            when ::DeclareSchema::SchemaChange::Base
+              command.down
+            else
+              raise ArgumentError, "unexpected command #{command.inspect}"
+            end
+          end
+
+          down = flattened_down.select(&:present?)
+
+          [up * "\n\n", down * "\n\n"]
         end
 
         def create_table(model)
