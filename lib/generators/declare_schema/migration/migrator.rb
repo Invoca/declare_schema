@@ -353,14 +353,12 @@ module Generators
           db_column_names |= to_rename.values
           to_change = db_column_names & model_column_names
 
-          renames = to_rename.map do |old_name, new_name|
-            "rename_column :#{new_table_name}, :#{old_name}, :#{new_name}"
-          end
-          undo_renames = to_rename.map do |old_name, new_name|
-            "rename_column :#{new_table_name}, :#{new_name}, :#{old_name}"
+          renames = undo_renames = to_rename.map do |old_name, new_name|
+            ::DeclareSchema::SchemaChange::ColumnRename.new(new_table_name, old_name, new_name)
           end
 
-          to_add = to_add.sort_by { |c| model.field_specs[c]&.position || 0 }
+          to_add.sort_by! { |c| model.field_specs[c]&.position || 0 }
+
           adds = to_add.map do |c|
             args =
               if (spec = model.field_specs[c])
@@ -414,14 +412,14 @@ module Generators
                                                                 [[], []]
                                                               end
 
-          [(renames + adds + removes + changes)                     * "\n",
-           (undo_renames + undo_adds + undo_removes + undo_changes) * "\n",
-           index_changes                                            * "\n",
-           undo_index_changes                                       * "\n",
-           fk_changes                                               * "\n",
-           undo_fk_changes                                          * "\n",
-           table_options_changes                                    * "\n",
-           undo_table_options_changes                               * "\n"]
+          [(renames + adds + removes + changes),
+           (undo_renames + undo_adds + undo_removes + undo_changes),
+           index_changes,
+           undo_index_changes,
+           fk_changes,
+           undo_fk_changes,
+           table_options_changes,
+           undo_table_options_changes]
         end
 
         def change_indexes(model, old_table_name, to_remove)
