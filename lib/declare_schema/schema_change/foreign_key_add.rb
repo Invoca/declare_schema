@@ -14,11 +14,11 @@ module DeclareSchema
 
       def up_command
         "add_foreign_key #{@table_name.to_sym.inspect}, #{@parent_table_name.to_sym.inspect}, " +
-          "column: #{@column_name.to_sym.inspect}, name: #{@name.inspect}"
+          "column: #{@column_name.to_sym.inspect}, name: #{@name.to_sym.inspect}"
       end
 
       def down_command
-        "remove_foreign_key #{@table_name.to_sym.inspect}, name: #{@name.inspect}"
+        "remove_foreign_key #{@table_name.to_sym.inspect}, name: #{@name.to_sym.inspect}"
       end
     end
   end

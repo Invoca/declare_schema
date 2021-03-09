@@ -16,13 +16,13 @@ RSpec.describe DeclareSchema::SchemaChange::ForeignKeyRemove do
   describe '#up/down' do
     describe '#up' do
       it 'responds with command' do
-        expect(subject.up).to eq("remove_foreign_key :#{table_name}, name: #{name.inspect}\n")
+        expect(subject.up).to eq("remove_foreign_key :#{table_name}, name: #{name.to_sym.inspect}\n")
       end
     end
 
     describe '#down' do
       it 'responds with command' do
-        expect(subject.down).to eq("add_foreign_key :#{table_name}, :#{parent_table_name}, column: #{column_name.inspect}, name: #{name.inspect}\n")
+        expect(subject.down).to eq("add_foreign_key :#{table_name}, :#{parent_table_name}, column: #{column_name.to_sym.inspect}, name: #{name.to_sym.inspect}\n")
       end
     end
   end
