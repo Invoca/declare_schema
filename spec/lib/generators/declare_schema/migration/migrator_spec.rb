@@ -13,12 +13,6 @@ module Generators
       RSpec.describe Migrator do
         subject { described_class.new }
 
-        describe 'format_options' do
-          it 'returns an array of option .inspect strings, with symbols using the modern : hash notation' do
-            expect(subject.format_options({ limit: 4, 'key' => 'value "quoted"' })).to eq(["limit: 4", '"key" => "value \"quoted\""'])
-          end
-        end
-
         describe '#before_generating_migration' do
           it 'requires a block be passed' do
             expect { described_class.before_generating_migration }.to raise_error(ArgumentError, 'A block is required when setting the before_generating_migration callback')
