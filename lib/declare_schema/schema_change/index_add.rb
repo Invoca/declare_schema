@@ -15,12 +15,12 @@ module DeclareSchema
       def up_command
         "create_index #{[@table_name.to_sym.inspect,
                          @column_names.map(&:to_sym).inspect,
-                         "name: #{@name.inspect}",
+                         "name: #{@name.to_sym.inspect}",
                          "unique: #{@unique.inspect}"].join(", ")}"
       end
 
       def down_command
-        "remove_index #{@table_name.to_sym.inspect}, name: #{@name.inspect}"
+        "remove_index #{@table_name.to_sym.inspect}, name: #{@name.to_sym.inspect}"
       end
     end
   end
