@@ -369,11 +369,9 @@ module Generators
             ::DeclareSchema::SchemaChange::ColumnAdd.new(new_table_name, c, type, options)
           end
 
-          removes = to_remove.map do |c|
-            "remove_column :#{new_table_name}, :#{c}"
-          end
-          undo_removes = to_remove.map do |c|
-            add_column_back(model, current_table_name, c)
+          removes = undo_removes = to_remove.map do |c|
+            type, options = add_column_back(model, current_table_name, c)
+            ::DeclareSchema::SchemaChange::ColumnRemove.new(new_table_name, c, type, options)
           end
 
           old_names = to_rename.invert
@@ -545,7 +543,7 @@ module Generators
             col_spec = ::DeclareSchema::Model::Column.new(model, current_table_name, column)
             schema_attributes = col_spec.schema_attributes
             type = schema_attributes.delete(:type) or raise "no :type found in #{schema_attributes.inspect}"
-            ["add_column :#{current_table_name}, :#{col_name}, #{type.inspect}", *format_options(schema_attributes)].join(', ')
+            [type, schema_attributes]
           end
         end
 
