@@ -209,12 +209,9 @@ module Generators
             ::DeclareSchema::SchemaChange::TableRemove.new(t, add_table_back(t))
           end
 
-          creates = to_create.map do |t|
-            create_table(models_by_table_name[t])
-          end * "\n\n"
-          undo_creates = to_create.map do |t|
-            "drop_table :#{t}"
-          end * "\n"
+          creates = undo_creates = to_create.map do |t|
+            ::DeclareSchema::SchemaChange::TableAdd.new(t, create_table(models_by_table_name[t]))
+          end
 
           changes                    = []
           undo_changes               = []
@@ -276,6 +273,7 @@ module Generators
           [up * "\n\n", down * "\n\n"]
         end
 
+        # TODO: TECH-5338: move most of this into SchemaChange::TableAdd
         def create_table(model)
           longest_field_name       = model.field_specs.values.map { |f| f.type.to_s.length }.max
           disable_auto_increment   = model.respond_to?(:disable_auto_increment) && model.disable_auto_increment
