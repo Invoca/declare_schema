@@ -10,13 +10,40 @@ RSpec.describe DeclareSchema::SchemaChange::IndexAdd do
   let(:table_name) { 'users' }
   let(:column_names) { [:last_name, 'first_name'] }
   let(:name) { 'on_last_name_and_first_name' }
-  let(:unique) { true }
+  let(:unique) { false }
   subject { described_class.new(table_name, column_names, name: name, unique: unique) }
 
   describe '#up/down' do
     describe '#up' do
-      it 'responds with command' do
-        expect(subject.up).to eq("create_index :#{table_name}, #{column_names.map(&:to_sym).inspect}, name: #{name.to_sym.inspect}, unique: #{unique}\n")
+      context 'without where:' do
+        it 'responds with command' do
+          expect(subject.up).to eq("create_index :#{table_name}, #{column_names.map(&:to_sym).inspect}, name: #{name.to_sym.inspect}\n")
+        end
+      end
+
+      context 'with empty where:' do
+        subject { described_class.new(table_name, column_names, name: name, unique: unique, where: nil) }
+
+        it 'responds with command' do
+          expect(subject.up).to eq("create_index :#{table_name}, #{column_names.map(&:to_sym).inspect}, name: #{name.to_sym.inspect}\n")
+        end
+      end
+
+      context 'with where:' do
+        let(:where) { "'last_name like 'A%'"}
+        subject { described_class.new(table_name, column_names, name: name, unique: unique, where: where) }
+
+        it 'responds with command' do
+          expect(subject.up).to eq("create_index :#{table_name}, #{column_names.map(&:to_sym).inspect}, name: #{name.to_sym.inspect}, where: #{where.inspect}\n")
+        end
+      end
+
+      context 'with unique: true' do
+        let(:unique) { true }
+
+        it 'responds with command' do
+          expect(subject.up).to eq("create_index :#{table_name}, #{column_names.map(&:to_sym).inspect}, name: #{name.to_sym.inspect}, unique: true\n")
+        end
       end
     end
 
