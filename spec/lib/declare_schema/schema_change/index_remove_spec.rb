@@ -22,7 +22,7 @@ RSpec.describe DeclareSchema::SchemaChange::IndexRemove do
 
     describe '#down' do
       it 'responds with command' do
-        expect(subject.down).to eq("create_index :#{table_name}, #{column_names.map(&:to_sym).inspect}, name: #{name.to_sym.inspect}, unique: #{unique}\n")
+        expect(subject.down).to eq("add_index :#{table_name}, #{column_names.map(&:to_sym).inspect}, name: #{name.to_sym.inspect}, unique: #{unique}\n")
       end
     end
   end

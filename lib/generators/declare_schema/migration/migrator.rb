@@ -396,7 +396,7 @@ module Generators
             end
           end
 
-          index_changes, undo_index_changes = change_indexes(model, current_table_name, to_remove)
+          index_changes, undo_index_changes = change_indexes(model, current_table_name, to_rename)
           fk_changes, undo_fk_changes = if ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
                                           [[], []]
                                         else
@@ -418,7 +418,7 @@ module Generators
            undo_table_options_changes]
         end
 
-        def change_indexes(model, old_table_name, to_remove)
+        def change_indexes(model, old_table_name, to_rename)
           ::DeclareSchema.default_generate_indexing or return [[], []]
 
           new_table_name = model.table_name
@@ -431,31 +431,31 @@ module Generators
               end
             end || i
           end
-          existing_has_primary_key = existing_indexes.any? do |i|
-            i.name == ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME &&
-              !i.fields.all? { |f| to_remove.include?(f) } # if we're removing the primary key column(s), the primary key index will be removed too
-          end
-          model_has_primary_key = model_indexes.any? { |i| i.name == ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME }
+          existing_primary_keys, existing_indexes_without_primary_key = existing_indexes.partition { |i| i.primary_key? }
+          defined_primary_keys, model_indexes_without_primary_key = model_indexes.partition { |i| i.primary_key? }
+          existing_primary_keys.size <= 1 or raise "too many existing primary keys! #{existing_primary_keys.inspect}"
+          defined_primary_keys.size <= 1 or raise "too many defined primary keys! #{defined_primary_keys.inspect}"
+          existing_primary_key = existing_primary_keys.first
+          defined_primary_key = defined_primary_keys.first
 
-          undo_add_indexes = []
-          add_indexes = (model_indexes - existing_indexes).map do |i|
-            undo_add_indexes << drop_index(old_table_name, i.name) unless i.name == ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME
-            i.to_add_statement(new_table_name, existing_has_primary_key)
+          existing_primary_key_columns = (existing_primary_key&.columns || []).map { |col_name| to_rename[col_name] || col_name }
+
+          change_primary_key =
+            if (existing_primary_key || defined_primary_key) &&
+              existing_primary_key_columns != defined_primary_key&.columns
+              ::DeclareSchema::SchemaChange::PrimaryKeyChange.new(new_table_name, existing_primary_key_columns, defined_primary_key&.columns)
+            end
+
+          add_indexes = undo_add_indexes = (model_indexes_without_primary_key - existing_indexes_without_primary_key).map do |i|
+            ::DeclareSchema::SchemaChange::IndexAdd.new(new_table_name, i.columns, unique: i.unique, where: i.where, name: i.name)
           end
-          undo_drop_indexes = []
-          drop_indexes = (existing_indexes - model_indexes).map do |i|
-            undo_drop_indexes << i.to_add_statement(old_table_name, model_has_primary_key)
-            drop_index(new_table_name, i.name) unless i.name == ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME
-          end.compact
+
+          drop_indexes = undo_drop_indexes = (existing_indexes_without_primary_key - model_indexes_without_primary_key).map do |i|
+            ::DeclareSchema::SchemaChange::IndexRemove.new(new_table_name, i.columns, unique: i.unique, where: i.where, name: i.name)
+          end
 
           # the order is important here - adding a :unique, for instance needs to remove then add
-          [drop_indexes + add_indexes, undo_add_indexes + undo_drop_indexes]
-        end
-
-        def drop_index(table, name)
-          # see https://hobo.lighthouseapp.com/projects/8324/tickets/566
-          # for why the rescue exists
-          "remove_index :#{table}, name: :#{name} rescue ActiveRecord::StatementInvalid"
+          [Array(change_primary_key) + drop_indexes + add_indexes, Array(change_primary_key) + undo_add_indexes + undo_drop_indexes]
         end
 
         def change_foreign_key_constraints(model, old_table_name)

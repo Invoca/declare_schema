@@ -368,7 +368,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     expect(Generators::DeclareSchema::Migration::Migrator.run).to(
       migrate_up(<<~EOS.strip)
         add_column :adverts, :category_id, :integer, limit: 8, null: false
-        create_index :adverts, [:category_id], name: :on_category_id
+        add_index :adverts, [:category_id], name: :on_category_id
         #{"add_foreign_key :adverts, :categories, column: :category_id, name: :on_category_id\n" if defined?(Mysql2)}
       EOS
       .and migrate_down(<<~EOS.strip)
@@ -392,7 +392,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     expect(Generators::DeclareSchema::Migration::Migrator.run).to(
       migrate_up(<<~EOS.strip)
         add_column :adverts, :c_id, :integer, limit: 8, null: false
-        create_index :adverts, [:c_id], name: :on_c_id
+        add_index :adverts, [:c_id], name: :on_c_id
         #{"add_foreign_key :adverts, :categories, column: :category_id, name: :on_category_id\n" +
           "add_foreign_key :adverts, :categories, column: :c_id, name: :on_c_id" if defined?(Mysql2)}
       EOS
@@ -431,7 +431,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     expect(Generators::DeclareSchema::Migration::Migrator.run).to(
       migrate_up(<<~EOS.strip)
         add_column :adverts, :category_id, :integer, limit: 8, null: false
-        create_index :adverts, [:category_id], name: :my_index
+        add_index :adverts, [:category_id], name: :my_index
         #{"add_foreign_key :adverts, :categories, column: :category_id, name: :on_category_id\n" +
           "add_foreign_key :adverts, :categories, column: :c_id, name: :on_c_id" if defined?(Mysql2)}
       EOS
@@ -486,7 +486,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     expect(Generators::DeclareSchema::Migration::Migrator.run).to(
       migrate_up(<<~EOS.strip)
         add_column :adverts, :title, :string, limit: 250, null: true#{charset_and_collation}
-        create_index :adverts, [:title], name: :on_title
+        add_index :adverts, [:title], name: :on_title
         #{"add_foreign_key :adverts, :categories, column: :category_id, name: :on_category_id\n" +
           "add_foreign_key :adverts, :categories, column: :c_id, name: :on_c_id" if defined?(Mysql2)}
       EOS
@@ -505,7 +505,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     expect(Generators::DeclareSchema::Migration::Migrator.run).to(
       migrate_up(<<~EOS.strip)
         add_column :adverts, :title, :string, limit: 250, null: true#{charset_and_collation}
-        create_index :adverts, [:title], name: :on_title, unique: true
+        add_index :adverts, [:title], name: :on_title, unique: true
         #{"add_foreign_key :adverts, :categories, column: :category_id, name: :on_category_id\n" +
           "add_foreign_key :adverts, :categories, column: :c_id, name: :on_c_id" if defined?(Mysql2)}
       EOS
@@ -524,7 +524,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     expect(Generators::DeclareSchema::Migration::Migrator.run).to(
       migrate_up(<<~EOS.strip)
         add_column :adverts, :title, :string, limit: 250, null: true#{charset_and_collation}
-        create_index :adverts, [:title], name: :my_index
+        add_index :adverts, [:title], name: :my_index
         #{"add_foreign_key :adverts, :categories, column: :category_id, name: :on_category_id\n" +
           "add_foreign_key :adverts, :categories, column: :c_id, name: :on_c_id" if defined?(Mysql2)}
       EOS
@@ -541,7 +541,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     expect(Generators::DeclareSchema::Migration::Migrator.run).to(
       migrate_up(<<~EOS.strip)
         add_column :adverts, :title, :string, limit: 250, null: true#{charset_and_collation}
-        create_index :adverts, [:title], name: :on_title
+        add_index :adverts, [:title], name: :on_title
         #{"add_foreign_key :adverts, :categories, column: :category_id, name: :on_category_id\n" +
           "add_foreign_key :adverts, :categories, column: :c_id, name: :on_c_id" if defined?(Mysql2)}
       EOS
@@ -558,7 +558,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     expect(Generators::DeclareSchema::Migration::Migrator.run).to(
       migrate_up(<<~EOS.strip)
         add_column :adverts, :title, :string, limit: 250, null: true#{charset_and_collation}
-        create_index :adverts, [:title], name: :my_index, unique: true
+        add_index :adverts, [:title], name: :my_index, unique: true
         #{"add_foreign_key :adverts, :categories, column: :category_id, name: :on_category_id\n" +
           "add_foreign_key :adverts, :categories, column: :c_id, name: :on_c_id" if defined?(Mysql2)}
       EOS
@@ -575,7 +575,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     expect(Generators::DeclareSchema::Migration::Migrator.run).to(
       migrate_up(<<~EOS.strip)
         add_column :adverts, :title, :string, limit: 250, null: true#{charset_and_collation}
-        create_index :adverts, [:title, :category_id], name: :on_title_and_category_id
+        add_index :adverts, [:title, :category_id], name: :on_title_and_category_id
         #{"add_foreign_key :adverts, :categories, column: :category_id, name: :on_category_id\n" +
           "add_foreign_key :adverts, :categories, column: :c_id, name: :on_c_id" if defined?(Mysql2)}
       EOS
@@ -589,7 +589,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     ### Rename a table
 
-    # The migration generator respects the `set_table_name` declaration, although as before, we need to explicitly tell the generator that we want a rename rather than a create and a drop.
+    # The migration generator respects the `set_table_name` declaration, although as before,
+    # we need to explicitly tell the generator that we want a rename rather than a create and a drop.
 
     class Advert < ActiveRecord::Base
       self.table_name = "ads"
@@ -607,10 +608,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         rename_table :adverts, :ads
         add_column :ads, :title, :string, limit: 250, null: true#{charset_and_collation}
         add_column :ads, :body, :text#{', limit: 4294967295' if defined?(Mysql2)}, null: true#{charset_and_collation}
-        #{if defined?(SQLite3)
-            "create_index :ads, [:id], unique: true, name: :PRIMARY\n"
-          elsif defined?(Mysql2)
-            "execute \"ALTER TABLE ads DROP PRIMARY KEY, ADD PRIMARY KEY (id)\"\n" +
+        #{if defined?(Mysql2)
             "add_foreign_key :adverts, :categories, column: :category_id, name: :on_category_id\n" +
             "add_foreign_key :adverts, :categories, column: :c_id, name: :on_c_id"
           end}
@@ -619,10 +617,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         remove_column :ads, :title
         remove_column :ads, :body
         rename_table :ads, :adverts
-        #{if defined?(SQLite3)
-            "create_index :adverts, [:id], unique: true, name: :PRIMARY\n"
-          elsif defined?(Mysql2)
-            "execute \"ALTER TABLE adverts DROP PRIMARY KEY, ADD PRIMARY KEY (id)\"\n" +
+        #{if defined?(Mysql2)
             "remove_foreign_key :adverts, name: :on_category_id\n" +
             "remove_foreign_key :adverts, name: :on_c_id"
           end}
@@ -658,22 +653,12 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         add_column :advertisements, :title, :string, limit: 250, null: true#{charset_and_collation}
         add_column :advertisements, :body, :text#{', limit: 4294967295' if defined?(Mysql2)}, null: true#{charset_and_collation}
         remove_column :advertisements, :name
-        #{if defined?(SQLite3)
-            "create_index :advertisements, [:id], name: :PRIMARY, unique: true"
-          elsif defined?(Mysql2)
-            "execute \"ALTER TABLE advertisements DROP PRIMARY KEY, ADD PRIMARY KEY (id)\""
-          end}
       EOS
       .and migrate_down(<<~EOS.strip)
         add_column :advertisements, :name, :string, limit: 250, null: true#{charset_and_collation}
         remove_column :advertisements, :title
         remove_column :advertisements, :body
         rename_table :advertisements, :adverts
-        #{if defined?(SQLite3)
-            "create_index :adverts, [:id], name: :PRIMARY, unique: true"
-          elsif defined?(Mysql2)
-            "execute \"ALTER TABLE adverts DROP PRIMARY KEY, ADD PRIMARY KEY (id)\""
-          end}
       EOS
     )
 
@@ -720,7 +705,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       expect(migrations).to(
         migrate_up(<<~EOS.strip)
           add_column :adverts, :type, :string, limit: 250, null: true#{charset_and_collation}
-          create_index :adverts, [:type], name: :on_type
+          add_index :adverts, [:type], name: :on_type
         EOS
         .and migrate_down(<<~EOS.strip)
           remove_column :adverts, :type
@@ -788,11 +773,6 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         rename_table :adverts, :ads
         add_column :ads, :created_at, :datetime, null: false
         change_column :ads, :title, :string, limit: 250, null: false, default: \"Untitled\"#{charset_and_collation}
-        #{if defined?(SQLite3)
-            "create_index :ads, [:id], name: :PRIMARY, unique: true"
-          elsif defined?(Mysql2)
-            'execute "ALTER TABLE ads DROP PRIMARY KEY, ADD PRIMARY KEY (id)"'
-          end}
       EOS
     )
 
@@ -819,11 +799,6 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     expect(Generators::DeclareSchema::Migration::Migrator.run(adverts: { id: :advert_id })).to(
       migrate_up(<<~EOS.strip)
         rename_column :adverts, :id, :advert_id
-        #{if defined?(SQLite3)
-            "create_index :adverts, [:advert_id], name: :PRIMARY, unique: true"
-          elsif defined?(Mysql2)
-          'execute "ALTER TABLE adverts DROP PRIMARY KEY, ADD PRIMARY KEY (advert_id)"'
-          end}
       EOS
     )
 

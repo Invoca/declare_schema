@@ -17,7 +17,7 @@ RSpec.describe DeclareSchema::SchemaChange::IndexAdd do
     describe '#up' do
       context 'without where:' do
         it 'responds with command' do
-          expect(subject.up).to eq("create_index :#{table_name}, #{column_names.map(&:to_sym).inspect}, name: #{name.to_sym.inspect}\n")
+          expect(subject.up).to eq("add_index :#{table_name}, #{column_names.map(&:to_sym).inspect}, name: #{name.to_sym.inspect}\n")
         end
       end
 
@@ -25,7 +25,7 @@ RSpec.describe DeclareSchema::SchemaChange::IndexAdd do
         subject { described_class.new(table_name, column_names, name: name, unique: unique, where: nil) }
 
         it 'responds with command' do
-          expect(subject.up).to eq("create_index :#{table_name}, #{column_names.map(&:to_sym).inspect}, name: #{name.to_sym.inspect}\n")
+          expect(subject.up).to eq("add_index :#{table_name}, #{column_names.map(&:to_sym).inspect}, name: #{name.to_sym.inspect}\n")
         end
       end
 
@@ -34,7 +34,7 @@ RSpec.describe DeclareSchema::SchemaChange::IndexAdd do
         subject { described_class.new(table_name, column_names, name: name, unique: unique, where: where) }
 
         it 'responds with command' do
-          expect(subject.up).to eq("create_index :#{table_name}, #{column_names.map(&:to_sym).inspect}, name: #{name.to_sym.inspect}, where: #{where.inspect}\n")
+          expect(subject.up).to eq("add_index :#{table_name}, #{column_names.map(&:to_sym).inspect}, name: #{name.to_sym.inspect}, where: #{where.inspect}\n")
         end
       end
 
@@ -42,7 +42,7 @@ RSpec.describe DeclareSchema::SchemaChange::IndexAdd do
         let(:unique) { true }
 
         it 'responds with command' do
-          expect(subject.up).to eq("create_index :#{table_name}, #{column_names.map(&:to_sym).inspect}, name: #{name.to_sym.inspect}, unique: true\n")
+          expect(subject.up).to eq("add_index :#{table_name}, #{column_names.map(&:to_sym).inspect}, name: #{name.to_sym.inspect}, unique: true\n")
         end
       end
     end

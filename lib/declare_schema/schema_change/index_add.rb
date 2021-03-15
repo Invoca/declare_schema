@@ -20,9 +20,9 @@ module DeclareSchema
         options[:unique] = true if @unique
         options[:where] = @where if @where
 
-        "create_index #{[@table_name.to_sym.inspect,
-                         @column_names.map(&:to_sym).inspect,
-                         *self.class.format_options(options)].join(', ')}"
+        "add_index #{[@table_name.to_sym.inspect,
+                      @column_names.map(&:to_sym).inspect,
+                      *self.class.format_options(options)].join(', ')}"
       end
 
       def down_command
