@@ -376,11 +376,11 @@ module Generators
                                         else
                                           change_foreign_key_constraints(model, current_table_name)
                                         end
-          table_options_changes, undo_table_options_changes = if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
-                                                                change_table_options(model, current_table_name)
-                                                              else
-                                                                [[], []]
-                                                              end
+          table_options_changes = if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
+                                    change_table_options(model, current_table_name)
+                                  else
+                                    []
+                                  end
 
           [(renames + adds + removes + changes),
            index_changes,
@@ -476,11 +476,12 @@ module Generators
           new_options_definition = ::DeclareSchema::Model::TableOptionsDefinition.new(model.table_name, table_options_for_model(model))
 
           if old_options_definition.equivalent?(new_options_definition)
-            [[], []]
+            []
           else
             [
-              [new_options_definition.alter_table_statement],
-              [old_options_definition.alter_table_statement]
+              ::DeclareSchema::SchemaChange::TableChange.new(current_table_name,
+                                                             old_options_definition.settings,
+                                                             new_options_definition.settings)
             ]
           end
         end
