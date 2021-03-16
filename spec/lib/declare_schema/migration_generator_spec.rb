@@ -365,7 +365,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       migrate_up(<<~EOS.strip)
         add_column :adverts, :category_id, :integer, limit: 8, null: false
         add_index :adverts, [:category_id], name: :on_category_id
-        #{"add_foreign_key :adverts, :categories, column: :category_id, name: :on_category_id\n" if defined?(Mysql2)}
+        #{"add_foreign_key :adverts, :categories, column: :category_id, name: :on_category_id" if defined?(Mysql2)}
       EOS
       .and migrate_down(<<~EOS.strip)
         #{"remove_foreign_key :adverts, name: :on_category_id" if defined?(Mysql2)}

@@ -327,13 +327,13 @@ module Generators
           db_column_names |= to_rename.values
           to_change = db_column_names & model_column_names
 
-          renames = undo_renames = to_rename.map do |old_name, new_name|
+          renames = to_rename.map do |old_name, new_name|
             ::DeclareSchema::SchemaChange::ColumnRename.new(new_table_name, old_name, new_name)
           end
 
           to_add.sort_by! { |c| model.field_specs[c]&.position || 0 }
 
-          adds = undo_adds = to_add.map do |c|
+          adds = to_add.map do |c|
             type, options =
               if (spec = model.field_specs[c])
                 [spec.type, spec.sql_options.merge(fk_field_options(model, c)).compact]
@@ -343,14 +343,13 @@ module Generators
             ::DeclareSchema::SchemaChange::ColumnAdd.new(new_table_name, c, type, options)
           end
 
-          removes = undo_removes = to_remove.map do |c|
+          removes = to_remove.map do |c|
             old_type, old_options = add_column_back(model, current_table_name, c)
             ::DeclareSchema::SchemaChange::ColumnRemove.new(new_table_name, c, old_type, old_options)
           end
 
           old_names = to_rename.invert
           changes = []
-          undo_changes = []
           to_change.each do |col_name_to_change|
             orig_col_name      = old_names[col_name_to_change] || col_name_to_change
             column             = db_columns[orig_col_name] or raise "failed to find column info for #{orig_col_name.inspect}"
@@ -366,7 +365,6 @@ module Generators
               changes << ::DeclareSchema::SchemaChange::ColumnChange.new(new_table_name, col_name_to_change,
                                                                          new_type: type, new_options: normalized_schema_attrs,
                                                                          old_type: old_type, old_options: old_options)
-              undo_changes << changes.last
             end
           end
 
