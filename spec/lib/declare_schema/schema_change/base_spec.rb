@@ -29,10 +29,10 @@ RSpec.describe DeclareSchema::SchemaChange::Base do
 
   describe 'class methods' do
     describe 'format_options' do
-      subject { { limit: 8, 'key' => 'value' } }
+      subject { { limit: 8, 'key' => 'value', subhash: { subkey: :subvalue } } }
 
       it 'formats using Ruby 2.0 symbol notation' do
-        expect(described_class.format_options(subject)).to eq(['limit: 8', '"key" => "value"'])
+        expect(described_class.format_options(subject)).to eq(['limit: 8', '"key" => "value"', 'subhash: { subkey: :subvalue }'])
       end
     end
   end

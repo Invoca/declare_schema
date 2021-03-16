@@ -8,10 +8,16 @@ module DeclareSchema
       class << self
         def format_options(options)
           options.map do |k, v|
+            value =
+              if v.is_a?(Hash)
+                "{ #{format_options(v).join(', ')} }"
+              else
+                v.inspect
+              end
             if k.is_a?(Symbol)
-              "#{k}: #{v.inspect}"
+              "#{k}: #{value}"
             else
-              "#{k.inspect} => #{v.inspect}"
+              "#{k.inspect} => #{value}"
             end
           end
         end
