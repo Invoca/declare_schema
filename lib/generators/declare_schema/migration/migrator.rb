@@ -25,9 +25,7 @@ module Generators
           end
 
           def run(renames = {})
-            g = Migrator.new
-            g.renames = renames
-            g.generate
+            Migrator.new(renames: renames).generate
           end
 
           def default_migration_name
@@ -49,13 +47,11 @@ module Generators
           deprecate :default_charset=, :default_collation=, :default_charset, :default_collation, deprecator: ActiveSupport::Deprecation.new('1.0', 'declare_schema')
         end
 
-        def initialize(ambiguity_resolver = {})
+        def initialize(ambiguity_resolver = {}, renames: nil)
           @ambiguity_resolver = ambiguity_resolver
           @drops = []
-          @renames = nil
+          @renames = renames
         end
-
-        attr_accessor :renames
 
         def load_rails_models
           ActiveRecord::Migration.verbose = false
@@ -110,19 +106,24 @@ module Generators
         # return a hash of table renames and modifies the passed arrays so
         # that renamed tables are no longer listed as to_create or to_drop
         def extract_table_renames!(to_create, to_drop)
-          if renames
+          if @renames
             # A hash of table renames has been provided
 
             to_rename = {}
-            renames.each_pair do |old_name, new_name|
-              new_name = new_name[:table_name] if new_name.is_a?(Hash)
-              next unless new_name
-
-              if to_create.delete(new_name.to_s) && to_drop.delete(old_name.to_s)
-                to_rename[old_name.to_s] = new_name.to_s
-              else
-                raise Error, "Invalid table rename specified: #{old_name} => #{new_name}"
+            @renames.each do |old_name, new_name|
+              if new_name.is_a?(Hash)
+                new_name = new_name[:table_name]
               end
+              new_name or next
+
+              old_name = old_name.to_s
+              new_name = new_name.to_s
+
+              to_create.delete(new_name) or raise Error,
+                "Rename specified new name: #{new_name.inspect} but it was not in the `to_create` list"
+              to_drop.delete(old_name) or raise Error,
+                "Rename specified old name: #{old_name.inspect} but it was not in the `to_drop` list"
+              to_rename[old_name] = new_name
             end
             to_rename
 
@@ -134,18 +135,22 @@ module Generators
           end
         end
 
+        # return a hash of column renames and modifies the passed arrays so
+        # that renamed columns are no longer listed as to_create or to_drop
         def extract_column_renames!(to_add, to_remove, table_name)
-          if renames
+          if @renames
             to_rename = {}
-            if (column_renames = renames&.[](table_name.to_sym))
-              # A hash of table renames has been provided
+            if (column_renames = @renames[table_name.to_sym])
+              # A hash of column renames has been provided
 
-              column_renames.each_pair do |old_name, new_name|
-                if to_add.delete(new_name.to_s) && to_remove.delete(old_name.to_s)
-                  to_rename[old_name.to_s] = new_name.to_s
-                else
-                  raise Error, "Invalid rename specified: #{old_name} => #{new_name}"
-                end
+              column_renames.each do |old_name, new_name|
+                old_name = old_name.to_s
+                new_name = new_name.to_s
+                to_add.delete(new_name) or raise Error,
+                  "Rename specified new name: #{new_name.inspect} but it was not in the `to_add` list for table #{table_name}"
+                to_remove.delete(old_name) or raise Error,
+                  "Rename specified old name: #{old_name.inspect} but it was not in the `to_remove` list for table #{table_name}"
+                to_rename[old_name] = new_name
               end
             end
             to_rename
