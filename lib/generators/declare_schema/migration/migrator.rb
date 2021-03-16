@@ -268,29 +268,10 @@ module Generators
         private
 
         def flatten_up_and_down_migrations(up_commands, down_commands)
-          flattened_up = up_commands.flatten.map do |command|
-            case command
-            when String
-              command
-            when ::DeclareSchema::SchemaChange::Base
-              command.up
-            else
-              raise ArgumentError, "unexpected command #{command.inspect}"
-            end
-          end
-
+          flattened_up = up_commands.flatten.map(&:up)
           up = flattened_up.select(&:present?)
-          flattened_down = down_commands.flatten.map do |command|
-            case command
-            when String
-              command
-            when ::DeclareSchema::SchemaChange::Base
-              command.down
-            else
-              raise ArgumentError, "unexpected command #{command.inspect}"
-            end
-          end
 
+          flattened_down = down_commands.flatten.map(&:down)
           down = flattened_down.select(&:present?)
 
           [up * "\n\n", down * "\n\n"]
@@ -318,12 +299,18 @@ module Generators
           end
         end
 
+        # TODO: TECH-5338: optimize that index doesn't need to be dropped on undo since entire table will be dropped
         def create_indexes(model)
-          model.index_definitions.map { |i| i.to_add_statement(model.table_name) }
+          model.index_definitions.map do |i|
+            ::DeclareSchema::SchemaChange::IndexAdd.new(model.table_name, i.columns, unique: i.unique, where: i.where, name: i.name)
+          end
         end
 
         def create_constraints(model)
-          model.constraint_specs.map { |fk| fk.to_add_statement }
+          model.constraint_specs.map do |fk|
+            ::DeclareSchema::SchemaChange::ForeignKeyAdd.new(fk.child_table_name, fk.parent_table_name,
+                                                             column_name: fk.foreign_key_name, name: fk.constraint_name)
+          end
         end
 
         def change_table(model, current_table_name)
@@ -451,7 +438,7 @@ module Generators
           end
 
           # the order is important here - adding a :unique, for instance needs to remove then add
-          [Array(change_primary_key) + drop_indexes + add_indexes, Array(change_primary_key) + undo_add_indexes + undo_drop_indexes]
+          [Array(change_primary_key) + drop_indexes + add_indexes, undo_add_indexes + undo_drop_indexes + Array(change_primary_key)]
         end
 
         def change_foreign_key_constraints(model, old_table_name)

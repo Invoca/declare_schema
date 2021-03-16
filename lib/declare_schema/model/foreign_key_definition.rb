@@ -62,11 +62,6 @@ module DeclareSchema
             foreign_key.sub(/_id\z/, '').camelize.constantize.table_name
       end
 
-      def to_add_statement
-        "add_foreign_key(#{@child_table_name.inspect}, #{parent_table_name.inspect}, " +
-          "column: #{@foreign_key_name.inspect}, name: #{@constraint_name.inspect})"
-      end
-
       def <=>(rhs)
         key <=> rhs.send(:key)
       end
