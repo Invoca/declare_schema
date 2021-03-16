@@ -370,7 +370,7 @@ module Generators
             end
           end
 
-          index_changes, undo_index_changes = change_indexes(model, current_table_name, to_rename)
+          index_changes = change_indexes(model, current_table_name, to_rename)
           fk_changes = if ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
                          []
                        else
@@ -389,7 +389,7 @@ module Generators
         end
 
         def change_indexes(model, old_table_name, to_rename)
-          ::DeclareSchema.default_generate_indexing or return [[], []]
+          ::DeclareSchema.default_generate_indexing or return []
 
           new_table_name = model.table_name
           existing_indexes = ::DeclareSchema::Model::IndexDefinition.for_model(model, old_table_name)
@@ -416,16 +416,16 @@ module Generators
               ::DeclareSchema::SchemaChange::PrimaryKeyChange.new(new_table_name, existing_primary_key_columns, defined_primary_key&.columns)
             end
 
-          add_indexes = undo_add_indexes = (model_indexes_without_primary_key - existing_indexes_without_primary_key).map do |i|
-            ::DeclareSchema::SchemaChange::IndexAdd.new(new_table_name, i.columns, unique: i.unique, where: i.where, name: i.name)
-          end
-
-          drop_indexes = undo_drop_indexes = (existing_indexes_without_primary_key - model_indexes_without_primary_key).map do |i|
+          drop_indexes = (existing_indexes_without_primary_key - model_indexes_without_primary_key).map do |i|
             ::DeclareSchema::SchemaChange::IndexRemove.new(new_table_name, i.columns, unique: i.unique, where: i.where, name: i.name)
           end
 
+          add_indexes = (model_indexes_without_primary_key - existing_indexes_without_primary_key).map do |i|
+            ::DeclareSchema::SchemaChange::IndexAdd.new(new_table_name, i.columns, unique: i.unique, where: i.where, name: i.name)
+          end
+
           # the order is important here - adding a :unique, for instance needs to remove then add
-          [Array(change_primary_key) + drop_indexes + add_indexes, undo_add_indexes + undo_drop_indexes + Array(change_primary_key)]
+          [Array(change_primary_key) + drop_indexes + add_indexes]
         end
 
         def change_foreign_key_constraints(model, old_table_name)
@@ -435,15 +435,15 @@ module Generators
           existing_fks = ::DeclareSchema::Model::ForeignKeyDefinition.for_model(model, old_table_name)
           model_fks = model.constraint_specs
 
+          drop_fks = (existing_fks - model_fks).map do |fk|
+            ::DeclareSchema::SchemaChange::ForeignKeyRemove.new(fk.child_table_name, fk.parent_table_name,
+                                                                column_name: fk.foreign_key_name, name: fk.constraint_name)
+          end
+
           add_fks = (model_fks - existing_fks).map do |fk|
             # next if fk.parent.constantize.abstract_class || fk.parent == fk.model.class_name
             ::DeclareSchema::SchemaChange::ForeignKeyAdd.new(fk.child_table_name, fk.parent_table_name,
                                                              column_name: fk.foreign_key_name, name: fk.constraint_name)
-          end
-
-          drop_fks = (existing_fks - model_fks).map do |fk|
-            ::DeclareSchema::SchemaChange::ForeignKeyRemove.new(fk.child_table_name, fk.parent_table_name,
-                                                                column_name: fk.foreign_key_name, name: fk.constraint_name)
           end
 
           [drop_fks + add_fks]
