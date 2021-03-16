@@ -201,15 +201,15 @@ module Generators
           to_change = model_table_names
           to_rename = extract_table_renames!(to_create, to_drop)
 
-          renames = undo_renames = to_rename.map do |old_name, new_name|
+          renames = to_rename.map do |old_name, new_name|
             ::DeclareSchema::SchemaChange::TableRename.new(old_name, new_name)
           end
 
-          drops = undo_drops = to_drop.map do |t|
+          drops = to_drop.map do |t|
             ::DeclareSchema::SchemaChange::TableRemove.new(t, add_table_back(t))
           end
 
-          creates = undo_creates = to_create.map do |t|
+          creates = to_create.map do |t|
             model = models_by_table_name[t]
             disable_auto_increment = model.try(:disable_auto_increment)
 
@@ -237,37 +237,28 @@ module Generators
           end
 
           changes                    = []
-          undo_changes               = []
           index_changes              = []
-          undo_index_changes         = []
           fk_changes                 = []
-          undo_fk_changes            = []
           table_options_changes      = []
-          undo_table_options_changes = []
 
           to_change.each do |t|
             model = models_by_table_name[t]
             table = to_rename.key(t) || model.table_name
             if table.in?(db_tables)
-              change, undo, index_change, undo_index, fk_change, undo_fk, table_options_change, undo_table_options_change = change_table(model, table)
+              change, index_change, fk_change, table_options_change = change_table(model, table)
               changes << change
-              undo_changes << undo
               index_changes << index_change
-              undo_index_changes << undo_index
               fk_changes << fk_change
-              undo_fk_changes << undo_fk
               table_options_changes << table_options_change
-              undo_table_options_changes << undo_table_options_change
             end
           end
 
-          flatten_up_and_down_migrations([renames, drops, creates, changes, index_changes, fk_changes, table_options_changes],
-                                         [undo_changes, undo_renames, undo_drops, undo_creates, undo_index_changes, undo_fk_changes, undo_table_options_changes])
+          flatten_up_and_down_migrations([renames, drops, creates, changes, index_changes, fk_changes, table_options_changes])
         end
 
         private
 
-        def flatten_up_and_down_migrations(up_commands, down_commands)
+        def flatten_up_and_down_migrations(up_commands)
           flattened_up = up_commands.flatten.map(&:up)
           up = flattened_up.select(&:present?)
 
@@ -392,13 +383,9 @@ module Generators
                                                               end
 
           [(renames + adds + removes + changes),
-           (undo_changes + undo_removes + undo_adds + undo_renames),
            index_changes,
-           undo_index_changes,
            fk_changes,
-           undo_fk_changes,
-           table_options_changes,
-           undo_table_options_changes]
+           table_options_changes]
         end
 
         def change_indexes(model, old_table_name, to_rename)
