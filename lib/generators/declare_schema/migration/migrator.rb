@@ -476,17 +476,6 @@ module Generators
           [drop_fks + add_fks, undo_add_fks + undo_drop_fks]
         end
 
-        # TODO: drop as part of TECH-5338
-        def format_options(options)
-          options.map do |k, v|
-            if k.is_a?(Symbol)
-              "#{k}: #{v.inspect}"
-            else
-              "#{k.inspect} => #{v.inspect}"
-            end
-          end
-        end
-
         def fk_field_options(model, field_name)
           foreign_key = model.constraint_specs.find { |fk| field_name == fk.foreign_key.to_s }
           if foreign_key && (parent_table = foreign_key.parent_table_name)
