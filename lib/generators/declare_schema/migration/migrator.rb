@@ -271,7 +271,7 @@ module Generators
           flattened_up = up_commands.flatten.map(&:up)
           up = flattened_up.select(&:present?)
 
-          flattened_down = down_commands.flatten.map(&:down)
+          flattened_down = up_commands.flatten.reverse.map(&:down)
           down = flattened_down.select(&:present?)
 
           [up * "\n\n", down * "\n\n"]

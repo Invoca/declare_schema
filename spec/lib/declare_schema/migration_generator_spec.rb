@@ -113,8 +113,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         add_column :adverts, :published_at, :datetime, null: true
       EOS
       .and migrate_down(<<~EOS.strip)
-        remove_column :adverts, :body
         remove_column :adverts, :published_at
+        remove_column :adverts, :body
       EOS
     )
 
@@ -368,9 +368,9 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         #{"add_foreign_key :adverts, :categories, column: :category_id, name: :on_category_id\n" if defined?(Mysql2)}
       EOS
       .and migrate_down(<<~EOS.strip)
-        remove_column :adverts, :category_id
+        #{"remove_foreign_key :adverts, name: :on_category_id" if defined?(Mysql2)}
         remove_index :adverts, name: :on_category_id
-        #{"remove_foreign_key :adverts, name: :on_category_id\n" if defined?(Mysql2)}
+        remove_column :adverts, :category_id
       EOS
     )
 
@@ -457,11 +457,11 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           "add_foreign_key :adverts, :categories, column: :c_id, name: :on_c_id" if defined?(Mysql2)}
       EOS
       .and migrate_down(<<~EOS.strip)
-        remove_column :adverts, :created_at
-        remove_column :adverts, :updated_at
+        #{"remove_foreign_key :adverts, name: :on_c_id\n" +
+          "remove_foreign_key :adverts, name: :on_category_id" if defined?(Mysql2)}
         remove_column :adverts, :lock_version
-        #{"remove_foreign_key :adverts, name: :on_category_id\n" +
-          "remove_foreign_key :adverts, name: :on_c_id" if defined?(Mysql2)}
+        remove_column :adverts, :updated_at
+        remove_column :adverts, :created_at
       EOS
     )
 
@@ -610,13 +610,13 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           end}
       EOS
       .and migrate_down(<<~EOS.strip)
-        remove_column :ads, :title
-        remove_column :ads, :body
-        rename_table :ads, :adverts
         #{if defined?(Mysql2)
-            "remove_foreign_key :adverts, name: :on_category_id\n" +
-            "remove_foreign_key :adverts, name: :on_c_id"
+            "remove_foreign_key :adverts, name: :on_c_id\n" +
+            "remove_foreign_key :adverts, name: :on_category_id"
           end}
+        remove_column :ads, :body
+        remove_column :ads, :title
+        rename_table :ads, :adverts
       EOS
     )
 
@@ -652,8 +652,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       EOS
       .and migrate_down(<<~EOS.strip)
         add_column :advertisements, :name, :string, limit: 250, null: true#{charset_and_collation}
-        remove_column :advertisements, :title
         remove_column :advertisements, :body
+        remove_column :advertisements, :title
         rename_table :advertisements, :adverts
       EOS
     )
