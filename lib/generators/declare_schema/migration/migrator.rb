@@ -258,17 +258,40 @@ module Generators
             end
           end
 
-          flatten_up_and_down_migrations([renames, drops, creates, changes, index_changes, fk_changes, table_options_changes])
+          migration_commands = [renames, drops, creates, changes, index_changes, fk_changes, table_options_changes].flatten
+
+          ordered_migration_commands = order_migrations(migration_commands)
+
+          up_and_down_migrations(ordered_migration_commands)
+        end
+
+        MIGRATION_ORDER = %w[ TableRename
+                              TableAdd
+                              TableChange
+                                ColumnAdd
+                                ColumnRename
+                                ColumnChange
+                                  PrimaryKeyChange
+                                  IndexAdd
+                                    ForeignKeyAdd
+                                    ForeignKeyRemove
+                                  IndexRemove
+                                ColumnRemove
+                              TableRemove ]
+
+        def order_migrations(migration_commands)
+          migration_commands.each_with_index.sort_by do |command, index|
+            command_type = command.class.name.gsub(/.*::/, '')
+            priority = MIGRATION_ORDER.index(command_type) or raise "#{command_type.inspect} not found in #{MIGRATION_ORDER.inspect}"
+            [priority, index] # index keeps the sort stable in case of a tie
+          end.map(&:first) # remove the index
         end
 
         private
 
-        def flatten_up_and_down_migrations(up_commands)
-          flattened_up = up_commands.flatten.map(&:up)
-          up = flattened_up.select(&:present?)
-
-          flattened_down = up_commands.flatten.reverse.map(&:down)
-          down = flattened_down.select(&:present?)
+        def up_and_down_migrations(migration_commands)
+          up   = migration_commands.map(&:up  ).select(&:present?)
+          down = migration_commands.map(&:down).select(&:present?).reverse
 
           [up * "\n\n", down * "\n\n"]
         end
