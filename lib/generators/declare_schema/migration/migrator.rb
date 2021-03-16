@@ -371,11 +371,11 @@ module Generators
           end
 
           index_changes, undo_index_changes = change_indexes(model, current_table_name, to_rename)
-          fk_changes, undo_fk_changes = if ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
-                                          [[], []]
-                                        else
-                                          change_foreign_key_constraints(model, current_table_name)
-                                        end
+          fk_changes = if ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
+                         []
+                       else
+                         change_foreign_key_constraints(model, current_table_name)
+                       end
           table_options_changes = if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
                                     change_table_options(model, current_table_name)
                                   else
@@ -430,24 +430,23 @@ module Generators
 
         def change_foreign_key_constraints(model, old_table_name)
           ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/) and raise ArgumentError, 'SQLite does not support foreign keys'
-          ::DeclareSchema.default_generate_foreign_keys or return [[], []]
+          ::DeclareSchema.default_generate_foreign_keys or return []
 
-          new_table_name = model.table_name
           existing_fks = ::DeclareSchema::Model::ForeignKeyDefinition.for_model(model, old_table_name)
           model_fks = model.constraint_specs
 
-          add_fks = undo_add_fks = (model_fks - existing_fks).map do |fk|
+          add_fks = (model_fks - existing_fks).map do |fk|
             # next if fk.parent.constantize.abstract_class || fk.parent == fk.model.class_name
             ::DeclareSchema::SchemaChange::ForeignKeyAdd.new(fk.child_table_name, fk.parent_table_name,
                                                              column_name: fk.foreign_key_name, name: fk.constraint_name)
           end
 
-          drop_fks = undo_drop_fks = (existing_fks - model_fks).map do |fk|
+          drop_fks = (existing_fks - model_fks).map do |fk|
             ::DeclareSchema::SchemaChange::ForeignKeyRemove.new(fk.child_table_name, fk.parent_table_name,
                                                                 column_name: fk.foreign_key_name, name: fk.constraint_name)
           end
 
-          [drop_fks + add_fks, undo_add_fks + undo_drop_fks]
+          [drop_fks + add_fks]
         end
 
         def fk_field_options(model, field_name)
