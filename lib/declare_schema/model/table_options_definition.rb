@@ -5,7 +5,6 @@ module DeclareSchema
     class TableOptionsDefinition
       include Comparable
 
-      # TODO remove with TECH-5338
       TABLE_OPTIONS_TO_SQL_MAPPINGS = {
         charset:   'CHARACTER SET',
         collation: 'COLLATE'
