@@ -10,15 +10,6 @@ RSpec.describe 'DeclareSchema Migration Generator' do
   before do
     load File.expand_path('prepare_testapp.rb', __dir__)
   end
-
-  let(:charset_alter_table) do
-    if defined?(Mysql2)
-      <<~EOS
-
-        execute "ALTER TABLE `adverts` CHARACTER SET utf8mb4 COLLATE utf8mb4_bin"
-      EOS
-    end
-  end
   let(:text_limit) do
     if defined?(Mysql2)
       ", limit: 4294967295"
@@ -27,6 +18,11 @@ RSpec.describe 'DeclareSchema Migration Generator' do
   let(:charset_and_collation) do
     if defined?(Mysql2)
       ', charset: "utf8mb4", collation: "utf8mb4_bin"'
+    end
+  end
+  let(:create_table_charset_and_collation) do
+    if defined?(Mysql2)
+      ", options: \"CHARACTER SET utf8mb4 COLLATE utf8mb4_bin\""
     end
   end
   let(:datetime_precision) do
@@ -79,9 +75,9 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     up, _ = Generators::DeclareSchema::Migration::Migrator.run.tap do |migrations|
       expect(migrations).to(
         migrate_up(<<~EOS.strip)
-          create_table :adverts, id: :bigint do |t|
+          create_table :adverts, id: :bigint#{create_table_charset_and_collation} do |t|
             t.string :name, limit: 250, null: true#{charset_and_collation}
-          end#{charset_alter_table}
+          end
         EOS
         .and migrate_down("drop_table :adverts")
       )

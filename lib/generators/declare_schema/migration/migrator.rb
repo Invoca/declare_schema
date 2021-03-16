@@ -210,7 +210,30 @@ module Generators
           end
 
           creates = undo_creates = to_create.map do |t|
-            ::DeclareSchema::SchemaChange::TableAdd.new(t, create_table(models_by_table_name[t]))
+            model = models_by_table_name[t]
+            disable_auto_increment = model.try(:disable_auto_increment)
+
+            primary_key_definition =
+              if disable_auto_increment
+                [:integer, :id, limit: 8, auto_increment: false, primary_key: true]
+              end
+
+            field_definitions = model.field_specs.values.sort_by(&:position).map do |f|
+              [f.type, f.name, f.sql_options]
+            end
+
+            table_options_definition = ::DeclareSchema::Model::TableOptionsDefinition.new(model.table_name, table_options_for_model(model))
+            table_options = create_table_options(model, disable_auto_increment)
+
+            table_add = ::DeclareSchema::SchemaChange::TableAdd.new(t,
+                                                                    Array(primary_key_definition) + field_definitions,
+                                                                    table_options,
+                                                                    sql_options: table_options_definition.settings)
+            [
+              table_add,
+              *Array((create_indexes(model)     if ::DeclareSchema.default_generate_indexing)),
+              *Array((create_constraints(model) if ::DeclareSchema.default_generate_foreign_keys))
+            ]
           end
 
           changes                    = []
@@ -273,35 +296,14 @@ module Generators
           [up * "\n\n", down * "\n\n"]
         end
 
-        # TODO: TECH-5338: move most of this into SchemaChange::TableAdd
-        def create_table(model)
-          longest_field_name       = model.field_specs.values.map { |f| f.type.to_s.length }.max
-          disable_auto_increment   = model.respond_to?(:disable_auto_increment) && model.disable_auto_increment
-          table_options_definition = ::DeclareSchema::Model::TableOptionsDefinition.new(model.table_name, table_options_for_model(model))
-          field_definitions        = [
-            ("t.integer :id, limit: 8, auto_increment: false, primary_key: true" if disable_auto_increment),
-            *(model.field_specs.values.sort_by(&:position).map { |f| create_field(f, longest_field_name) })
-          ].compact
-
-          <<~EOS.strip
-            create_table #{model.table_name.to_sym.inspect}, #{create_table_options(model, disable_auto_increment)} do |t|
-              #{field_definitions.join("\n")}
-            end
-
-            #{table_options_definition.alter_table_statement unless ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)}
-            #{create_indexes(model).join("\n")               if ::DeclareSchema.default_generate_indexing}
-            #{create_constraints(model).join("\n")           if ::DeclareSchema.default_generate_foreign_keys}
-          EOS
-        end
-
         def create_table_options(model, disable_auto_increment)
           primary_key = model._defined_primary_key
           if primary_key.blank? || disable_auto_increment
-            "id: false"
+            { id: false }
           elsif primary_key == "id"
-            "id: :bigint"
+            { id: :bigint }
           else
-            "primary_key: :#{primary_key}"
+            { primary_key: :primary_key.to_sym }
           end
         end
 
@@ -322,12 +324,6 @@ module Generators
 
         def create_constraints(model)
           model.constraint_specs.map { |fk| fk.to_add_statement }
-        end
-
-        def create_field(field_spec, field_name_width)
-          options = field_spec.sql_options.merge(fk_field_options(field_spec.model, field_spec.name))
-          args = [field_spec.name.inspect] + format_options(options.compact)
-          format("t.%-*s %s", field_name_width, field_spec.type, args.join(', '))
         end
 
         def change_table(model, current_table_name)
