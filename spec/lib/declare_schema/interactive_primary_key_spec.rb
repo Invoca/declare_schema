@@ -35,6 +35,33 @@ RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
 
     nuke_model_class(Foo)
 
+    # The ActiveRecord sqlite3 driver has a bug where rename_column recreates the entire table, but forgets to set the primary key:
+    #
+    # [7] pry(#<RSpec::ExampleGroups::DeclareSchemaMigrationGeneratorInteractivePrimaryKey>)> u = 'rename_column :foos, :foo_id, :id'
+    # => "rename_column :foos, :foo_id, :id"
+    # [8] pry(#<RSpec::ExampleGroups::DeclareSchemaMigrationGeneratorInteractivePrimaryKey>)> ActiveRecord::Migration.class_eval(u)
+    # (0.0ms)  begin transaction
+    #  (pry):17
+    # (0.2ms)  CREATE TEMPORARY TABLE "afoos" ("id" integer NOT NULL)
+    #  (pry):17
+    # (0.1ms)  INSERT INTO "afoos" ("id")
+    #
+    #  (pry):17
+    # (0.4ms)  DROP TABLE "foos"
+    #  (pry):17
+    # (0.1ms)  CREATE TABLE "foos" ("id" integer NOT NULL)
+    #  (pry):17
+    # (0.1ms)  INSERT INTO "foos" ("id")
+    #
+    #  (pry):17
+    # (0.1ms)  DROP TABLE "afoos"
+    #  (pry):17
+    # (0.9ms)  commit transaction
+    if defined?(SQLite3)
+      ActiveRecord::Base.connection.execute("drop table foos")
+      ActiveRecord::Base.connection.execute("CREATE TABLE foos (id integer PRIMARY KEY AUTOINCREMENT NOT NULL)")
+    end
+
     ### migrate to
 
     if Rails::VERSION::MAJOR >= 5 && !defined?(Mysql2) # TODO TECH-4814 Put this test back for Mysql2
