@@ -12,7 +12,7 @@ module DeclareSchema
         end or raise ArgumentError, "fields must be Array(Array(Symbol, Symbol, Hash)); got #{fields.inspect}"
         @fields = fields
         @create_table_options = create_table_options
-        @create_table_options = @create_table_options.merge(options: sql_options) if sql_options
+        @create_table_options = @create_table_options.merge(options: sql_options) if sql_options.present?
       end
 
       def up_command
