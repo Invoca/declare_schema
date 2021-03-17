@@ -2,6 +2,8 @@
 
 module DeclareSchema
   module SchemaChange
+    module All
+    end
     autoload :Base, 'declare_schema/schema_change/base'
     autoload :ColumnAdd, 'declare_schema/schema_change/column_add'
     autoload :ColumnChange, 'declare_schema/schema_change/column_change'
