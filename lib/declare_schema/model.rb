@@ -41,7 +41,7 @@ module DeclareSchema
           eval <<~EOS
             def self.inherited(klass)
               unless klass.field_specs.has_key?(inheritance_column)
-                fields do |f|
+                declare_schema do |f|
                   f.field(inheritance_column, :string, limit: 255, null: true)
                 end
                 index(inheritance_column)

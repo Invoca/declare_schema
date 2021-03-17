@@ -57,4 +57,4 @@ jobs:
           git config --global user.email "dummy@example.com"
           git config --global user.name "dummy"
           MYSQL_PORT=3306 bundle exec rake test:prepare_testapp[force]
-          bundle exec rake test:all < test_responses.txt
+          bundle exec rake test:all
