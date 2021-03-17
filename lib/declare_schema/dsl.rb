@@ -28,8 +28,7 @@ module DeclareSchema
       field(:lock_version, :integer, default: 1, null: false)
     end
 
-    def field(name, type, *args)
-      options = args.extract_options!
+    def field(name, type, *args, **options)
       @model.declare_field(name, type, *(args + [@options.merge(options)]))
     end
 
