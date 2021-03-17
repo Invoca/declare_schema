@@ -436,11 +436,13 @@ module Generators
 
           existing_primary_key_columns = (existing_primary_key&.columns || []).map { |col_name| to_rename[col_name] || col_name }
 
-          change_primary_key =
-            if (existing_primary_key || defined_primary_key) &&
-              existing_primary_key_columns != defined_primary_key&.columns
-              ::DeclareSchema::SchemaChange::PrimaryKeyChange.new(new_table_name, existing_primary_key_columns, defined_primary_key&.columns)
-            end
+          if !ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
+            change_primary_key =
+              if (existing_primary_key || defined_primary_key) &&
+                existing_primary_key_columns != defined_primary_key&.columns
+                ::DeclareSchema::SchemaChange::PrimaryKeyChange.new(new_table_name, existing_primary_key_columns, defined_primary_key&.columns)
+              end
+          end
 
           drop_indexes = (existing_indexes_without_primary_key - model_indexes_without_primary_key).map do |i|
             ::DeclareSchema::SchemaChange::IndexRemove.new(new_table_name, i.columns, unique: i.unique, where: i.where, name: i.name)

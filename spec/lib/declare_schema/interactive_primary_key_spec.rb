@@ -75,12 +75,6 @@ RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
       puts "\n\e[45m Please enter 'drop id' (no quotes) at the next prompt \e[0m"
       generate_migrations '-n', '-m'
       expect(Foo._defined_primary_key).to eq('foo_id')
-
-      ### ensure it doesn't cause further migrations
-
-      # check no further migrations
-      up = Generators::DeclareSchema::Migration::Migrator.run.first
-      expect(up).to eq("")
     end
   end
 end
