@@ -303,7 +303,7 @@ module Generators
           elsif primary_key == "id"
             { id: :bigint }
           else
-            { primary_key: :primary_key.to_sym }
+            { primary_key: primary_key.to_sym }
           end
         end
 
