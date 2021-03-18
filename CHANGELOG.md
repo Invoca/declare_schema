@@ -4,7 +4,7 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.10.1] - Unreleased
+## [0.10.1] - 2021-03-18
 ### Fixed
 - Migration steps are now generated in a defined dependency order, so that--for example--indexes that depend
  on columns are deleted first, before the columns themselves are deleted (since the latter implicitly does the former, which would break the migration when run).
