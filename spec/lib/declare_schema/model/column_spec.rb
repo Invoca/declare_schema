@@ -85,14 +85,6 @@ RSpec.describe DeclareSchema::Model::Column do
   end
 
   describe 'instance methods' do
-    before do
-      class ColumnTestModel < ActiveRecord::Base
-        fields do
-          title :string, limit: 127, null: false
-          count :integer, null: false
-        end
-      end
-    end
     let(:model) { ColumnTestModel }
     let(:type) { :integer }
     let(:current_table_name) { model.table_name }
@@ -108,18 +100,56 @@ RSpec.describe DeclareSchema::Model::Column do
                           sql_type_metadata: {}) }
     subject { described_class.new(model, current_table_name, column) }
 
-    describe '#type' do
-      it 'returns type' do
-        expect(subject.type).to eq(type)
+    context 'Using fields' do
+      before do
+        class ColumnTestModel < ActiveRecord::Base
+          fields do
+            title :string, limit: 127, null: false
+            count :integer, null: false
+          end
+        end
+      end
+
+      describe '#type' do
+        it 'returns type' do
+          expect(subject.type).to eq(type)
+        end
+      end
+
+      describe '#schema_attributes' do
+        it 'returns a hash with relevant key/values' do
+          if defined?(Mysql2)
+            expect(subject.schema_attributes).to eq(type: :integer, null: false, limit: 4)
+          else
+            expect(subject.schema_attributes).to eq(type: :integer, null: false)
+          end
+        end
       end
     end
 
-    describe '#schema_attributes' do
-      it 'returns a hash with relevant key/values' do
-        if defined?(Mysql2)
-          expect(subject.schema_attributes).to eq(type: :integer, null: false, limit: 4)
-        else
-          expect(subject.schema_attributes).to eq(type: :integer, null: false)
+    context 'Using declare_schema' do
+      before do
+        class ColumnTestModel < ActiveRecord::Base
+          declare_schema do
+            string :title, limit: 127, null: false
+            integer :count, null: false
+          end
+        end
+      end
+
+      describe '#type' do
+        it 'returns type' do
+          expect(subject.type).to eq(type)
+        end
+      end
+
+      describe '#schema_attributes' do
+        it 'returns a hash with relevant key/values' do
+          if defined?(Mysql2)
+            expect(subject.schema_attributes).to eq(type: :integer, null: false, limit: 4)
+          else
+            expect(subject.schema_attributes).to eq(type: :integer, null: false)
+          end
         end
       end
     end

@@ -69,11 +69,11 @@ module DeclareSchema
             def declare_model_fields_and_associations
               buffer = ::DeclareSchema::Support::IndentedBuffer.new(indent: 2)
               buffer.newline!
-              buffer << 'fields do'
+              buffer << 'declare_schema do'
               buffer.indent! do
                 field_attributes.each do |attribute|
-                  decl = "%-#{max_attribute_length}s" % attribute.name + ' ' +
-                    attribute.type.to_sym.inspect +
+                  decl = "%-#{max_attribute_length}s" % attribute.type + ' ' +
+                    attribute.name.to_sym.inspect +
                     case attribute.type.to_s
                     when 'string'
                       ', limit: 255'
@@ -113,7 +113,7 @@ module DeclareSchema
             end
 
             def max_attribute_length
-              attributes.map { |attribute| attribute.name.length }.max
+              attributes.map { |attribute| attribute.type.length }.max
             end
 
             def field_attributes

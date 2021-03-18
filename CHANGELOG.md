@@ -4,11 +4,19 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.9.1] - Unreleased
+## [0.10.1] - Unreleased
 ### Fixed
 - Migration steps are now generated in a defined dependency order, so that--for example--indexes that depend
  on columns are deleted first, before the columns themselves are deleted (since the latter implicitly does the former, which would break the migration when run).
 - Related to the above, down migration steps are now always generated in exactly the reverse order of the up migration steps.
+
+## [0.10.0] - 2021-03-17
+### Deprecated
+- Deprecated the `fields` DSL method in favor of `declare_schema`.
+
+### Added
+- Added the `declare_schema` method to replace `fields`. We now expect a column's type to come before the name
+i.e. `declare schema { string :title }`. Otherwise, there is no difference between `fields` and `declare_schema`.
 
 ## [0.9.0] - 2021-03-01
 ### Added
@@ -146,6 +154,8 @@ using the appropriate Rails configuration attributes.
 ### Added
 - Initial version from https://github.com/Invoca/hobo_fields v4.1.0.
 
+[0.10.1]: https://github.com/Invoca/declare_schema/compare/v0.10.0...v0.10.1
+[0.10.0]: https://github.com/Invoca/declare_schema/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/Invoca/declare_schema/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/Invoca/declare_schema/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/Invoca/declare_schema/compare/v0.7.0...v0.7.1
