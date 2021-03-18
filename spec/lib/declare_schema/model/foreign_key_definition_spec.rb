@@ -60,6 +60,14 @@ RSpec.describe DeclareSchema::Model::ForeignKeyDefinition do
           expect(subject.on_delete_cascade).to be_truthy
         end
       end
+
+      context 'when constraint name passed' do
+        let(:options) { { parent_table: :networks, foreign_key: :the_network_id, index_name: :index_on_network_id,
+                          constraint_name: "", dependent: :delete } }
+        it 'in as ""' do
+          expect(subject.constraint_name).to eq("index_on_network_id")
+        end
+      end
     end
   end
 
