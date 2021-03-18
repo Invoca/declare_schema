@@ -19,9 +19,9 @@ module DeclareSchema
         @parent_table_name = options[:parent_table]&.to_s
         @foreign_key_name = options[:foreign_key]&.to_s || @foreign_key
 
-        @constraint_name = options[:constraint_name]&.to_s ||
+        @constraint_name = options[:constraint_name]&.to_s.presence ||
                              options[:index_name]&.to_s ||
-                             IndexDefinition.index_name(@foreign_key_name)
+                             model.connection.index_name(model.table_name, column: @foreign_key_name)
         @on_delete_cascade = options[:dependent] == :delete
       end
 
