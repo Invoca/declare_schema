@@ -835,6 +835,55 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     expect(Ad.field_specs['company'].options[:validates].inspect).to eq("{:presence=>true, :uniqueness=>{:case_sensitive=>false}}")
   end
 
+  context 'models with the same parent foreign key relation' do
+    before do
+      class Category < ActiveRecord::Base
+        fields do
+          name :string, limit: 250, null: true
+        end
+      end
+      class Advertiser < ActiveRecord::Base
+        fields do
+          name :string, limit: 250, null: true
+        end
+        belongs_to :category, limit: 8
+      end
+      class Affiliate < ActiveRecord::Base
+        fields do
+          name :string, limit: 250, null: true
+        end
+        belongs_to :category, limit: 8
+      end
+    end
+    it 'will genereate unique constraint names' do
+      expect(Generators::DeclareSchema::Migration::Migrator.run).to(
+        migrate_up(<<~EOS.strip)
+          create_table :categories, id: :bigint, options: "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin" do |t|
+            t.string :name, limit: 250, null: true, charset: "utf8mb4", collation: "utf8mb4_bin"
+          end
+          create_table :advertisers, id: :bigint, options: "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin" do |t|
+            t.string  :name, limit: 250, null: true, charset: "utf8mb4", collation: "utf8mb4_bin"
+            t.integer :category_id, limit: 8, null: false
+          end
+          create_table :affiliates, id: :bigint, options: "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin" do |t|
+            t.string  :name, limit: 250, null: true, charset: "utf8mb4", collation: "utf8mb4_bin"
+            t.integer :category_id, limit: 8, null: false
+          end
+          add_index :advertisers, [:category_id], name: :on_category_id
+          add_index :affiliates, [:category_id], name: :on_category_id
+          #{"add_foreign_key :advertisers, :categories, column: :category_id, name: :on_category_id" if defined?(Mysql2)}
+          #{"add_foreign_key :affiliates, :categories, column: :category_id, name: :on_category_id" if defined?(Mysql2)}
+          EOS
+      )
+      migrate
+
+      # Advertiser.field_specs.delete(:category_id)
+      # Advertiser.index_definitions.delete_if { |spec| spec.fields==["category_id"] }
+      # Affiliate.field_specs.delete(:category_id)
+      # Affiliate.index_definitions.delete_if { |spec| spec.fields==["category_id"] }
+    end
+  end
+
   describe 'serialize' do
     before do
       class Ad < ActiveRecord::Base
