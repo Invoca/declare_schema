@@ -11,17 +11,7 @@ module Generators
   module DeclareSchema
     module Migration
       RSpec.describe Migrator do
-        before do
-          ActiveRecord::Base.connection.tables
-        end
-
         subject { described_class.new }
-
-        describe 'format_options' do
-          it 'returns an array of option .inspect strings, with symbols using the modern : hash notation' do
-            expect(subject.format_options({ limit: 4, 'key' => 'value "quoted"' })).to eq(["limit: 4", '"key" => "value \"quoted\""'])
-          end
-        end
 
         describe '#before_generating_migration' do
           it 'requires a block be passed' do
@@ -67,7 +57,7 @@ module Generators
           end
         end
 
-        describe 'load_rails_models' do
+        describe '#load_rails_models' do
           before do
             expect(Rails.application).to receive(:eager_load!)
             expect(Rails::Engine).to receive(:subclasses).and_return([])
@@ -89,6 +79,64 @@ module Generators
           context 'when no before_generating_migration callback is configured' do
             it { should be_nil }
           end
+        end
+
+        describe '#order_migrations' do
+          let(:class_name_order) do
+            %w[ TableRename
+                TableAdd
+                TableChange
+                ColumnAdd
+                ColumnRename
+                ColumnChange
+                PrimaryKeyChange
+                IndexAdd
+                ForeignKeyAdd
+                ForeignKeyRemove
+                IndexRemove
+                ColumnRemove
+                TableRemove ]
+            end
+          let(:one_of_each) do
+            class_name_order.map do |class_name|
+              klass = klass_from_class_name(class_name)
+              instance_double(klass).tap do |double|
+                allow(double).to receive(:class).and_return(klass)
+              end
+            end
+          end
+          let(:one_of_each_shuffled) { one_of_each.shuffle }
+
+          it 'orders properly' do
+            ordered = subject.order_migrations(one_of_each_shuffled)
+            expect(ordered.map { |c| c.class.name.sub(/.*::/, '') }).to eq(class_name_order)
+          end
+
+          context 'when there are dups' do
+            let(:one_of_each_with_dups) do
+              (class_name_order * 2).map do |class_name|
+                klass = klass_from_class_name(class_name)
+                instance_double(klass).tap do |double|
+                  allow(double).to receive(:class).and_return(klass)
+                end
+              end
+            end
+            let(:one_of_each_with_dups_shuffled) { one_of_each_with_dups.shuffle }
+            let(:one_of_each_with_dups_shuffled_grouped) { one_of_each_with_dups_shuffled.group_by { |c| c.class.name } }
+
+            it 'sorts stably' do
+              ordered = subject.order_migrations(one_of_each_with_dups_shuffled)
+              ordered_grouped = ordered.group_by { |c| c.class.name }
+              ordered_grouped.each do |class_name, schema_changes|
+                shuffled_for_class = one_of_each_with_dups_shuffled_grouped[class_name]
+                expect(schema_changes.map(&:object_id)).to eq(shuffled_for_class.map(&:object_id))
+              end
+            end
+          end
+        end
+
+        def klass_from_class_name(class_name)
+          "::DeclareSchema::SchemaChange::#{class_name}".constantize
         end
       end
     end

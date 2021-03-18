@@ -2,6 +2,7 @@
 
 require 'active_record'
 require 'active_record/connection_adapters/abstract_adapter'
+require 'declare_schema/schema_change/all'
 
 module Generators
   module DeclareSchema
@@ -24,9 +25,7 @@ module Generators
           end
 
           def run(renames = {})
-            g = Migrator.new
-            g.renames = renames
-            g.generate
+            Migrator.new(renames: renames).generate
           end
 
           def default_migration_name
@@ -48,13 +47,11 @@ module Generators
           deprecate :default_charset=, :default_collation=, :default_charset, :default_collation, deprecator: ActiveSupport::Deprecation.new('1.0', 'declare_schema')
         end
 
-        def initialize(ambiguity_resolver = {})
+        def initialize(ambiguity_resolver = {}, renames: nil)
           @ambiguity_resolver = ambiguity_resolver
           @drops = []
-          @renames = nil
+          @renames = renames
         end
-
-        attr_accessor :renames
 
         def load_rails_models
           ActiveRecord::Migration.verbose = false
@@ -109,19 +106,24 @@ module Generators
         # return a hash of table renames and modifies the passed arrays so
         # that renamed tables are no longer listed as to_create or to_drop
         def extract_table_renames!(to_create, to_drop)
-          if renames
+          if @renames
             # A hash of table renames has been provided
 
             to_rename = {}
-            renames.each_pair do |old_name, new_name|
-              new_name = new_name[:table_name] if new_name.is_a?(Hash)
-              next unless new_name
-
-              if to_create.delete(new_name.to_s) && to_drop.delete(old_name.to_s)
-                to_rename[old_name.to_s] = new_name.to_s
-              else
-                raise Error, "Invalid table rename specified: #{old_name} => #{new_name}"
+            @renames.each do |old_name, new_name|
+              if new_name.is_a?(Hash)
+                new_name = new_name[:table_name]
               end
+              new_name or next
+
+              old_name = old_name.to_s
+              new_name = new_name.to_s
+
+              to_create.delete(new_name) or raise Error,
+                "Rename specified new name: #{new_name.inspect} but it was not in the `to_create` list"
+              to_drop.delete(old_name) or raise Error,
+                "Rename specified old name: #{old_name.inspect} but it was not in the `to_drop` list"
+              to_rename[old_name] = new_name
             end
             to_rename
 
@@ -133,18 +135,22 @@ module Generators
           end
         end
 
+        # return a hash of column renames and modifies the passed arrays so
+        # that renamed columns are no longer listed as to_create or to_drop
         def extract_column_renames!(to_add, to_remove, table_name)
-          if renames
+          if @renames
             to_rename = {}
-            if (column_renames = renames&.[](table_name.to_sym))
-              # A hash of table renames has been provided
+            if (column_renames = @renames[table_name.to_sym])
+              # A hash of column renames has been provided
 
-              column_renames.each_pair do |old_name, new_name|
-                if to_add.delete(new_name.to_s) && to_remove.delete(old_name.to_s)
-                  to_rename[old_name.to_s] = new_name.to_s
-                else
-                  raise Error, "Invalid rename specified: #{old_name} => #{new_name}"
-                end
+              column_renames.each do |old_name, new_name|
+                old_name = old_name.to_s
+                new_name = new_name.to_s
+                to_add.delete(new_name) or raise Error,
+                  "Rename specified new name: #{new_name.inspect} but it was not in the `to_add` list for table #{table_name}"
+                to_remove.delete(old_name) or raise Error,
+                  "Rename specified old name: #{old_name.inspect} but it was not in the `to_remove` list for table #{table_name}"
+                to_rename[old_name] = new_name
               end
             end
             to_rename
@@ -201,85 +207,103 @@ module Generators
           to_rename = extract_table_renames!(to_create, to_drop)
 
           renames = to_rename.map do |old_name, new_name|
-            "rename_table :#{old_name}, :#{new_name}"
-          end * "\n"
-          undo_renames = to_rename.map do |old_name, new_name|
-            "rename_table :#{new_name}, :#{old_name}"
-          end * "\n"
+            ::DeclareSchema::SchemaChange::TableRename.new(old_name, new_name)
+          end
 
           drops = to_drop.map do |t|
-            "drop_table :#{t}"
-          end * "\n"
-          undo_drops = to_drop.map do |t|
-            add_table_back(t)
-          end * "\n\n"
+            ::DeclareSchema::SchemaChange::TableRemove.new(t, add_table_back(t))
+          end
 
           creates = to_create.map do |t|
-            create_table(models_by_table_name[t])
-          end * "\n\n"
-          undo_creates = to_create.map do |t|
-            "drop_table :#{t}"
-          end * "\n"
+            model = models_by_table_name[t]
+            disable_auto_increment = model.try(:disable_auto_increment)
+
+            primary_key_definition =
+              if disable_auto_increment
+                [:integer, :id, limit: 8, auto_increment: false, primary_key: true]
+              end
+
+            field_definitions = model.field_specs.values.sort_by(&:position).map do |f|
+              [f.type, f.name, f.sql_options]
+            end
+
+            table_options_definition = ::DeclareSchema::Model::TableOptionsDefinition.new(model.table_name, table_options_for_model(model))
+            table_options = create_table_options(model, disable_auto_increment)
+
+            table_add = ::DeclareSchema::SchemaChange::TableAdd.new(t,
+                                                                    Array(primary_key_definition) + field_definitions,
+                                                                    table_options,
+                                                                    sql_options: table_options_definition.settings)
+            [
+              table_add,
+              *Array((create_indexes(model)     if ::DeclareSchema.default_generate_indexing)),
+              *Array((create_constraints(model) if ::DeclareSchema.default_generate_foreign_keys))
+            ]
+          end
 
           changes                    = []
-          undo_changes               = []
           index_changes              = []
-          undo_index_changes         = []
           fk_changes                 = []
-          undo_fk_changes            = []
           table_options_changes      = []
-          undo_table_options_changes = []
 
           to_change.each do |t|
             model = models_by_table_name[t]
             table = to_rename.key(t) || model.table_name
             if table.in?(db_tables)
-              change, undo, index_change, undo_index, fk_change, undo_fk, table_options_change, undo_table_options_change = change_table(model, table)
+              change, index_change, fk_change, table_options_change = change_table(model, table)
               changes << change
-              undo_changes << undo
               index_changes << index_change
-              undo_index_changes << undo_index
               fk_changes << fk_change
-              undo_fk_changes << undo_fk
               table_options_changes << table_options_change
-              undo_table_options_changes << undo_table_options_change
             end
           end
 
-          up = [renames, drops, creates, changes, index_changes, fk_changes, table_options_changes].flatten.reject(&:blank?) * "\n\n"
-          down = [undo_changes, undo_renames, undo_drops, undo_creates, undo_index_changes, undo_fk_changes, undo_table_options_changes].flatten.reject(&:blank?) * "\n\n"
+          migration_commands = [renames, drops, creates, changes, index_changes, fk_changes, table_options_changes].flatten
 
-          [up, down]
+          ordered_migration_commands = order_migrations(migration_commands)
+
+          up_and_down_migrations(ordered_migration_commands)
         end
 
-        def create_table(model)
-          longest_field_name       = model.field_specs.values.map { |f| f.type.to_s.length }.max
-          disable_auto_increment   = model.respond_to?(:disable_auto_increment) && model.disable_auto_increment
-          table_options_definition = ::DeclareSchema::Model::TableOptionsDefinition.new(model.table_name, table_options_for_model(model))
-          field_definitions        = [
-            ("t.integer :id, limit: 8, auto_increment: false, primary_key: true" if disable_auto_increment),
-            *(model.field_specs.values.sort_by(&:position).map { |f| create_field(f, longest_field_name) })
-          ].compact
+        MIGRATION_ORDER = %w[ TableRename
+                              TableAdd
+                              TableChange
+                                ColumnAdd
+                                ColumnRename
+                                ColumnChange
+                                  PrimaryKeyChange
+                                  IndexAdd
+                                    ForeignKeyAdd
+                                    ForeignKeyRemove
+                                  IndexRemove
+                                ColumnRemove
+                              TableRemove ]
 
-          <<~EOS.strip
-            create_table :#{model.table_name}, #{create_table_options(model, disable_auto_increment)} do |t|
-              #{field_definitions.join("\n")}
-            end
+        def order_migrations(migration_commands)
+          migration_commands.each_with_index.sort_by do |command, index|
+            command_type = command.class.name.gsub(/.*::/, '')
+            priority = MIGRATION_ORDER.index(command_type) or raise "#{command_type.inspect} not found in #{MIGRATION_ORDER.inspect}"
+            [priority, index] # index keeps the sort stable in case of a tie
+          end.map(&:first) # remove the index
+        end
 
-            #{table_options_definition.alter_table_statement unless ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)}
-            #{create_indexes(model).join("\n")               if ::DeclareSchema.default_generate_indexing}
-            #{create_constraints(model).join("\n")           if ::DeclareSchema.default_generate_foreign_keys}
-          EOS
+        private
+
+        def up_and_down_migrations(migration_commands)
+          up   = migration_commands.map(&:up  ).select(&:present?)
+          down = migration_commands.map(&:down).select(&:present?).reverse
+
+          [up * "\n\n", down * "\n\n"]
         end
 
         def create_table_options(model, disable_auto_increment)
           primary_key = model._defined_primary_key
           if primary_key.blank? || disable_auto_increment
-            "id: false"
+            { id: false }
           elsif primary_key == "id"
-            "id: :bigint"
+            { id: :bigint }
           else
-            "primary_key: :#{primary_key}"
+            { primary_key: primary_key.to_sym }
           end
         end
 
@@ -294,18 +318,18 @@ module Generators
           end
         end
 
+        # TODO: TECH-5338: optimize that index doesn't need to be dropped on undo since entire table will be dropped
         def create_indexes(model)
-          model.index_definitions.map { |i| i.to_add_statement(model.table_name) }
+          model.index_definitions.map do |i|
+            ::DeclareSchema::SchemaChange::IndexAdd.new(model.table_name, i.columns, unique: i.unique, where: i.where, name: i.name)
+          end
         end
 
         def create_constraints(model)
-          model.constraint_specs.map { |fk| fk.to_add_statement }
-        end
-
-        def create_field(field_spec, field_name_width)
-          options = field_spec.sql_options.merge(fk_field_options(field_spec.model, field_spec.name))
-          args = [field_spec.name.inspect] + format_options(options.compact)
-          format("t.%-*s %s", field_name_width, field_spec.type, args.join(', '))
+          model.constraint_specs.map do |fk|
+            ::DeclareSchema::SchemaChange::ForeignKeyAdd.new(fk.child_table_name, fk.parent_table_name,
+                                                             column_name: fk.foreign_key_name, name: fk.constraint_name)
+          end
         end
 
         def change_table(model, current_table_name)
@@ -332,37 +356,28 @@ module Generators
           to_change = db_column_names & model_column_names
 
           renames = to_rename.map do |old_name, new_name|
-            "rename_column :#{new_table_name}, :#{old_name}, :#{new_name}"
-          end
-          undo_renames = to_rename.map do |old_name, new_name|
-            "rename_column :#{new_table_name}, :#{new_name}, :#{old_name}"
+            ::DeclareSchema::SchemaChange::ColumnRename.new(new_table_name, old_name, new_name)
           end
 
-          to_add = to_add.sort_by { |c| model.field_specs[c]&.position || 0 }
+          to_add.sort_by! { |c| model.field_specs[c]&.position || 0 }
+
           adds = to_add.map do |c|
-            args =
+            type, options =
               if (spec = model.field_specs[c])
-                options = spec.sql_options.merge(fk_field_options(model, c))
-                [":#{spec.type}", *format_options(options.compact)]
+                [spec.type, spec.sql_options.merge(fk_field_options(model, c)).compact]
               else
-                [":integer"]
+                [:integer, {}]
               end
-            ["add_column :#{new_table_name}, :#{c}", *args].join(', ')
-          end
-          undo_adds = to_add.map do |c|
-            "remove_column :#{new_table_name}, :#{c}"
+            ::DeclareSchema::SchemaChange::ColumnAdd.new(new_table_name, c, type, options)
           end
 
           removes = to_remove.map do |c|
-            "remove_column :#{new_table_name}, :#{c}"
-          end
-          undo_removes = to_remove.map do |c|
-            add_column_back(model, current_table_name, c)
+            old_type, old_options = add_column_back(model, current_table_name, c)
+            ::DeclareSchema::SchemaChange::ColumnRemove.new(new_table_name, c, old_type, old_options)
           end
 
           old_names = to_rename.invert
           changes = []
-          undo_changes = []
           to_change.each do |col_name_to_change|
             orig_col_name      = old_names[col_name_to_change] || col_name_to_change
             column             = db_columns[orig_col_name] or raise "failed to find column info for #{orig_col_name.inspect}"
@@ -374,36 +389,33 @@ module Generators
 
             if !::DeclareSchema::Model::Column.equivalent_schema_attributes?(normalized_schema_attrs, col_attrs)
               type = normalized_schema_attrs.delete(:type) or raise "no :type found in #{normalized_schema_attrs.inspect}"
-              changes << ["change_column #{new_table_name.to_sym.inspect}", col_name_to_change.to_sym.inspect,
-                          type.to_sym.inspect, *format_options(normalized_schema_attrs)].join(", ")
-              undo_changes << change_column_back(model, current_table_name, orig_col_name)
+              old_type, old_options = change_column_back(model, current_table_name, orig_col_name)
+              changes << ::DeclareSchema::SchemaChange::ColumnChange.new(new_table_name, col_name_to_change,
+                                                                         new_type: type, new_options: normalized_schema_attrs,
+                                                                         old_type: old_type, old_options: old_options)
             end
           end
 
-          index_changes, undo_index_changes = change_indexes(model, current_table_name, to_remove)
-          fk_changes, undo_fk_changes = if ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
-                                          [[], []]
-                                        else
-                                          change_foreign_key_constraints(model, current_table_name)
-                                        end
-          table_options_changes, undo_table_options_changes = if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
-                                                                change_table_options(model, current_table_name)
-                                                              else
-                                                                [[], []]
-                                                              end
+          index_changes = change_indexes(model, current_table_name, to_rename)
+          fk_changes = if ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
+                         []
+                       else
+                         change_foreign_key_constraints(model, current_table_name)
+                       end
+          table_options_changes = if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
+                                    change_table_options(model, current_table_name)
+                                  else
+                                    []
+                                  end
 
-          [(renames + adds + removes + changes)                     * "\n",
-           (undo_renames + undo_adds + undo_removes + undo_changes) * "\n",
-           index_changes                                            * "\n",
-           undo_index_changes                                       * "\n",
-           fk_changes                                               * "\n",
-           undo_fk_changes                                          * "\n",
-           table_options_changes                                    * "\n",
-           undo_table_options_changes                               * "\n"]
+          [(renames + adds + removes + changes),
+           index_changes,
+           fk_changes,
+           table_options_changes]
         end
 
-        def change_indexes(model, old_table_name, to_remove)
-          ::DeclareSchema.default_generate_indexing or return [[], []]
+        def change_indexes(model, old_table_name, to_rename)
+          ::DeclareSchema.default_generate_indexing or return []
 
           new_table_name = model.table_name
           existing_indexes = ::DeclareSchema::Model::IndexDefinition.for_model(model, old_table_name)
@@ -415,69 +427,54 @@ module Generators
               end
             end || i
           end
-          existing_has_primary_key = existing_indexes.any? do |i|
-            i.name == ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME &&
-              !i.fields.all? { |f| to_remove.include?(f) } # if we're removing the primary key column(s), the primary key index will be removed too
-          end
-          model_has_primary_key    = model_indexes.any?    { |i| i.name == ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME }
+          existing_primary_keys, existing_indexes_without_primary_key = existing_indexes.partition { |i| i.primary_key? }
+          defined_primary_keys, model_indexes_without_primary_key = model_indexes.partition { |i| i.primary_key? }
+          existing_primary_keys.size <= 1 or raise "too many existing primary keys! #{existing_primary_keys.inspect}"
+          defined_primary_keys.size <= 1 or raise "too many defined primary keys! #{defined_primary_keys.inspect}"
+          existing_primary_key = existing_primary_keys.first
+          defined_primary_key = defined_primary_keys.first
 
-          undo_add_indexes = []
-          add_indexes = (model_indexes - existing_indexes).map do |i|
-            undo_add_indexes << drop_index(old_table_name, i.name) unless i.name == ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME
-            i.to_add_statement(new_table_name, existing_has_primary_key)
+          existing_primary_key_columns = (existing_primary_key&.columns || []).map { |col_name| to_rename[col_name] || col_name }
+
+          if !ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
+            change_primary_key =
+              if (existing_primary_key || defined_primary_key) &&
+                existing_primary_key_columns != defined_primary_key&.columns
+                ::DeclareSchema::SchemaChange::PrimaryKeyChange.new(new_table_name, existing_primary_key_columns, defined_primary_key&.columns)
+              end
           end
-          undo_drop_indexes = []
-          drop_indexes = (existing_indexes - model_indexes).map do |i|
-            undo_drop_indexes << i.to_add_statement(old_table_name, model_has_primary_key)
-            drop_index(new_table_name, i.name) unless i.name == ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME
-          end.compact
+
+          drop_indexes = (existing_indexes_without_primary_key - model_indexes_without_primary_key).map do |i|
+            ::DeclareSchema::SchemaChange::IndexRemove.new(new_table_name, i.columns, unique: i.unique, where: i.where, name: i.name)
+          end
+
+          add_indexes = (model_indexes_without_primary_key - existing_indexes_without_primary_key).map do |i|
+            ::DeclareSchema::SchemaChange::IndexAdd.new(new_table_name, i.columns, unique: i.unique, where: i.where, name: i.name)
+          end
 
           # the order is important here - adding a :unique, for instance needs to remove then add
-          [drop_indexes + add_indexes, undo_add_indexes + undo_drop_indexes]
-        end
-
-        def drop_index(table, name)
-          # see https://hobo.lighthouseapp.com/projects/8324/tickets/566
-          # for why the rescue exists
-          "remove_index :#{table}, name: :#{name} rescue ActiveRecord::StatementInvalid"
+          [Array(change_primary_key) + drop_indexes + add_indexes]
         end
 
         def change_foreign_key_constraints(model, old_table_name)
           ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/) and raise ArgumentError, 'SQLite does not support foreign keys'
-          ::DeclareSchema.default_generate_foreign_keys or return [[], []]
+          ::DeclareSchema.default_generate_foreign_keys or return []
 
-          new_table_name = model.table_name
           existing_fks = ::DeclareSchema::Model::ForeignKeyDefinition.for_model(model, old_table_name)
           model_fks = model.constraint_specs
 
-          undo_add_fks = []
+          drop_fks = (existing_fks - model_fks).map do |fk|
+            ::DeclareSchema::SchemaChange::ForeignKeyRemove.new(fk.child_table_name, fk.parent_table_name,
+                                                                column_name: fk.foreign_key_name, name: fk.constraint_name)
+          end
+
           add_fks = (model_fks - existing_fks).map do |fk|
             # next if fk.parent.constantize.abstract_class || fk.parent == fk.model.class_name
-            undo_add_fks << remove_foreign_key(old_table_name, fk.constraint_name)
-            fk.to_add_statement
+            ::DeclareSchema::SchemaChange::ForeignKeyAdd.new(fk.child_table_name, fk.parent_table_name,
+                                                             column_name: fk.foreign_key_name, name: fk.constraint_name)
           end
 
-          undo_drop_fks = []
-          drop_fks = (existing_fks - model_fks).map do |fk|
-            undo_drop_fks << fk.to_add_statement
-            remove_foreign_key(new_table_name, fk.constraint_name)
-          end
-
-          [drop_fks + add_fks, undo_add_fks + undo_drop_fks]
-        end
-
-        def remove_foreign_key(old_table_name, fk_name)
-          "remove_foreign_key(#{old_table_name.inspect}, name: #{fk_name.to_s.inspect})"
-        end
-
-        def format_options(options)
-          options.map do |k, v|
-            if k.is_a?(Symbol)
-              "#{k}: #{v.inspect}"
-            else
-              "#{k.inspect} => #{v.inspect}"
-            end
-          end
+          [drop_fks + add_fks]
         end
 
         def fk_field_options(model, field_name)
@@ -506,11 +503,12 @@ module Generators
           new_options_definition = ::DeclareSchema::Model::TableOptionsDefinition.new(model.table_name, table_options_for_model(model))
 
           if old_options_definition.equivalent?(new_options_definition)
-            [[], []]
+            []
           else
             [
-              [new_options_definition.alter_table_statement],
-              [old_options_definition.alter_table_statement]
+              ::DeclareSchema::SchemaChange::TableChange.new(current_table_name,
+                                                             old_options_definition.settings,
+                                                             new_options_definition.settings)
             ]
           end
         end
@@ -528,7 +526,7 @@ module Generators
             col_spec = ::DeclareSchema::Model::Column.new(model, current_table_name, column)
             schema_attributes = col_spec.schema_attributes
             type = schema_attributes.delete(:type) or raise "no :type found in #{schema_attributes.inspect}"
-            ["add_column :#{current_table_name}, :#{col_name}, #{type.inspect}", *format_options(schema_attributes)].join(', ')
+            [type, schema_attributes]
           end
         end
 
@@ -538,7 +536,7 @@ module Generators
             col_spec = ::DeclareSchema::Model::Column.new(model, current_table_name, column)
             schema_attributes = col_spec.schema_attributes
             type = schema_attributes.delete(:type) or raise "no :type found in #{schema_attributes.inspect}"
-            ["change_column #{current_table_name.to_sym.inspect}", col_name.to_sym.inspect, type.to_sym.inspect, *format_options(schema_attributes)].join(', ')
+            [type, schema_attributes]
           end
         end
 

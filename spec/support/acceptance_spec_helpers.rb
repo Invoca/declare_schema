@@ -45,13 +45,13 @@ module AcceptanceSpecHelpers
 
   class MigrationUpEquals < RSpec::Matchers::BuiltIn::Eq
     def matches?(subject)
-      super(subject[0].gsub(/, +([a-z_]+:)/i, ', \1')) # normalize multiple spaces to one
+      super(subject[0].strip.gsub(/, +([a-z_]+:)/i, ', \1').gsub(/\n+/, "\n")) # normalize multiple spaces and newlines to one
     end
   end
 
   class MigrationDownEquals < RSpec::Matchers::BuiltIn::Eq
     def matches?(subject)
-      super(subject[1].gsub(/, +([a-z_]+:)/i, ', \1')) # normalize multiple spaces to one
+      super(subject[1].strip.gsub(/, +([a-z_]+:)/i, ', \1').gsub(/\n+/, "\n")) # normalize multiple spaces and newlines to one
     end
   end
 end

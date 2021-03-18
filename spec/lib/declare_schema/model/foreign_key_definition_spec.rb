@@ -62,12 +62,6 @@ RSpec.describe DeclareSchema::Model::ForeignKeyDefinition do
           end
         end
       end
-
-      describe '#to_add_statement' do
-        it 'returns add_foreign_key command' do
-          expect(subject.to_add_statement).to eq('add_foreign_key("models", "networks", column: "network_id", name: "on_network_id")')
-        end
-      end
     end
 
     describe 'class << self' do
@@ -147,12 +141,6 @@ RSpec.describe DeclareSchema::Model::ForeignKeyDefinition do
             expect(subject.constraint_name).to eq('constraint_1')
             expect(subject.on_delete_cascade).to be_truthy
           end
-        end
-      end
-
-      describe '#to_add_statement' do
-        it 'returns add_foreign_key command' do
-          expect(subject.to_add_statement).to eq('add_foreign_key("models", "networks", column: "network_id", name: "on_network_id")')
         end
       end
     end

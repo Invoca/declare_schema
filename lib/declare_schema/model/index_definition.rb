@@ -93,25 +93,6 @@ module DeclareSchema
         name == PRIMARY_KEY_NAME
       end
 
-      def to_add_statement(new_table_name, existing_primary_key = nil)
-        if primary_key? && !ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
-          to_add_primary_key_statement(new_table_name, existing_primary_key)
-        else
-          # Note: + below keeps that interpolated string from being frozen, so we can << into it.
-          r = +"add_index #{new_table_name.to_sym.inspect}, #{fields.map(&:to_sym).inspect}"
-          r << ", unique: true"      if unique
-          r << ", where: '#{where}'" if where.present?
-          r << ", name: '#{name}'"
-          r
-        end
-      end
-
-      def to_add_primary_key_statement(new_table_name, existing_primary_key)
-        drop = "DROP PRIMARY KEY, " if existing_primary_key
-        statement = "ALTER TABLE #{new_table_name} #{drop}ADD PRIMARY KEY (#{fields.join(', ')})"
-        "execute #{statement.inspect}"
-      end
-
       def to_key
         @key ||= [table, fields, name, unique, where].map(&:to_s)
       end
