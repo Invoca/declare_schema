@@ -25,7 +25,7 @@ RSpec.describe DeclareSchema::Model::ForeignKeyDefinition do
     subject { described_class.new(model, foreign_key, options)}
 
     before do
-      allow(connection).to receive(:index_name).with('models', column: 'network_id') { 'on_network_id' }
+      allow(model.connection).to receive(:index_name).with(model.table_name, column: options[:foreign_key]&.to_s || foreign_key.to_s) { 'index_on_network_id' }
     end
 
     describe '#initialize' do
