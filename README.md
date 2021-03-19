@@ -57,7 +57,7 @@ during the initialization of your Rails application.
 
 ### before_generating_migration callback
 
-During the initializtion process for generating migrations, `DeclareSchema` will
+During the initialization process for generating migrations, `DeclareSchema` will
 trigger the `eager_load!` on the `Rails` application and all `Rails::Engine`s loaded
 into scope.  If you need to generate migrations for models that aren't automatically loaded by `eager_load!`,
 load them in the `before_generating_migration` block.
@@ -162,6 +162,16 @@ turn all tables into `utf8mb4` supporting tables:
 
 DeclareSchema.default_charset   = "utf8mb4"
 DeclareSchema.default_collation = "utf8mb4_bin"
+```
+#### db:migrate Command
+`declare_schema` can run the migration once it is generated, if the `--migrate` option is passed.
+If not, it will display the command to run later. By default this command is
+```
+bundle exec rails db:migrate
+```
+If your repo has a different command to run for migrations, you can configure it like this:
+```ruby
+`DeclareSchema.db_migrate_command = "bundle exec rails db:migrate_immediate"`
 ```
 
 ## Declaring Character Set and Collation

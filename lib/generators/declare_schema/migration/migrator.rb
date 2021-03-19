@@ -47,8 +47,8 @@ module Generators
           deprecate :default_charset=, :default_collation=, :default_charset, :default_collation, deprecator: ActiveSupport::Deprecation.new('1.0', 'declare_schema')
         end
 
-        def initialize(ambiguity_resolver = {}, renames: nil)
-          @ambiguity_resolver = ambiguity_resolver
+        def initialize(renames: nil, &block)
+          @ambiguity_resolver = block
           @drops = []
           @renames = renames
         end

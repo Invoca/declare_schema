@@ -28,10 +28,16 @@ module DeclareSchema
   @default_null                  = false
   @default_generate_foreign_keys = true
   @default_generate_indexing     = true
+  @db_migrate_command            =
+    if Rails::VERSION::MAJOR < 5
+      "bundle exec rake db:migrate"
+    else
+      "bundle exec rails db:migrate"
+    end
 
   class << self
     attr_reader :default_charset, :default_collation, :default_text_limit, :default_string_limit, :default_null,
-                :default_generate_foreign_keys, :default_generate_indexing
+                :default_generate_foreign_keys, :default_generate_indexing, :db_migrate_command
 
     def to_class(type)
       case type
@@ -77,6 +83,11 @@ module DeclareSchema
     def default_generate_indexing=(generate_indexing)
       generate_indexing.in?([true, false]) or raise ArgumentError, "generate_indexing must be either true or false (got #{generate_indexing.inspect})"
       @default_generate_indexing = generate_indexing
+    end
+
+    def db_migrate_command=(db_migrate_command)
+      db_migrate_command.is_a?(String) or raise ArgumentError, "db_migrate_command must be a string (got #{db_migrate_command.inspect})"
+      @db_migrate_command = db_migrate_command
     end
   end
 end
