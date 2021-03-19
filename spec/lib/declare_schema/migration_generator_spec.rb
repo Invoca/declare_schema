@@ -871,18 +871,16 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           end
           add_index :advertisers, [:category_id], name: :on_category_id
           add_index :affiliates, [:category_id], name: :on_category_id
-          #{"add_foreign_key :advertisers, :categories, column: :category_id, name: :index_advertisers_on_category_id" if defined?(Mysql2)}
-          #{"add_foreign_key :affiliates, :categories, column: :category_id, name: :index_affiliates_on_category_id" if defined?(Mysql2)}
+          #{"add_foreign_key :advertisers, :categories, column: :category_id, name: :index_advertisers_on_category_id"}
+          #{"add_foreign_key :affiliates, :categories, column: :category_id, name: :index_affiliates_on_category_id"}
           EOS
       )
       migrate
 
-      # Advertiser.field_specs.delete(:category_id)
-      # Advertiser.index_definitions.delete_if { |spec| spec.fields==["category_id"] }
-      # Affiliate.field_specs.delete(:category_id)
-      # Affiliate.index_definitions.delete_if { |spec| spec.fields==["category_id"] }
+      nuke_model_class(Advertiser)
+      nuke_model_class(Affiliate)
     end
-  end
+  end if defined?(Mysql2)
 
   describe 'serialize' do
     before do
