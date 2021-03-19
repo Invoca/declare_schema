@@ -11,9 +11,9 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     expect_model_definition_to_eq('alpha/beta', <<~EOS)
       class Alpha::Beta < #{active_record_base_class}
 
-        fields do
-          one :string, limit: 255
-          two :integer
+        declare_schema do
+          string  :one, limit: 255
+          integer :two
         end
 
       end

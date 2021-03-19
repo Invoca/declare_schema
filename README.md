@@ -228,5 +228,5 @@ or add it to your `bundler` Gemfile:
 To run tests:
 ```
 rake test:prepare_testapp[force]
-rake test:all < test_responses.txt
+rake test:all
 ```

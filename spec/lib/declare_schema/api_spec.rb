@@ -20,9 +20,9 @@ RSpec.describe 'DeclareSchema API' do
       expect_model_definition_to_eq('advert', <<~EOS)
         class Advert < #{active_record_base_class}
 
-          fields do
-            title :string, limit: 255
-            body  :text
+          declare_schema do
+            string :title, limit: 255
+            text   :body
           end
 
         end
@@ -91,8 +91,8 @@ RSpec.describe 'DeclareSchema API' do
       class AdvertWithRequiredTitle < ActiveRecord::Base
         self.table_name = 'adverts'
 
-        fields do
-          title :string, :required, limit: 255
+        declare_schema do
+          string :title, :required, limit: 255
         end
       end
 
@@ -110,8 +110,8 @@ RSpec.describe 'DeclareSchema API' do
       class AdvertWithUniqueTitle < ActiveRecord::Base
         self.table_name = 'adverts'
 
-        fields do
-          title :string, :unique, limit: 255
+        declare_schema do
+          string :title, :unique, limit: 255
         end
       end
 
