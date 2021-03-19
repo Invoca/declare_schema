@@ -855,6 +855,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         belongs_to :category, limit: 8
       end
     end
+
     it 'will genereate unique constraint names' do
       expect(Generators::DeclareSchema::Migration::Migrator.run).to(
         migrate_up(<<~EOS.strip)
@@ -871,8 +872,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           end
           add_index :advertisers, [:category_id], name: :on_category_id
           add_index :affiliates, [:category_id], name: :on_category_id
-          #{"add_foreign_key :advertisers, :categories, column: :category_id, name: :index_advertisers_on_category_id"}
-          #{"add_foreign_key :affiliates, :categories, column: :category_id, name: :index_affiliates_on_category_id"}
+          add_foreign_key :advertisers, :categories, column: :category_id, name: :index_advertisers_on_category_id
+          add_foreign_key :affiliates, :categories, column: :category_id, name: :index_affiliates_on_category_id
           EOS
       )
       migrate
@@ -880,7 +881,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       nuke_model_class(Advertiser)
       nuke_model_class(Affiliate)
     end
-  end if defined?(Mysql2)
+  end if !defined?(Sqlite3)
 
   describe 'serialize' do
     before do
