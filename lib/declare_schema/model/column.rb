@@ -53,7 +53,7 @@ module DeclareSchema
         def deserialize_default_value(column, type, default_value)
           type or raise ArgumentError, "must pass type; got #{type.inspect}"
 
-          case Rails::VERSION::MAJOR
+          case ActiveSupport::VERSION::MAJOR
           when 4
             # TODO: Delete this Rails 4 support ASAP! This could be wrong, since it's using the type of the old column...which
             # might be getting migrated to a new type. We should be using just type as below. -Colin

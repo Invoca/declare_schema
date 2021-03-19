@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'rails'
-
 require 'declare_schema/extensions/module'
 
 module DeclareSchema
@@ -130,7 +128,7 @@ module DeclareSchema
 
         fk_options[:dependent] = options.delete(:far_end_dependent) if options.has_key?(:far_end_dependent)
 
-        if Rails::VERSION::MAJOR >= 5
+        if ActiveSupport::VERSION::MAJOR >= 5
           super
         else
           super(name, scope, options.except(:optional))
@@ -149,7 +147,7 @@ module DeclareSchema
         end
       end
 
-      if ::Rails::VERSION::MAJOR < 5
+      if ::ActiveSupport::VERSION::MAJOR < 5
         def primary_key
           super || 'id'
         end
@@ -227,7 +225,7 @@ module DeclareSchema
                   ActiveRecord::Coders::JSON
                 elsif [:load, :dump].all? { |x| class_name_or_coder.respond_to?(x) }
                   class_name_or_coder
-                elsif Rails::VERSION::MAJOR >= 5
+                elsif ActiveSupport::VERSION::MAJOR >= 5
                   ActiveRecord::Coders::YAMLColumn.new(attr_name, class_name_or_coder)
                 else
                   ActiveRecord::Coders::YAMLColumn.new(class_name_or_coder)

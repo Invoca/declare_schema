@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'rails'
 begin
   require 'mysql2'
 rescue LoadError
@@ -63,7 +62,7 @@ RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
         ActiveRecord::Base.connection.execute("CREATE TABLE foos (id integer PRIMARY KEY AUTOINCREMENT NOT NULL)")
       end
 
-      if Rails::VERSION::MAJOR >= 5 && !defined?(Mysql2) # TODO TECH-4814 Put this test back for Mysql2
+      if ActiveSupport::VERSION::MAJOR >= 5 && !defined?(Mysql2) # TODO TECH-4814 Put this test back for Mysql2
         # replace custom primary_key
         class Foo < ActiveRecord::Base
           fields do
@@ -131,7 +130,7 @@ RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
         ActiveRecord::Base.connection.execute("CREATE TABLE foos (id integer PRIMARY KEY AUTOINCREMENT NOT NULL)")
       end
 
-      if Rails::VERSION::MAJOR >= 5 && !defined?(Mysql2) # TODO TECH-4814 Put this test back for Mysql2
+      if ActiveSupport::VERSION::MAJOR >= 5 && !defined?(Mysql2) # TODO TECH-4814 Put this test back for Mysql2
         # replace custom primary_key
         class Foo < ActiveRecord::Base
           declare_schema do

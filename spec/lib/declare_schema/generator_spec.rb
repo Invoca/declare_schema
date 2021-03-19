@@ -27,7 +27,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
     EOS
 
-    case Rails::VERSION::MAJOR
+    case ActiveSupport::VERSION::MAJOR
     when 4, 5
       expect_test_definition_to_eq('alpha/beta', <<~EOS)
         require "test_helper"
@@ -50,7 +50,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       EOS
     end
 
-    case Rails::VERSION::MAJOR
+    case ActiveSupport::VERSION::MAJOR
     when 4
       expect_test_fixture_to_eq('alpha/beta', <<~EOS)
         # Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html

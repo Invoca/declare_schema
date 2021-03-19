@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'rails'
-
 begin
   require 'mysql2'
 rescue LoadError
@@ -16,7 +14,7 @@ RSpec.describe DeclareSchema::Model::Column do
 
   describe 'class methods' do
     describe '.native_type?' do
-      if Rails::VERSION::MAJOR >= 5
+      if ActiveSupport::VERSION::MAJOR >= 5
         let(:native_types) { [:string, :text, :integer, :float, :decimal, :datetime, :time, :date, :binary, :boolean, :json] }
       else
         let(:native_types) { [:string, :text, :integer, :float, :decimal, :datetime, :time, :date, :binary, :boolean] }
@@ -65,9 +63,7 @@ RSpec.describe DeclareSchema::Model::Column do
     end
 
     describe '.deserialize_default_value' do
-      require 'rails'
-
-      if ::Rails::VERSION::MAJOR >= 5
+      if ::ActiveSupport::VERSION::MAJOR >= 5
         it 'deserializes :boolean' do
           expect(described_class.deserialize_default_value(nil, :boolean, 'true')).to eq(true)
           expect(described_class.deserialize_default_value(nil, :boolean, 'false')).to eq(false)

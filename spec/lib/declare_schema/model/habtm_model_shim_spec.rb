@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'rails'
-
 begin
   require 'mysql2'
 rescue LoadError
