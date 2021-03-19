@@ -38,20 +38,18 @@ module DeclareSchema
                  type: :boolean,
                  desc: "Don't prompt for a migration name - just pick one"
 
-    class_option :generate,
-                 aliases: '-g',
-                 type: :boolean,
-                 desc: "Don't prompt for action - generate the migration"
-
     class_option :migrate,
                  aliases: '-m',
                  type: :boolean,
-                 desc: "Don't prompt for action - generate and migrate"
+                 desc: "After generating migration, run it"
 
     def migrate
       return if migrations_pending?
 
-      generator = Generators::DeclareSchema::Migration::Migrator.new(->(c, d, k, p) { extract_renames!(c, d, k, p) })
+      generator = Generators::DeclareSchema::Migration::Migrator.new do |to_create, to_drop, kind_str, name_prefix|
+        extract_renames!(to_create, to_drop, kind_str, name_prefix)
+      end
+
       up, down = generator.generate
 
       if up.blank?
@@ -67,34 +65,31 @@ module DeclareSchema
       say down
       say "----------------------------------"
 
-      action = options[:generate] && 'g' ||
-               options[:migrate] && 'm' ||
-               choose("\nWhat now: [g]enerate migration, generate and [m]igrate now or [c]ancel?", /^(g|m|c)$/)
+      final_migration_name =
+        name.presence ||
+        if !options[:default_name]
+          choose("\nMigration filename (spaces will be converted to _) [#{default_migration_name}]:", /^[a-z0-9_ ]*$/,
+                 default_migration_name).strip.gsub(' ', '_').presence
+        end ||
+        default_migration_name
 
-      if action != 'c'
-        if name.blank? && !options[:default_name]
-          final_migration_name = choose("\nMigration filename: [<enter>=#{migration_name}|<custom_name>]:", /^[a-z0-9_ ]*$/, migration_name).strip.gsub(' ', '_')
+      @up = indent(up, 4)
+      @down = indent(down, 4)
+      @migration_class_name = final_migration_name.camelize
+
+      migration_template('migration.rb.erb', "db/migrate/#{final_migration_name.underscore}.rb")
+
+      db_migrate_command = ::DeclareSchema.db_migrate_command
+      if options[:migrate]
+        say db_migrate_command
+        bare_rails_command = db_migrate_command.sub(/\Abundle exec +/, '').sub(/\Arake +|rails +/, '')
+        if Rails::VERSION::MAJOR < 5
+          rake(bare_rails_command)
+        else
+          rails_command(bare_rails_command)
         end
-        final_migration_name = migration_name if final_migration_name.blank?
-
-        up.gsub!("\n", "\n    ")
-        up.gsub!(/ +\n/, "\n")
-        down.gsub!("\n", "\n    ")
-        down.gsub!(/ +\n/, "\n")
-
-        @up = up
-        @down = down
-        @migration_class_name = final_migration_name.camelize
-
-        migration_template('migration.rb.erb', "db/migrate/#{final_migration_name.underscore}.rb")
-        if action == 'm'
-          case Rails::VERSION::MAJOR
-          when 4
-            rake('db:migrate')
-          else
-            rails_command('db:migrate')
-          end
-        end
+      else
+        say "\nNot running migration since --migrate not given. When you are ready, run:\n\n   #{db_migrate_command}\n\n"
       end
     rescue ::DeclareSchema::UnknownTypeError => ex
       say "Invalid field type: #{ex}"
@@ -176,8 +171,8 @@ module DeclareSchema
       to_rename
     end
 
-    def migration_name
-      name || Generators::DeclareSchema::Migration::Migrator.default_migration_name
+    def default_migration_name
+      Generators::DeclareSchema::Migration::Migrator.default_migration_name
     end
   end
 end
