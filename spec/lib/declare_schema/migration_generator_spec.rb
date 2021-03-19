@@ -882,7 +882,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         nuke_model_class(Advertiser)
         nuke_model_class(Affiliate)
       end
-    end if !defined?(Sqlite3)
+    end if !defined?(SQLite3)
 
     describe 'serialize' do
       before do
@@ -2040,7 +2040,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         nuke_model_class(Advertiser)
         nuke_model_class(Affiliate)
       end
-    end if !defined?(Sqlite3)
+    end if !defined?(SQLite3)
 
     describe 'serialize' do
       before do
