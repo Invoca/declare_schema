@@ -12,7 +12,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
   before do
     load File.expand_path('prepare_testapp.rb', __dir__)
 
-    if Rails::VERSION::MAJOR < 5
+    if ActiveSupport::VERSION::MAJOR < 5
       allow(col_spec).to receive(:type_cast_from_database, &:itself)
     end
   end
@@ -184,7 +184,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
 
   describe '#schema_attributes' do
     let(:col_spec) do
-      case Rails::VERSION::MAJOR
+      case ActiveSupport::VERSION::MAJOR
       when 4
         cast_type = ActiveRecord::Type::Integer.new(limit: 8)
         ActiveRecord::ConnectionAdapters::Column.new("price", nil, cast_type, "integer(8)", false)

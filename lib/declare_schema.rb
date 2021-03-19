@@ -29,7 +29,7 @@ module DeclareSchema
   @default_generate_foreign_keys = true
   @default_generate_indexing     = true
   @db_migrate_command            =
-    if Rails::VERSION::MAJOR < 5
+    if ActiveSupport::VERSION::MAJOR < 5
       "bundle exec rake db:migrate"
     else
       "bundle exec rails db:migrate"

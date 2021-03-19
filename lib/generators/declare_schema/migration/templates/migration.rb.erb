@@ -1,4 +1,4 @@
-class <%= @migration_class_name %> < (Rails::VERSION::MAJOR >= 5 ? ActiveRecord::Migration[4.2] : ActiveRecord::Migration)
+class <%= @migration_class_name %> < (ActiveSupport::VERSION::MAJOR >= 5 ? ActiveRecord::Migration[4.2] : ActiveRecord::Migration)
   def self.up
     <%= @up %>
   end

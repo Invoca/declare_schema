@@ -110,7 +110,7 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
             let(:model_class) { IndexDefinitionCompoundIndexModel }
 
             it 'returns the indexes for the model' do
-              if Rails::VERSION::MAJOR < 5
+              if ActiveSupport::VERSION::MAJOR < 5
                 expect(model_class.connection).to receive(:primary_key).with('index_definition_compound_index_models').and_return(nil)
                 connection_stub = instance_double(ActiveRecord::Base.connection.class, "connection")
                 expect(connection_stub).to receive(:indexes).
@@ -219,7 +219,7 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
             let(:model_class) { IndexDefinitionCompoundIndexModel }
 
             it 'returns the indexes for the model' do
-              if Rails::VERSION::MAJOR < 5
+              if ActiveSupport::VERSION::MAJOR < 5
                 expect(model_class.connection).to receive(:primary_key).with('index_definition_compound_index_models').and_return(nil)
                 connection_stub = instance_double(ActiveRecord::Base.connection.class, "connection")
                 expect(connection_stub).to receive(:indexes).

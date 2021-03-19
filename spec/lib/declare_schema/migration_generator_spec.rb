@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'rails'
 begin
   require 'mysql2'
 rescue LoadError
@@ -26,20 +25,20 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     end
   end
   let(:datetime_precision) do
-    if defined?(Mysql2) && Rails::VERSION::MAJOR >= 5
+    if defined?(Mysql2) && ActiveSupport::VERSION::MAJOR >= 5
       ', precision: 0'
     end
   end
   let(:table_options) do
     if defined?(Mysql2)
-      ", options: \"#{'ENGINE=InnoDB ' if Rails::VERSION::MAJOR == 5}DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin\"" +
-        if Rails::VERSION::MAJOR >= 6
+      ", options: \"#{'ENGINE=InnoDB ' if ActiveSupport::VERSION::MAJOR == 5}DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin\"" +
+        if ActiveSupport::VERSION::MAJOR >= 6
           ', charset: "utf8mb4", collation: "utf8mb4_bin"'
         else
           ''
         end
     else
-      ", id: :integer" unless Rails::VERSION::MAJOR < 5
+      ", id: :integer" unless ActiveSupport::VERSION::MAJOR < 5
     end
   end
   let(:lock_version_limit) do
@@ -87,7 +86,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       ActiveRecord::Migration.class_eval(up)
       expect(Advert.columns.map(&:name)).to eq(["id", "name"])
 
-      if Rails::VERSION::MAJOR < 5
+      if ActiveSupport::VERSION::MAJOR < 5
         # Rails 4 drivers don't always create PK properly. Fix that by dropping and recreating.
         ActiveRecord::Base.connection.execute("drop table adverts")
         if defined?(Mysql2)
@@ -1020,8 +1019,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
     end
 
-    context "for Rails #{Rails::VERSION::MAJOR}" do
-      if Rails::VERSION::MAJOR >= 5
+    context "for Rails #{ActiveSupport::VERSION::MAJOR}" do
+      if ActiveSupport::VERSION::MAJOR >= 5
         let(:optional_true) { { optional: true } }
         let(:optional_false) { { optional: false } }
       else
@@ -1127,13 +1126,13 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         migration_content = File.read(migrations.first)
         first_line = migration_content.split("\n").first
         base_class = first_line.split(' < ').last
-        expect(base_class).to eq("(Rails::VERSION::MAJOR >= 5 ? ActiveRecord::Migration[4.2] : ActiveRecord::Migration)")
+        expect(base_class).to eq("(ActiveSupport::VERSION::MAJOR >= 5 ? ActiveRecord::Migration[4.2] : ActiveRecord::Migration)")
       end
     end
 
     context 'Does not generate migrations' do
       it 'for aliased fields bigint -> integer limit 8' do
-        if Rails::VERSION::MAJOR >= 5 || !ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
+        if ActiveSupport::VERSION::MAJOR >= 5 || !ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
           class Advert < active_record_base_class.constantize
             fields do
               price :bigint
@@ -1145,7 +1144,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           migrations = Dir.glob('db/migrate/*declare_schema_migration*.rb')
           expect(migrations.size).to eq(1), migrations.inspect
 
-          if defined?(Mysql2) && Rails::VERSION::MAJOR < 5
+          if defined?(Mysql2) && ActiveSupport::VERSION::MAJOR < 5
             ActiveRecord::Base.connection.execute("ALTER TABLE adverts ADD PRIMARY KEY (id)")
           end
 
@@ -1198,7 +1197,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       ActiveRecord::Migration.class_eval(up)
       expect(Advert.columns.map(&:name)).to eq(["id", "name"])
 
-      if Rails::VERSION::MAJOR < 5
+      if ActiveSupport::VERSION::MAJOR < 5
         # Rails 4 drivers don't always create PK properly. Fix that by dropping and recreating.
         ActiveRecord::Base.connection.execute("drop table adverts")
         if defined?(Mysql2)
@@ -2130,8 +2129,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
     end
 
-    context "for Rails #{Rails::VERSION::MAJOR}" do
-      if Rails::VERSION::MAJOR >= 5
+    context "for Rails #{ActiveSupport::VERSION::MAJOR}" do
+      if ActiveSupport::VERSION::MAJOR >= 5
         let(:optional_true) { { optional: true } }
         let(:optional_false) { { optional: false } }
       else
@@ -2237,13 +2236,13 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         migration_content = File.read(migrations.first)
         first_line = migration_content.split("\n").first
         base_class = first_line.split(' < ').last
-        expect(base_class).to eq("(Rails::VERSION::MAJOR >= 5 ? ActiveRecord::Migration[4.2] : ActiveRecord::Migration)")
+        expect(base_class).to eq("(ActiveSupport::VERSION::MAJOR >= 5 ? ActiveRecord::Migration[4.2] : ActiveRecord::Migration)")
       end
     end
 
     context 'Does not generate migrations' do
       it 'for aliased fields bigint -> integer limit 8' do
-        if Rails::VERSION::MAJOR >= 5 || !ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
+        if ActiveSupport::VERSION::MAJOR >= 5 || !ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
           class Advert < active_record_base_class.constantize
             declare_schema do
               bigint :price
@@ -2255,7 +2254,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           migrations = Dir.glob('db/migrate/*declare_schema_migration*.rb')
           expect(migrations.size).to eq(1), migrations.inspect
 
-          if defined?(Mysql2) && Rails::VERSION::MAJOR < 5
+          if defined?(Mysql2) && ActiveSupport::VERSION::MAJOR < 5
             ActiveRecord::Base.connection.execute("ALTER TABLE adverts ADD PRIMARY KEY (id)")
           end
 

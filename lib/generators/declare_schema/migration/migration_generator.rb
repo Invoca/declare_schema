@@ -83,7 +83,7 @@ module DeclareSchema
       if options[:migrate]
         say db_migrate_command
         bare_rails_command = db_migrate_command.sub(/\Abundle exec +/, '').sub(/\Arake +|rails +/, '')
-        if Rails::VERSION::MAJOR < 5
+        if ActiveSupport::VERSION::MAJOR < 5
           rake(bare_rails_command)
         else
           rails_command(bare_rails_command)
@@ -98,7 +98,7 @@ module DeclareSchema
     private
 
     def migrations_pending?
-      migrations = case Rails::VERSION::MAJOR
+      migrations = case ActiveSupport::VERSION::MAJOR
                    when 4
                      ActiveRecord::Migrator.migrations('db/migrate')
                    when 5
@@ -106,7 +106,7 @@ module DeclareSchema
                    else
                      ActiveRecord::MigrationContext.new(ActiveRecord::Migrator.migrations_paths, ActiveRecord::SchemaMigration).migrations
                    end
-      pending_migrations = case Rails::VERSION::MAJOR
+      pending_migrations = case ActiveSupport::VERSION::MAJOR
                            when 4, 5
                              ActiveRecord::Migrator.new(:up, migrations).pending_migrations
                            else
