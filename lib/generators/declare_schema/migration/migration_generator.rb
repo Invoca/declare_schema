@@ -97,6 +97,13 @@ module DeclareSchema
 
     private
 
+    if ActiveSupport::VERSION::MAJOR < 5
+      def indent(string, columns)
+        whitespace = ' ' * columns
+        string.gsub("\n", "\n#{whitespace}").gsub!(/ +\n/, "\n")
+      end
+    end
+
     def migrations_pending?
       migrations = case ActiveSupport::VERSION::MAJOR
                    when 4
