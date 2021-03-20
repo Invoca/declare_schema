@@ -6,6 +6,11 @@ begin
 rescue LoadError
 end
 
+begin
+  require 'sqlite3'
+rescue LoadError
+end
+
 RSpec.describe 'DeclareSchema Migration Generator' do
   before do
     load File.expand_path('prepare_testapp.rb', __dir__)
