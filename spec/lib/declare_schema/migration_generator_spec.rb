@@ -887,7 +887,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         nuke_model_class(Advertiser)
         nuke_model_class(Affiliate)
       end
-    end if !defined?(SQLite3) and ActiveRecord::VERSION::MAJOR >= 5
+    end if !defined?(SQLite3) && ActiveRecord::VERSION::MAJOR >= 5
 
     describe 'serialize' do
       before do
@@ -2040,12 +2040,13 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           add_foreign_key :affiliates, :categories, column: :category_id, name: :index_affiliates_on_category_id
         EOS
         )
+        binding.pry
         migrate
 
         nuke_model_class(Advertiser)
         nuke_model_class(Affiliate)
       end
-    end if !defined?(SQLite3) and ActiveRecord::VERSION::MAJOR >= 5
+    end if !defined?(SQLite3) && ActiveRecord::VERSION::MAJOR >= 5
 
     describe 'serialize' do
       before do
