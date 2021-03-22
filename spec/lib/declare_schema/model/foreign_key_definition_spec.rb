@@ -26,7 +26,7 @@ RSpec.describe DeclareSchema::Model::ForeignKeyDefinition do
       subject { described_class.new(model, foreign_key, options)}
 
       before do
-        allow(connection).to receive(:index_name).with('models', column: 'network_id') { 'on_network_id' }
+        allow(model.connection).to receive(:index_name).with(any_args) { 'index_on_network_id' }
       end
 
       describe '#initialize' do
@@ -36,7 +36,7 @@ RSpec.describe DeclareSchema::Model::ForeignKeyDefinition do
         end
 
         context 'when most options passed' do
-          let(:options) { { parent_table: :networks, foreign_key: :the_network_id, index_name: :index_on_network_id } }
+          let(:options) { { parent_table: :networks, foreign_key: :the_network_id } }
 
           it 'normalizes symbols to strings' do
             expect(subject.foreign_key).to eq('network_id')
@@ -50,8 +50,7 @@ RSpec.describe DeclareSchema::Model::ForeignKeyDefinition do
 
         context 'when all options passed' do
           let(:foreign_key) { nil }
-          let(:options) { { parent_table: :networks, foreign_key: :the_network_id, index_name: :index_on_network_id,
-                            constraint_name: :constraint_1, dependent: :delete } }
+          let(:options) { { parent_table: :networks, foreign_key: :the_network_id, constraint_name: :constraint_1, dependent: :delete } }
 
           it 'normalizes symbols to strings' do
             expect(subject.foreign_key).to be_nil
@@ -59,6 +58,19 @@ RSpec.describe DeclareSchema::Model::ForeignKeyDefinition do
             expect(subject.parent_table_name).to eq('networks')
             expect(subject.constraint_name).to eq('constraint_1')
             expect(subject.on_delete_cascade).to be_truthy
+          end
+        end
+
+        context 'when constraint name passed as empty string' do
+          let(:options) { { constraint_name: "" } }
+          it 'defaults to rails constraint name' do
+            expect(subject.constraint_name).to eq("index_on_network_id")
+          end
+        end
+
+        context 'when no constraint name passed' do
+          it 'defaults to rails constraint name' do
+            expect(subject.constraint_name).to eq("index_on_network_id")
           end
         end
       end
@@ -107,7 +119,7 @@ RSpec.describe DeclareSchema::Model::ForeignKeyDefinition do
       subject { described_class.new(model, foreign_key, options)}
 
       before do
-        allow(connection).to receive(:index_name).with('models', column: 'network_id') { 'on_network_id' }
+        allow(model.connection).to receive(:index_name).with(any_args) { 'index_on_network_id' }
       end
 
       describe '#initialize' do
@@ -117,7 +129,7 @@ RSpec.describe DeclareSchema::Model::ForeignKeyDefinition do
         end
 
         context 'when most options passed' do
-          let(:options) { { parent_table: :networks, foreign_key: :the_network_id, index_name: :index_on_network_id } }
+          let(:options) { { parent_table: :networks, foreign_key: :the_network_id } }
 
           it 'normalizes symbols to strings' do
             expect(subject.foreign_key).to eq('network_id')
@@ -131,8 +143,7 @@ RSpec.describe DeclareSchema::Model::ForeignKeyDefinition do
 
         context 'when all options passed' do
           let(:foreign_key) { nil }
-          let(:options) { { parent_table: :networks, foreign_key: :the_network_id, index_name: :index_on_network_id,
-                            constraint_name: :constraint_1, dependent: :delete } }
+          let(:options) { { parent_table: :networks, foreign_key: :the_network_id, constraint_name: :constraint_1, dependent: :delete } }
 
           it 'normalizes symbols to strings' do
             expect(subject.foreign_key).to be_nil
@@ -140,6 +151,19 @@ RSpec.describe DeclareSchema::Model::ForeignKeyDefinition do
             expect(subject.parent_table_name).to eq('networks')
             expect(subject.constraint_name).to eq('constraint_1')
             expect(subject.on_delete_cascade).to be_truthy
+          end
+        end
+
+        context 'when constraint name passed as empty string' do
+          let(:options) { { constraint_name: "" } }
+          it 'defaults to rails constraint name' do
+            expect(subject.constraint_name).to eq("index_on_network_id")
+          end
+        end
+
+        context 'when no constraint name passed' do
+          it 'defaults to rails constraint name' do
+            expect(subject.constraint_name).to eq("index_on_network_id")
           end
         end
       end

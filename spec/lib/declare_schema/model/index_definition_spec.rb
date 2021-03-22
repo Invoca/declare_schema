@@ -75,7 +75,7 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
           ActiveRecord::Base.connection.execute <<~EOS
               CREATE TABLE index_definition_test_models (
                 id INTEGER NOT NULL PRIMARY KEY,
-                name #{if defined?(Sqlite3) then 'TEXT' else 'VARCHAR(255)' end} NOT NULL
+                name #{if defined?(SQLite3) then 'TEXT' else 'VARCHAR(255)' end} NOT NULL
               )
           EOS
           ActiveRecord::Base.connection.execute <<~EOS
@@ -184,7 +184,7 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
           ActiveRecord::Base.connection.execute <<~EOS
             CREATE TABLE index_definition_test_models (
               id INTEGER NOT NULL PRIMARY KEY,
-              name #{if defined?(Sqlite3) then 'TEXT' else 'VARCHAR(255)' end} NOT NULL
+              name #{if defined?(SQLite3) then 'TEXT' else 'VARCHAR(255)' end} NOT NULL
             )
           EOS
           ActiveRecord::Base.connection.execute <<~EOS
