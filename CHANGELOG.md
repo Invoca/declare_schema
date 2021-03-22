@@ -4,13 +4,15 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.11.0] - Unreleased
+## [0.11.0] - 2021-03-22
 ### Removed
 - Removed `g|m|c` prompt entirely, since it was confusing. Instead, the migration is
  always generated; the user may press ^C at the filename prompt to cancel.
  The migration will be run if `--migrate` is passed; otherwise, the migrate command will be displayed to be run later.
 ### Added
 - Added the new configuration option `DeclareSchema.@db_migrate_command =`.
+### Fixed 
+- Fixed bug where foreign key constraint names are not globally unique
 
 ## [0.10.1] - 2021-03-18
 ### Fixed
