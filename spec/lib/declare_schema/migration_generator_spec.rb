@@ -887,7 +887,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         nuke_model_class(Advertiser)
         nuke_model_class(Affiliate)
       end
-    end if !defined?(SQLite3)
+    end if !defined?(SQLite3) and ActiveRecord::VERSION::MAJOR >= 5
 
     describe 'serialize' do
       before do
@@ -2045,7 +2045,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         nuke_model_class(Advertiser)
         nuke_model_class(Affiliate)
       end
-    end if !defined?(SQLite3)
+    end if !defined?(SQLite3) and ActiveRecord::VERSION::MAJOR >= 5
 
     describe 'serialize' do
       before do
