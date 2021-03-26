@@ -73,8 +73,8 @@ module DeclareSchema
         end ||
         default_migration_name
 
-      @up = indent(up, 4)
-      @down = indent(down, 4)
+      @up = indent(up.strip, 4)
+      @down = indent(down.strip, 4)
       @migration_class_name = final_migration_name.camelize
 
       migration_template('migration.rb.erb', "db/migrate/#{final_migration_name.underscore}.rb")
@@ -100,7 +100,7 @@ module DeclareSchema
     if ActiveSupport::VERSION::MAJOR < 5
       def indent(string, columns)
         whitespace = ' ' * columns
-        string.gsub("\n", "\n#{whitespace}").gsub!(/ +\n/, "\n")
+        string.gsub("\n", "\n#{whitespace}").gsub(/ +\n/, "\n")
       end
     end
 
