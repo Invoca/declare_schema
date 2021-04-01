@@ -4,10 +4,10 @@ Declare your Rails/active_record model schemas and have database migrations gene
 
 ## Example
 
-Make a model and declare your schema within a `fields do ... end` block:
+Make a model and declare your schema within a `declare_schema do ... end` block:
 ```ruby
 class Company < ActiveRecord::Base
-  fields do
+  declare_schema do
     company_name :string, limit: 100
     ticker_symbol :string, limit: 4, null: true, index: true, unique: true
     employee_count :integer
@@ -187,7 +187,7 @@ at three separate levels
 
 ### Table Configuration
 In order to configure a table's default character set and collation, the `charset` and
-`collation` arguments can be added to the `fields` block.
+`collation` arguments can be added to the `declare_schema` block.
 
 For example, if you have a comments model that needs `utf8mb4` support, it would look
 like the following:
@@ -197,7 +197,7 @@ like the following:
 # frozen_string_literal: true
 
 class Comment < ActiveRecord::Base
-  fields charset: "utf8mb4", collation: "utf8mb4_bin" do
+  declare_schema charset: "utf8mb4", collation: "utf8mb4_bin" do
     subject :string, limit: 255
     content :text,   limit: 0xffff_ffff
   end
@@ -217,7 +217,7 @@ look like the following:
 # frozen_string_literal: true
 
 class Comment < ActiveRecord::Base
-  fields do
+  declare_schema do
     subject :string, limit: 255
     context :text,   limit: 0xffff_ffff, charset: "utf8mb4", collation: "utf8mb4_bin"
   end
