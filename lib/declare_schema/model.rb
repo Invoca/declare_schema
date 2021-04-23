@@ -99,7 +99,10 @@ module DeclareSchema
         end
       end
 
-      # Extend belongs_to so that it creates a FieldSpec for the foreign key
+      # Extend belongs_to so that it
+      # 1. creates a FieldSpec for the foreign key
+      # 2. declares an index on the foreign key
+      # 3. declares a foreign_key constraint
       def belongs_to(name, scope = nil, **options)
         column_options = {}
 

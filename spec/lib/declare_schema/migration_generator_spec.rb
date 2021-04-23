@@ -441,10 +441,10 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       Advert.field_specs.delete(:category_id)
       Advert.index_definitions.delete_if { |spec| spec.fields == ["category_id"] }
 
-      ### Timestamps and Optimimistic Locking
+      ### Timestamps and Optimistic Locking
 
       # `updated_at` and `created_at` can be declared with the shorthand `timestamps`.
-      # Similarly, `lock_version` can be declared with the "shorthand" `optimimistic_lock`.
+      # Similarly, `lock_version` can be declared with the "shorthand" `optimistic_lock`.
 
       class Advert < ActiveRecord::Base
         fields do
