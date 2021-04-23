@@ -2319,6 +2319,20 @@ RSpec.describe 'DeclareSchema Migration Generator' do
             end
           end
         end
+
+        it 'deprecates limit:' do
+          expect(ActiveSupport::Deprecation).to receive(:warn).with("belongs_to limit: is deprecated since it is now inferred")
+          eval <<~EOS
+            class UsingLimit < ActiveRecord::Base
+              declare_schema { }
+              belongs_to :ad_category, limit: 4
+            end
+          EOS
+        end
+
+        context 'when parent object PKs have different limits' do
+          it 'infers the FK limit from the PK'
+        end
       end
     end
 

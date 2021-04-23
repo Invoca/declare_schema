@@ -112,7 +112,10 @@ module DeclareSchema
                                   options[:optional] # infer :null from :optional
                                 end || false
         column_options[:default] = options.delete(:default) if options.has_key?(:default)
-        column_options[:limit] = options.delete(:limit) if options.has_key?(:limit)
+        if options.has_key?(:limit)
+          options.delete(:limit)
+          ActiveSupport::Deprecation.warn("belongs_to limit: is deprecated since it is now inferred")
+        end
 
         index_options = {}
         index_options[:name]   = options.delete(:index) if options.has_key?(:index)
