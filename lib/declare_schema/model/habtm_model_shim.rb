@@ -29,7 +29,7 @@ module DeclareSchema
         @connection = connection
       end
 
-      def table_options
+      def _table_options
         {}
       end
 

@@ -2039,7 +2039,6 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           add_foreign_key :affiliates, :categories, column: :category_id, name: :index_affiliates_on_category_id
         EOS
         )
-        binding.pry
         migrate
 
         nuke_model_class(Advertiser)
@@ -2331,7 +2330,52 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         end
 
         context 'when parent object PKs have different limits' do
-          it 'infers the FK limit from the PK'
+          before do
+            class IdDefault < ActiveRecord::Base
+              declare_schema { }
+            end
+            class Id4 < ActiveRecord::Base
+              declare_schema id: :integer do
+              end
+            end
+            class Id8 < ActiveRecord::Base
+              declare_schema id: :bigint do
+              end
+            end
+            class Fk < ActiveRecord::Base
+              declare_schema { }
+              belongs_to :id_default
+              belongs_to :id4
+              belongs_to :id8
+            end
+          end
+
+          it 'creates the proper PKs' do
+            up = Generators::DeclareSchema::Migration::Migrator.run.first
+
+            create_id4_defaults = up.split("\n").grep(/create_table :id_defaults/).first
+            expect(create_id4_defaults).to be, up
+            expect(create_id4_defaults).to match(/, id: :bigint/)
+
+            create_id4s = up.split("\n").grep(/create_table :id4s/).first
+            expect(create_id4s).to be, up
+            expect(create_id4s).to match(/, id: :integer/)
+
+            create_id8s = up.split("\n").grep(/create_table :id8s/).first
+            expect(create_id8s).to be, up
+            expect(create_id8s).to match(/, id: :bigint/)
+          end
+
+          it 'infers the FK limit from the create_table id: type' do
+            up = Generators::DeclareSchema::Migration::Migrator.run.first
+
+            create_fks = up.split("\n").grep(/t\.integer /).map { |command| command.gsub(', null: false', '').gsub(/^ +/, '') }
+            expect(create_fks).to eq([
+                                       't.integer :id_default_id, limit: 8',
+                                       't.integer :id4_id, limit: 4',
+                                       't.integer :id8_id, limit: 8'
+                                     ])
+          end
         end
       end
     end

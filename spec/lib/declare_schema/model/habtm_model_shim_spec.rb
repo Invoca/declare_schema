@@ -55,7 +55,7 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
 
     describe '#table_options' do
       it 'returns empty hash' do
-        expect(subject.table_options).to eq({})
+        expect(subject._table_options).to eq({})
       end
     end
 

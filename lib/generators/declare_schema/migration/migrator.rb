@@ -304,7 +304,7 @@ module Generators
             { id: :bigint }
           else
             { primary_key: primary_key.to_sym }
-          end
+          end.merge(model._table_options)
         end
 
         def table_options_for_model(model)

@@ -142,7 +142,9 @@ module DeclareSchema
 
         refl = reflections[name.to_s] or raise "Couldn't find reflection #{name} in #{reflections.keys}"
         fkey = refl.foreign_key or raise "Couldn't find foreign_key for #{name} in #{refl.inspect}"
-        declare_field(fkey.to_sym, :integer, column_options)
+        klass = refl.klass or raise "Couldn't find belongs_to klass for #{name} in #{refl.inspect}"
+        pk_id_type = klass._table_options&.[](:id)
+        declare_field(fkey.to_sym,  pk_id_type || :bigint, column_options)
         if refl.options[:polymorphic]
           foreign_type = options[:foreign_type] || "#{name}_type"
           _declare_polymorphic_type_field(foreign_type, column_options)
