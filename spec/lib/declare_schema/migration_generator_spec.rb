@@ -2366,7 +2366,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
             expect(create_id8s).to match(/, id: :bigint/)
           end
 
-          it 'infers the FK limit from the create_table id: type' do
+          it 'infers the correct FK type from the create_table id: type' do
             up = Generators::DeclareSchema::Migration::Migrator.run.first
 
             create_fks = up.split("\n").grep(/t\.integer /).map { |command| command.gsub(', null: false', '').gsub(/^ +/, '') }
@@ -2376,13 +2376,65 @@ RSpec.describe 'DeclareSchema Migration Generator' do
                                          't.integer :id_default_id, limit: X',
                                          't.integer :id4_id, limit: X',
                                          't.integer :id8_id, limit: X'
-                                       ])
+                                       ]), up
             else
               expect(create_fks).to eq([
                                          't.integer :id_default_id, limit: 8',
                                          't.integer :id4_id, limit: 4',
                                          't.integer :id8_id, limit: 8'
-                                       ])
+                                       ]), up
+            end
+          end
+
+          context "when parent objects were migrated before and later definitions don't have explicit id:" do
+            before do
+              up = Generators::DeclareSchema::Migration::Migrator.run.first
+              ActiveRecord::Migration.class_eval up
+              nuke_model_class(IdDefault)
+              nuke_model_class(Id4)
+              nuke_model_class(Id8)
+              nuke_model_class(Fk)
+              ActiveRecord::Base.connection.schema_cache.clear!
+
+
+              class NewIdDefault < ActiveRecord::Base
+                self.table_name = 'id_defaults'
+                declare_schema { }
+              end
+              class NewId4 < ActiveRecord::Base
+                self.table_name = 'id4s'
+                declare_schema { }
+              end
+              class NewId8 < ActiveRecord::Base
+                self.table_name = 'id8s'
+                declare_schema { }
+              end
+              class NewFk < ActiveRecord::Base
+                declare_schema { }
+                belongs_to :new_id_default
+                belongs_to :new_id4
+                belongs_to :new_id8
+              end
+            end
+
+            it 'infers the correct FK :integer limit: ' do
+              up = Generators::DeclareSchema::Migration::Migrator.run.first
+
+              create_fks = up.split("\n").grep(/t\.integer /).map { |command| command.gsub(', null: false', '').gsub(/^ +/, '') }
+              if defined?(SQLite3)
+                create_fks.map! { |command| command.gsub(/limit: [a-z0-9]+/, 'limit: X') }
+                expect(create_fks).to eq([
+                                           't.integer :new_id_default_id, limit: X',
+                                           't.integer :new_id4_id, limit: X',
+                                           't.integer :new_id8_id, limit: X'
+                                         ]), up
+              else
+                expect(create_fks).to eq([
+                                           't.integer :new_id_default_id, limit: 8',
+                                           't.integer :new_id4_id, limit: 4',
+                                           't.integer :new_id8_id, limit: 8'
+                                         ]), up
+              end
             end
           end
         end
