@@ -2370,11 +2370,20 @@ RSpec.describe 'DeclareSchema Migration Generator' do
             up = Generators::DeclareSchema::Migration::Migrator.run.first
 
             create_fks = up.split("\n").grep(/t\.integer /).map { |command| command.gsub(', null: false', '').gsub(/^ +/, '') }
-            expect(create_fks).to eq([
-                                       't.integer :id_default_id, limit: 8',
-                                       't.integer :id4_id, limit: 4',
-                                       't.integer :id8_id, limit: 8'
-                                     ])
+            if defined?(SQLite3)
+              create_fks.map! { |command| command.gsub(/limit: [a-z0-9]+/, 'limit: X') }
+              expect(create_fks).to eq([
+                                         't.integer :id_default_id, limit: X',
+                                         't.integer :id4_id, limit: X',
+                                         't.integer :id8_id, limit: X'
+                                       ])
+            else
+              expect(create_fks).to eq([
+                                         't.integer :id_default_id, limit: 8',
+                                         't.integer :id4_id, limit: 4',
+                                         't.integer :id8_id, limit: 8'
+                                       ])
+            end
           end
         end
       end
