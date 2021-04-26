@@ -223,6 +223,12 @@ module Generators
                 [:integer, :id, limit: 8, auto_increment: false, primary_key: true]
               end
 
+            model.field_specs.each do |name, field_spec|
+              if (pre_migration = field_spec.options.delete(:pre_migration))
+                pre_migration.call(field_spec)
+              end
+            end
+
             field_definitions = model.field_specs.values.sort_by(&:position).map do |f|
               [f.type, f.name, f.sql_options]
             end

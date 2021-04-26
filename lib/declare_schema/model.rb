@@ -142,17 +142,24 @@ module DeclareSchema
 
         refl = reflections[name.to_s] or raise "Couldn't find reflection #{name} in #{reflections.keys}"
         fkey = refl.foreign_key or raise "Couldn't find foreign_key for #{name} in #{refl.inspect}"
-        klass = refl.klass or raise "Couldn't find belongs_to klass for #{name} in #{refl.inspect}"
-        unless (pk_id_type = klass._table_options&.[](:id))
-          if klass.table_exists? && (pk_column = klass.columns_hash[klass._defined_primary_key])
-            pk_id_type = pk_column.type
-            if pk_id_type == :integer
-              column_options[:limit] = pk_column.limit
-            end
-          end
+        column_options[:pre_migration] = ->(field_spec) do
+          klass = refl.klass or raise "Couldn't find belongs_to klass for #{name} in #{refl.inspect}"
+          new_limit =
+            if (pk_id_type = klass._table_options&.[](:id))
+              if pk_id_type == :integer
+                4
+              end
+            else
+              if klass.table_exists? && (pk_column = klass.columns_hash[klass._defined_primary_key])
+                pk_id_type = pk_column.type
+                if pk_id_type == :integer
+                  pk_column.limit
+                end
+              end
+            end and field_spec.sql_options[:limit] = new_limit
         end
 
-        declare_field(fkey.to_sym,  pk_id_type || :bigint, column_options)
+        declare_field(fkey.to_sym, :bigint, column_options)
         if refl.options[:polymorphic]
           foreign_type = options[:foreign_type] || "#{name}_type"
           _declare_polymorphic_type_field(foreign_type, column_options)
