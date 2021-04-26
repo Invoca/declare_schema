@@ -318,8 +318,8 @@ module Generators
             {}
           else
             {
-              charset:   model.table_options[:charset] || ::DeclareSchema.default_charset,
-              collation: model.table_options[:collation] || ::DeclareSchema.default_collation
+              charset:   model._table_options&.[](:charset) || ::DeclareSchema.default_charset,
+              collation: model._table_options&.[](:collation) || ::DeclareSchema.default_collation
             }
           end
         end
