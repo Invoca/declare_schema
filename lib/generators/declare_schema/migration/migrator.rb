@@ -187,6 +187,12 @@ module Generators
           models, db_tables = models_and_tables
           models_by_table_name = {}
           models.each do |m|
+            m.try(:field_specs)&.each do |_name, field_spec|
+              if (pre_migration = field_spec.options.delete(:pre_migration))
+                pre_migration.call(field_spec)
+              end
+            end
+
             if !models_by_table_name.has_key?(m.table_name)
               models_by_table_name[m.table_name] = m
             elsif m.superclass == models_by_table_name[m.table_name].superclass.superclass

@@ -142,24 +142,25 @@ module DeclareSchema
 
         refl = reflections[name.to_s] or raise "Couldn't find reflection #{name} in #{reflections.keys}"
         fkey = refl.foreign_key or raise "Couldn't find foreign_key for #{name} in #{refl.inspect}"
-        column_options[:pre_migration] = ->(field_spec) do
-          klass = refl.klass or raise "Couldn't find belongs_to klass for #{name} in #{refl.inspect}"
-          new_limit =
-            if (pk_id_type = klass._table_options&.[](:id))
-              if pk_id_type == :integer
-                4
-              end
-            else
-              if klass.table_exists? && (pk_column = klass.columns_hash[klass._defined_primary_key])
-                pk_id_type = pk_column.type
-                if pk_id_type == :integer
-                  pk_column.limit
-                end
-              end
-            end and field_spec.sql_options[:limit] = new_limit
+        fkey_id_column_options = column_options.dup
+
+        # Note: the foreign key limit: should match the primary key limit:. (If there is a foreign key constraint,
+        # those limits _must_ match.) We'd like to call _infer_fk_limit and get the limit right from the PK.
+        # But we can't here, because that will mess up the autoloader to follow every belongs_to association right
+        # when it is declared. So instead we assume :bigint (integer limit: 8) below, while also registering this
+        # pre_migration: callback to double-check that assumption Just In Time--right before we generate a migration.
+        #
+        # The one downside of this approach is that application code that asks the field_spec for the declared
+        # foreign key limit: will always get 8 back even if this is a grandfathered foreign key that points to
+        # a limit: 4 primary key. It seems unlikely that any application code would do this.
+        fkey_id_column_options[:pre_migration] = ->(field_spec) do
+          if (inferred_limit = _infer_fk_limit(fkey, refl))
+            field_spec.sql_options[:limit] = inferred_limit
+          end
         end
 
-        declare_field(fkey.to_sym, :bigint, column_options)
+        declare_field(fkey.to_sym, :bigint, fkey_id_column_options)
+
         if refl.options[:polymorphic]
           foreign_type = options[:foreign_type] || "#{name}_type"
           _declare_polymorphic_type_field(foreign_type, column_options)
@@ -167,6 +168,28 @@ module DeclareSchema
         else
           index(fkey, index_options) if index_options[:name] != false
           constraint(fkey, fk_options) if fk_options[:constraint_name] != false
+        end
+      end
+
+      def _infer_fk_limit(fkey, refl)
+        if refl.options[:polymorphic]
+          if (fkey_column = columns_hash[fkey.to_s]) && fkey_column.type == :integer
+            fkey_column.limit
+          end
+        else
+          klass = refl.klass or raise "Couldn't find belongs_to klass for #{name} in #{refl.inspect}"
+          if (pk_id_type = klass._table_options&.[](:id))
+            if pk_id_type == :integer
+              4
+            end
+          else
+            if klass.table_exists? && (pk_column = klass.columns_hash[klass._defined_primary_key])
+              pk_id_type = pk_column.type
+              if pk_id_type == :integer
+                pk_column.limit
+              end
+            end
+          end
         end
       end
 
