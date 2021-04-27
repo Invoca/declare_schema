@@ -183,7 +183,7 @@ module DeclareSchema
               4
             end
           else
-            if klass.table_exists? && (pk_column = klass.columns_hash[klass._defined_primary_key])
+            if klass.table_exists? && (pk_column = klass.columns_hash[klass._declared_primary_key])
               pk_id_type = pk_column.type
               if pk_id_type == :integer
                 pk_column.limit
@@ -201,27 +201,27 @@ module DeclareSchema
 
       # returns the primary key (String) as declared with primary_key =
       # unlike the `primary_key` method, DOES NOT query the database to find the actual primary key in use right now
-      # if no explicit primary key set, returns the default_defined_primary_key
-      def _defined_primary_key
+      # if no explicit primary key set, returns the _default_declared_primary_key
+      def _declared_primary_key
         if defined?(@primary_key)
           @primary_key&.to_s
-        end || _default_defined_primary_key
+        end || _default_declared_primary_key
       end
 
       private
 
-      # if this is a derived class, returns the base class's _defined_primary_key
+      # if this is a derived class, returns the base class's _declared_primary_key
       # otherwise, returns 'id'
-      def _default_defined_primary_key
+      def _default_declared_primary_key
         if self == base_class
           'id'
         else
-          base_class._defined_primary_key
+          base_class._declared_primary_key
         end
       end
 
       def _rails_default_primary_key
-        ::DeclareSchema::Model::IndexDefinition.new(self, [_defined_primary_key.to_sym], unique: true, name: DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME)
+        ::DeclareSchema::Model::IndexDefinition.new(self, [_declared_primary_key.to_sym], unique: true, name: DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME)
       end
 
       # Declares the "foo_type" field that accompanies the "foo_id"

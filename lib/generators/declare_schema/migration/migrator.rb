@@ -309,7 +309,7 @@ module Generators
         end
 
         def create_table_options(model, disable_auto_increment)
-          primary_key = model._defined_primary_key
+          primary_key = model._declared_primary_key
           if primary_key.blank? || disable_auto_increment
             { id: false }
           elsif primary_key == "id"
@@ -348,7 +348,7 @@ module Generators
           new_table_name = model.table_name
 
           db_columns = model.connection.columns(current_table_name).index_by(&:name)
-          if (pk = model._defined_primary_key.presence)
+          if (pk = model._declared_primary_key.presence)
             key_was_in_db_columns = db_columns.delete(pk)
           end
 

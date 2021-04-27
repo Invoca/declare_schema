@@ -47,9 +47,9 @@ module DeclareSchema
       end
 
       def initialize(model, name, type, position: 0, **options)
-        _defined_primary_key = model._defined_primary_key
+        _declared_primary_key = model._declared_primary_key
 
-        name.to_s == _defined_primary_key and raise ArgumentError, "you may not provide a field spec for the primary key #{name.inspect}"
+        name.to_s == _declared_primary_key and raise ArgumentError, "you may not provide a field spec for the primary key #{name.inspect}"
 
         @model = model
         @name = name.to_sym
