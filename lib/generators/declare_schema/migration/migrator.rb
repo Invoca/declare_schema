@@ -348,18 +348,17 @@ module Generators
           new_table_name = model.table_name
 
           db_columns = model.connection.columns(current_table_name).index_by(&:name)
-          key_missing = db_columns[model._defined_primary_key].nil? && model._defined_primary_key.present?
-          if model._defined_primary_key.present?
-            db_columns.delete(model._defined_primary_key)
+          if (pk = model._defined_primary_key.presence)
+            key_was_in_db_columns = db_columns.delete(pk)
           end
 
           model_column_names = model.field_specs.keys.map(&:to_s)
           db_column_names = db_columns.keys.map(&:to_s)
 
           to_add = model_column_names - db_column_names
-          to_add += [model._defined_primary_key] if key_missing && model._defined_primary_key.present?
+          to_add += [pk] unless key_was_in_db_columns
           to_remove = db_column_names - model_column_names
-          to_remove -= [model._defined_primary_key.to_sym] if model._defined_primary_key.present?
+          to_remove -= [pk.to_sym] if pk    # TODO: The .to_sym here means this code is always a no-op, right? -Colin
 
           to_rename = extract_column_renames!(to_add, to_remove, new_table_name)
 
