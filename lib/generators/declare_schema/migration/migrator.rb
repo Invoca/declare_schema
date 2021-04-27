@@ -209,8 +209,8 @@ module Generators
 
           to_create = model_table_names - db_tables
           to_drop = db_tables - model_table_names - self.class.always_ignore_tables
-          to_change = model_table_names
           to_rename = extract_table_renames!(to_create, to_drop)
+          to_change = model_table_names
 
           renames = to_rename.map do |old_name, new_name|
             ::DeclareSchema::SchemaChange::TableRename.new(old_name, new_name)
@@ -228,12 +228,6 @@ module Generators
               if disable_auto_increment
                 [:integer, :id, limit: 8, auto_increment: false, primary_key: true]
               end
-
-            model.field_specs.each do |name, field_spec|
-              if (pre_migration = field_spec.options.delete(:pre_migration))
-                pre_migration.call(field_spec)
-              end
-            end
 
             field_definitions = model.field_specs.values.sort_by(&:position).map do |f|
               [f.type, f.name, f.sql_options]
