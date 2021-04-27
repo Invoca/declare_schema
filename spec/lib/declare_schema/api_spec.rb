@@ -41,10 +41,12 @@ RSpec.describe 'DeclareSchema API' do
 
       if ActiveSupport::VERSION::MAJOR == 5
         # TODO: get this to work on Travis for Rails 6
+        # TODO: uncomment since we're not on Travis any more? -Colin
         generate_migrations '-n', '-m'
       end
 
       require 'advert'
+      Advert.reset_primary_key
 
       ## The Basics
 
