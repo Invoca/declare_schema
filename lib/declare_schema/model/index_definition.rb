@@ -37,7 +37,7 @@ module DeclareSchema
         def for_model(model, old_table_name = nil)
           t = old_table_name || model.table_name
 
-          primary_key_columns = Array(model.connection.primary_key(t)).presence || sqlite_compound_primary_key(model, t) or
+          primary_key_columns = Array(model.connection.primary_key(t)).presence || fallback_find_primary_key(model, t) or
             raise "could not find primary key for table #{t} in #{model.connection.columns(t).inspect}"
 
           primary_key_found = false
@@ -67,7 +67,7 @@ module DeclareSchema
         private
 
         # This is the old approach which is still needed for MySQL in Rails 4 and SQLite
-        def sqlite_compound_primary_key(model, table)
+        def fallback_find_primary_key(model, table)
           ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/) || ActiveSupport::VERSION::MAJOR < 5 or return nil
 
           connection = model.connection.dup
@@ -83,9 +83,11 @@ module DeclareSchema
             end
           end
 
-          pk_index = connection.indexes(table).find { |index| index.name.to_s == PRIMARY_KEY_NAME } or return nil
-
-          Array(pk_index.columns)
+          if (pk_index = connection.indexes(table).find { |index| index.name.to_s == PRIMARY_KEY_NAME })
+            Array(pk_index.columns)
+          elsif model.connection.columns(table).any? { |col| col.name == 'id' }
+            ['id']
+          end
         end
       end
 
