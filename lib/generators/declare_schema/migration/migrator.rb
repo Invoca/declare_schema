@@ -350,7 +350,7 @@ module Generators
           db_column_names = db_columns.keys.map(&:to_s)
 
           to_add = model_column_names - db_column_names
-          to_add += [pk] unless key_was_in_db_columns
+          to_add << pk if pk && !key_was_in_db_columns
           to_remove = db_column_names - model_column_names
           to_remove -= [pk.to_sym] if pk    # TODO: The .to_sym here means this code is always a no-op, right? -Colin
 
