@@ -2241,92 +2241,94 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       let(:optional_flag) { { false => optional_false, true => optional_true } }
 
       describe 'belongs_to' do
-        before do
-          unless defined?(AdCategory)
-            class AdCategory < ActiveRecord::Base
-              declare_schema { }
+        context 'with AdCategory and Advert in DB' do
+          before do
+            unless defined?(AdCategory)
+              class AdCategory < ActiveRecord::Base
+                declare_schema { }
+              end
             end
-          end
 
-          class Advert < ActiveRecord::Base
-            declare_schema do
-              string :name, limit: 250, null: true
-              integer :category_id, limit: 8
-              integer :nullable_category_id, limit: 8, null: true
+            class Advert < ActiveRecord::Base
+              declare_schema do
+                string :name, limit: 250, null: true
+                integer :category_id, limit: 8
+                integer :nullable_category_id, limit: 8, null: true
+              end
             end
+            up = Generators::DeclareSchema::Migration::Migrator.run.first
+            ActiveRecord::Migration.class_eval(up)
           end
-          up = Generators::DeclareSchema::Migration::Migrator.run.first
-          ActiveRecord::Migration.class_eval(up)
-        end
 
-        it 'passes through optional: when given' do
-          class AdvertBelongsTo < ActiveRecord::Base
-            self.table_name = 'adverts'
-            declare_schema { }
-            reset_column_information
-            belongs_to :ad_category, optional: true
-          end
-          expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_true)
-        end
-
-        describe 'contradictory settings' do # contradictory settings are ok--for example, during migration
-          it 'passes through optional: true, null: false' do
+          it 'passes through optional: when given' do
             class AdvertBelongsTo < ActiveRecord::Base
               self.table_name = 'adverts'
               declare_schema { }
               reset_column_information
-              belongs_to :ad_category, optional: true, null: false
+              belongs_to :ad_category, optional: true
             end
             expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_true)
-            expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(false)
           end
 
-          it 'passes through optional: false, null: true' do
-            class AdvertBelongsTo < ActiveRecord::Base
-              self.table_name = 'adverts'
-              declare_schema { }
-              reset_column_information
-              belongs_to :ad_category, optional: false, null: true
-            end
-            expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_false)
-            expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(true)
-          end
-        end
-
-        [false, true].each do |nullable|
-          context "nullable=#{nullable}" do
-            it 'infers optional: from null:' do
-              eval <<~EOS
-                class AdvertBelongsTo < ActiveRecord::Base
-                  declare_schema { }
-                  belongs_to :ad_category, null: #{nullable}
-                end
-              EOS
-              expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_flag[nullable])
-              expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(nullable)
+          describe 'contradictory settings' do # contradictory settings are ok--for example, during migration
+            it 'passes through optional: true, null: false' do
+              class AdvertBelongsTo < ActiveRecord::Base
+                self.table_name = 'adverts'
+                declare_schema { }
+                reset_column_information
+                belongs_to :ad_category, optional: true, null: false
+              end
+              expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_true)
+              expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(false)
             end
 
-            it 'infers null: from optional:' do
-              eval <<~EOS
-                class AdvertBelongsTo < ActiveRecord::Base
-                  declare_schema { }
-                  belongs_to :ad_category, optional: #{nullable}
-                end
-              EOS
-              expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_flag[nullable])
-              expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(nullable)
+            it 'passes through optional: false, null: true' do
+              class AdvertBelongsTo < ActiveRecord::Base
+                self.table_name = 'adverts'
+                declare_schema { }
+                reset_column_information
+                belongs_to :ad_category, optional: false, null: true
+              end
+              expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_false)
+              expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(true)
             end
           end
-        end
 
-        it 'deprecates limit:' do
-          expect(ActiveSupport::Deprecation).to receive(:warn).with("belongs_to limit: is deprecated since it is now inferred")
-          eval <<~EOS
-            class UsingLimit < ActiveRecord::Base
-              declare_schema { }
-              belongs_to :ad_category, limit: 4
+          [false, true].each do |nullable|
+            context "nullable=#{nullable}" do
+              it 'infers optional: from null:' do
+                eval <<~EOS
+                  class AdvertBelongsTo < ActiveRecord::Base
+                    declare_schema { }
+                    belongs_to :ad_category, null: #{nullable}
+                  end
+                EOS
+                expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_flag[nullable])
+                expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(nullable)
+              end
+
+              it 'infers null: from optional:' do
+                eval <<~EOS
+                  class AdvertBelongsTo < ActiveRecord::Base
+                    declare_schema { }
+                    belongs_to :ad_category, optional: #{nullable}
+                  end
+                EOS
+                expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_flag[nullable])
+                expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(nullable)
+              end
             end
-          EOS
+          end
+
+          it 'deprecates limit:' do
+            expect(ActiveSupport::Deprecation).to receive(:warn).with("belongs_to limit: is deprecated since it is now inferred")
+            eval <<~EOS
+              class UsingLimit < ActiveRecord::Base
+                declare_schema { }
+                belongs_to :ad_category, limit: 4
+              end
+            EOS
+          end
         end
 
         context 'when parent object PKs have different limits' do
