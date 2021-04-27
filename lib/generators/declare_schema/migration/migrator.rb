@@ -343,16 +343,15 @@ module Generators
 
           db_columns = model.connection.columns(current_table_name).index_by(&:name)
           if (pk = model._declared_primary_key.presence)
-            key_was_in_db_columns = db_columns.delete(pk)
+            pk_was_in_db_columns = db_columns.delete(pk)
           end
 
           model_column_names = model.field_specs.keys.map(&:to_s)
           db_column_names = db_columns.keys.map(&:to_s)
 
           to_add = model_column_names - db_column_names
-          to_add << pk if pk && !key_was_in_db_columns
+          to_add << pk if pk && !pk_was_in_db_columns
           to_remove = db_column_names - model_column_names
-          to_remove -= [pk.to_sym] if pk    # TODO: The .to_sym here means this code is always a no-op, right? -Colin
 
           to_rename = extract_column_renames!(to_add, to_remove, new_table_name)
 
