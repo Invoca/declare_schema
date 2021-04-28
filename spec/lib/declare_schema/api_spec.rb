@@ -40,8 +40,6 @@ RSpec.describe 'DeclareSchema API' do
       load_models
 
       if ActiveSupport::VERSION::MAJOR == 5
-        # TODO: get this to work on Travis for Rails 6
-        # TODO: uncomment since we're not on Travis any more? -Colin
         generate_migrations '-n', '-m'
       end
 
@@ -49,8 +47,6 @@ RSpec.describe 'DeclareSchema API' do
       Advert.reset_primary_key
 
       ## The Basics
-
-      # The main feature of DeclareSchema, aside from the migration generator, is the ability to declare rich types for your fields. For example, you can declare that a field is an email address, and the field will be automatically validated for correct email address syntax.
 
       ### Field Types
 
