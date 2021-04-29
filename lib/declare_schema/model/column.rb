@@ -59,7 +59,7 @@ module DeclareSchema
             # might be getting migrated to a new type. We should be using just type as below. -Colin
             column.type_cast_from_database(default_value)
           else
-            cast_type = ActiveRecord::Base.connection.send(:lookup_cast_type, type) or
+            cast_type = ActiveRecord::Base.connection.send(:lookup_cast_type, type.to_s) or
               raise "cast_type not found for #{type}"
             cast_type.deserialize(default_value)
           end

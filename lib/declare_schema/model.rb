@@ -99,7 +99,10 @@ module DeclareSchema
         end
       end
 
-      # Extend belongs_to so that it creates a FieldSpec for the foreign key
+      # Extend belongs_to so that it
+      # 1. creates a FieldSpec for the foreign key
+      # 2. declares an index on the foreign key
+      # 3. declares a foreign_key constraint
       def belongs_to(name, scope = nil, **options)
         column_options = {}
 
@@ -109,7 +112,10 @@ module DeclareSchema
                                   options[:optional] # infer :null from :optional
                                 end || false
         column_options[:default] = options.delete(:default) if options.has_key?(:default)
-        column_options[:limit] = options.delete(:limit) if options.has_key?(:limit)
+        if options.has_key?(:limit)
+          options.delete(:limit)
+          ActiveSupport::Deprecation.warn("belongs_to limit: is deprecated since it is now inferred")
+        end
 
         index_options = {}
         index_options[:name]   = options.delete(:index) if options.has_key?(:index)
@@ -136,7 +142,25 @@ module DeclareSchema
 
         refl = reflections[name.to_s] or raise "Couldn't find reflection #{name} in #{reflections.keys}"
         fkey = refl.foreign_key or raise "Couldn't find foreign_key for #{name} in #{refl.inspect}"
-        declare_field(fkey.to_sym, :integer, column_options)
+        fkey_id_column_options = column_options.dup
+
+        # Note: the foreign key limit: should match the primary key limit:. (If there is a foreign key constraint,
+        # those limits _must_ match.) We'd like to call _infer_fk_limit and get the limit right from the PK.
+        # But we can't here, because that will mess up the autoloader to follow every belongs_to association right
+        # when it is declared. So instead we assume :bigint (integer limit: 8) below, while also registering this
+        # pre_migration: callback to double-check that assumption Just In Time--right before we generate a migration.
+        #
+        # The one downside of this approach is that application code that asks the field_spec for the declared
+        # foreign key limit: will always get 8 back even if this is a grandfathered foreign key that points to
+        # a limit: 4 primary key. It seems unlikely that any application code would do this.
+        fkey_id_column_options[:pre_migration] = ->(field_spec) do
+          if (inferred_limit = _infer_fk_limit(fkey, refl))
+            field_spec.sql_options[:limit] = inferred_limit
+          end
+        end
+
+        declare_field(fkey.to_sym, :bigint, fkey_id_column_options)
+
         if refl.options[:polymorphic]
           foreign_type = options[:foreign_type] || "#{name}_type"
           _declare_polymorphic_type_field(foreign_type, column_options)
@@ -144,6 +168,28 @@ module DeclareSchema
         else
           index(fkey, index_options) if index_options[:name] != false
           constraint(fkey, fk_options) if fk_options[:constraint_name] != false
+        end
+      end
+
+      def _infer_fk_limit(fkey, refl)
+        if refl.options[:polymorphic]
+          if (fkey_column = columns_hash[fkey.to_s]) && fkey_column.type == :integer
+            fkey_column.limit
+          end
+        else
+          klass = refl.klass or raise "Couldn't find belongs_to klass for #{name} in #{refl.inspect}"
+          if (pk_id_type = klass._table_options&.[](:id))
+            if pk_id_type == :integer
+              4
+            end
+          else
+            if klass.table_exists? && (pk_column = klass.columns_hash[klass._declared_primary_key])
+              pk_id_type = pk_column.type
+              if pk_id_type == :integer
+                pk_column.limit
+              end
+            end
+          end
         end
       end
 
@@ -155,27 +201,27 @@ module DeclareSchema
 
       # returns the primary key (String) as declared with primary_key =
       # unlike the `primary_key` method, DOES NOT query the database to find the actual primary key in use right now
-      # if no explicit primary key set, returns the default_defined_primary_key
-      def _defined_primary_key
+      # if no explicit primary key set, returns the _default_declared_primary_key
+      def _declared_primary_key
         if defined?(@primary_key)
           @primary_key&.to_s
-        end || _default_defined_primary_key
+        end || _default_declared_primary_key
       end
 
       private
 
-      # if this is a derived class, returns the base class's _defined_primary_key
+      # if this is a derived class, returns the base class's _declared_primary_key
       # otherwise, returns 'id'
-      def _default_defined_primary_key
+      def _default_declared_primary_key
         if self == base_class
           'id'
         else
-          base_class._defined_primary_key
+          base_class._declared_primary_key
         end
       end
 
       def _rails_default_primary_key
-        ::DeclareSchema::Model::IndexDefinition.new(self, [_defined_primary_key.to_sym], unique: true, name: DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME)
+        ::DeclareSchema::Model::IndexDefinition.new(self, [_declared_primary_key.to_sym], unique: true, name: DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME)
       end
 
       # Declares the "foo_type" field that accompanies the "foo_id"

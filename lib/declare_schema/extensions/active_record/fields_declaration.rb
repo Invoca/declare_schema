@@ -7,12 +7,14 @@ require 'declare_schema/field_declaration_dsl'
 
 module DeclareSchema
   module Macros
+    attr_reader :_table_options
+
     def fields(table_options = {}, &block)
       # Any model that calls 'fields' gets DeclareSchema::Model behavior
       DeclareSchema::Model.mix_in(self)
 
       @include_in_migration = true
-      @table_options        = table_options
+      @_table_options        = table_options
 
       if block
         dsl = DeclareSchema::FieldDeclarationDsl.new(self)
@@ -31,7 +33,7 @@ module DeclareSchema
 
       # @include_in_migration = false #||= options.fetch(:include_in_migration, true); options.delete(:include_in_migration)
       @include_in_migration = true # TODO: Add back or delete the include_in_migration feature
-      @table_options        = table_options
+      @_table_options        = table_options
 
       if block
         dsl = DeclareSchema::Dsl.new(self, null: false)

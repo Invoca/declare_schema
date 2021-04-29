@@ -441,10 +441,10 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       Advert.field_specs.delete(:category_id)
       Advert.index_definitions.delete_if { |spec| spec.fields == ["category_id"] }
 
-      ### Timestamps and Optimimistic Locking
+      ### Timestamps and Optimistic Locking
 
       # `updated_at` and `created_at` can be declared with the shorthand `timestamps`.
-      # Similarly, `lock_version` can be declared with the "shorthand" `optimimistic_lock`.
+      # Similarly, `lock_version` can be declared with the "shorthand" `optimistic_lock`.
 
       class Advert < ActiveRecord::Base
         fields do
@@ -2039,7 +2039,6 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           add_foreign_key :affiliates, :categories, column: :category_id, name: :index_affiliates_on_category_id
         EOS
         )
-        binding.pry
         migrate
 
         nuke_model_class(Advertiser)
@@ -2242,80 +2241,202 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       let(:optional_flag) { { false => optional_false, true => optional_true } }
 
       describe 'belongs_to' do
-        before do
-          unless defined?(AdCategory)
-            class AdCategory < ActiveRecord::Base
-              declare_schema { }
+        context 'with AdCategory and Advert in DB' do
+          before do
+            unless defined?(AdCategory)
+              class AdCategory < ActiveRecord::Base
+                declare_schema { }
+              end
             end
-          end
 
-          class Advert < ActiveRecord::Base
-            declare_schema do
-              string :name, limit: 250, null: true
-              integer :category_id, limit: 8
-              integer :nullable_category_id, limit: 8, null: true
+            class Advert < ActiveRecord::Base
+              declare_schema do
+                string :name, limit: 250, null: true
+                integer :category_id, limit: 8
+                integer :nullable_category_id, limit: 8, null: true
+              end
             end
+            up = Generators::DeclareSchema::Migration::Migrator.run.first
+            ActiveRecord::Migration.class_eval(up)
           end
-          up = Generators::DeclareSchema::Migration::Migrator.run.first
-          ActiveRecord::Migration.class_eval(up)
-        end
 
-        it 'passes through optional: when given' do
-          class AdvertBelongsTo < ActiveRecord::Base
-            self.table_name = 'adverts'
-            declare_schema { }
-            reset_column_information
-            belongs_to :ad_category, optional: true
-          end
-          expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_true)
-        end
-
-        describe 'contradictory settings' do # contradictory settings are ok--for example, during migration
-          it 'passes through optional: true, null: false' do
+          it 'passes through optional: when given' do
             class AdvertBelongsTo < ActiveRecord::Base
               self.table_name = 'adverts'
               declare_schema { }
               reset_column_information
-              belongs_to :ad_category, optional: true, null: false
+              belongs_to :ad_category, optional: true
             end
             expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_true)
-            expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(false)
           end
 
-          it 'passes through optional: false, null: true' do
-            class AdvertBelongsTo < ActiveRecord::Base
-              self.table_name = 'adverts'
-              declare_schema { }
-              reset_column_information
-              belongs_to :ad_category, optional: false, null: true
+          describe 'contradictory settings' do # contradictory settings are ok--for example, during migration
+            it 'passes through optional: true, null: false' do
+              class AdvertBelongsTo < ActiveRecord::Base
+                self.table_name = 'adverts'
+                declare_schema { }
+                reset_column_information
+                belongs_to :ad_category, optional: true, null: false
+              end
+              expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_true)
+              expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(false)
             end
-            expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_false)
-            expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(true)
+
+            it 'passes through optional: false, null: true' do
+              class AdvertBelongsTo < ActiveRecord::Base
+                self.table_name = 'adverts'
+                declare_schema { }
+                reset_column_information
+                belongs_to :ad_category, optional: false, null: true
+              end
+              expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_false)
+              expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(true)
+            end
+          end
+
+          [false, true].each do |nullable|
+            context "nullable=#{nullable}" do
+              it 'infers optional: from null:' do
+                eval <<~EOS
+                  class AdvertBelongsTo < ActiveRecord::Base
+                    declare_schema { }
+                    belongs_to :ad_category, null: #{nullable}
+                  end
+                EOS
+                expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_flag[nullable])
+                expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(nullable)
+              end
+
+              it 'infers null: from optional:' do
+                eval <<~EOS
+                  class AdvertBelongsTo < ActiveRecord::Base
+                    declare_schema { }
+                    belongs_to :ad_category, optional: #{nullable}
+                  end
+                EOS
+                expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_flag[nullable])
+                expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(nullable)
+              end
+            end
+          end
+
+          it 'deprecates limit:' do
+            expect(ActiveSupport::Deprecation).to receive(:warn).with("belongs_to limit: is deprecated since it is now inferred")
+            eval <<~EOS
+              class UsingLimit < ActiveRecord::Base
+                declare_schema { }
+                belongs_to :ad_category, limit: 4
+              end
+            EOS
           end
         end
 
-        [false, true].each do |nullable|
-          context "nullable=#{nullable}" do
-            it 'infers optional: from null:' do
-              eval <<~EOS
-                class AdvertBelongsTo < ActiveRecord::Base
-                  declare_schema { }
-                  belongs_to :ad_category, null: #{nullable}
-                end
-              EOS
-              expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_flag[nullable])
-              expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(nullable)
+        context 'when parent object PKs have different limits' do
+          before do
+            class IdDefault < ActiveRecord::Base
+              declare_schema { }
+            end
+            class Id4 < ActiveRecord::Base
+              declare_schema id: :integer do
+              end
+            end
+            class Id8 < ActiveRecord::Base
+              declare_schema id: :bigint do
+              end
+            end
+            class Fk < ActiveRecord::Base
+              declare_schema { }
+              belongs_to :id_default, (ActiveSupport::VERSION::MAJOR < 5 ? { constraint: false } : {})
+              belongs_to :id4, (ActiveSupport::VERSION::MAJOR < 5 ? { constraint: false } : {})
+              belongs_to :id8, (ActiveSupport::VERSION::MAJOR < 5 ? { constraint: false } : {})
+            end
+          end
+
+          it 'creates the proper PKs' do
+            up = Generators::DeclareSchema::Migration::Migrator.run.first
+
+            create_id4_defaults = up.split("\n").grep(/create_table :id_defaults/).first
+            expect(create_id4_defaults).to be, up
+            expect(create_id4_defaults).to match(/, id: :bigint/)
+
+            create_id4s = up.split("\n").grep(/create_table :id4s/).first
+            expect(create_id4s).to be, up
+            expect(create_id4s).to match(/, id: :integer/)
+
+            create_id8s = up.split("\n").grep(/create_table :id8s/).first
+            expect(create_id8s).to be, up
+            expect(create_id8s).to match(/, id: :bigint/)
+          end
+
+          it 'infers the correct FK type from the create_table id: type' do
+            up = Generators::DeclareSchema::Migration::Migrator.run.first
+
+            create_fks = up.split("\n").grep(/t\.integer /).map { |command| command.gsub(', null: false', '').gsub(/^ +/, '') }
+            if defined?(SQLite3)
+              create_fks.map! { |command| command.gsub(/limit: [a-z0-9]+/, 'limit: X') }
+              expect(create_fks).to eq([
+                                         't.integer :id_default_id, limit: X',
+                                         't.integer :id4_id, limit: X',
+                                         't.integer :id8_id, limit: X'
+                                       ]), up
+            else
+              expect(create_fks).to eq([
+                                         't.integer :id_default_id, limit: 8',
+                                         't.integer :id4_id, limit: 4',
+                                         't.integer :id8_id, limit: 8'
+                                       ]), up
+            end
+          end
+
+          context "when parent objects were migrated before and later definitions don't have explicit id:" do
+            before do
+              up = Generators::DeclareSchema::Migration::Migrator.run.first
+              ActiveRecord::Migration.class_eval up
+              nuke_model_class(IdDefault)
+              nuke_model_class(Id4)
+              nuke_model_class(Id8)
+              nuke_model_class(Fk)
+              ActiveRecord::Base.connection.schema_cache.clear!
+
+
+              class NewIdDefault < ActiveRecord::Base
+                self.table_name = 'id_defaults'
+                declare_schema { }
+              end
+              class NewId4 < ActiveRecord::Base
+                self.table_name = 'id4s'
+                declare_schema { }
+              end
+              class NewId8 < ActiveRecord::Base
+                self.table_name = 'id8s'
+                declare_schema { }
+              end
+              class NewFk < ActiveRecord::Base
+                declare_schema { }
+                belongs_to :new_id_default
+                belongs_to :new_id4
+                belongs_to :new_id8
+              end
             end
 
-            it 'infers null: from optional:' do
-              eval <<~EOS
-                class AdvertBelongsTo < ActiveRecord::Base
-                  declare_schema { }
-                  belongs_to :ad_category, optional: #{nullable}
-                end
-              EOS
-              expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_flag[nullable])
-              expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(nullable)
+            it 'infers the correct FK :integer limit: ' do
+              up = Generators::DeclareSchema::Migration::Migrator.run.first
+
+              create_fks = up.split("\n").grep(/t\.integer /).map { |command| command.gsub(', null: false', '').gsub(/^ +/, '') }
+              if defined?(SQLite3)
+                create_fks.map! { |command| command.gsub(/limit: [a-z0-9]+/, 'limit: X') }
+                expect(create_fks).to eq([
+                                           't.integer :new_id_default_id, limit: X',
+                                           't.integer :new_id4_id, limit: X',
+                                           't.integer :new_id8_id, limit: X'
+                                         ]), up
+              else
+                expect(create_fks).to eq([
+                                           't.integer :new_id_default_id, limit: 8',
+                                           't.integer :new_id4_id, limit: 4',
+                                           't.integer :new_id8_id, limit: 8'
+                                         ]), up
+              end
             end
           end
         end

@@ -6,9 +6,9 @@ module DeclareSchema
   module SchemaChange
     class ColumnAdd < Base
       def initialize(table_name, column_name, column_type, **column_options)
-        @table_name = table_name
-        @column_name = column_name
-        @column_type = column_type
+        @table_name = table_name or raise ArgumentError, "must provide table_name"
+        @column_name = column_name or raise ArgumentError, "must provide column_name"
+        @column_type = column_type or raise ArgumentError, "must provide column_type"
         @column_options = column_options
       end
 

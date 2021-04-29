@@ -187,6 +187,12 @@ module Generators
           models, db_tables = models_and_tables
           models_by_table_name = {}
           models.each do |m|
+            m.try(:field_specs)&.each do |_name, field_spec|
+              if (pre_migration = field_spec.options.delete(:pre_migration))
+                pre_migration.call(field_spec)
+              end
+            end
+
             if !models_by_table_name.has_key?(m.table_name)
               models_by_table_name[m.table_name] = m
             elsif m.superclass == models_by_table_name[m.table_name].superclass.superclass
@@ -203,8 +209,8 @@ module Generators
 
           to_create = model_table_names - db_tables
           to_drop = db_tables - model_table_names - self.class.always_ignore_tables
-          to_change = model_table_names
           to_rename = extract_table_renames!(to_create, to_drop)
+          to_change = model_table_names
 
           renames = to_rename.map do |old_name, new_name|
             ::DeclareSchema::SchemaChange::TableRename.new(old_name, new_name)
@@ -297,14 +303,14 @@ module Generators
         end
 
         def create_table_options(model, disable_auto_increment)
-          primary_key = model._defined_primary_key
+          primary_key = model._declared_primary_key
           if primary_key.blank? || disable_auto_increment
             { id: false }
           elsif primary_key == "id"
             { id: :bigint }
           else
             { primary_key: primary_key.to_sym }
-          end
+          end.merge(model._table_options)
         end
 
         def table_options_for_model(model)
@@ -312,8 +318,8 @@ module Generators
             {}
           else
             {
-              charset:   model.table_options[:charset] || ::DeclareSchema.default_charset,
-              collation: model.table_options[:collation] || ::DeclareSchema.default_collation
+              charset:   model._table_options&.[](:charset) || ::DeclareSchema.default_charset,
+              collation: model._table_options&.[](:collation) || ::DeclareSchema.default_collation
             }
           end
         end
@@ -336,18 +342,16 @@ module Generators
           new_table_name = model.table_name
 
           db_columns = model.connection.columns(current_table_name).index_by(&:name)
-          key_missing = db_columns[model._defined_primary_key].nil? && model._defined_primary_key.present?
-          if model._defined_primary_key.present?
-            db_columns.delete(model._defined_primary_key)
+          if (pk = model._declared_primary_key.presence)
+            pk_was_in_db_columns = db_columns.delete(pk)
           end
 
           model_column_names = model.field_specs.keys.map(&:to_s)
           db_column_names = db_columns.keys.map(&:to_s)
 
           to_add = model_column_names - db_column_names
-          to_add += [model._defined_primary_key] if key_missing && model._defined_primary_key.present?
+          to_add << pk if pk && !pk_was_in_db_columns
           to_remove = db_column_names - model_column_names
-          to_remove -= [model._defined_primary_key.to_sym] if model._defined_primary_key.present?
 
           to_rename = extract_column_renames!(to_add, to_remove, new_table_name)
 

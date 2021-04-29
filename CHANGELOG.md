@@ -4,6 +4,12 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - Unreleased
+### Added
+- `belongs_to` now always infers the `limit:` of the foreign key to match that of the primary key it points to.
+ Note: this isn't possible for polymorphic foreign keys, so it assumes `limit: 8` there...unless the schema
+ was migrated in the past with `limit: 4`.
+
 ## [0.11.1] - 2021-03-26
 ### Fixed
 - Fixed a bug where up and down in generated migration would be empty in Rails 4.
@@ -168,6 +174,7 @@ using the appropriate Rails configuration attributes.
 ### Added
 - Initial version from https://github.com/Invoca/hobo_fields v4.1.0.
 
+[0.12.0]: https://github.com/Invoca/declare_schema/compare/v0.11.1...v0.12.0
 [0.11.1]: https://github.com/Invoca/declare_schema/compare/v0.11.0...v0.11.1
 [0.11.0]: https://github.com/Invoca/declare_schema/compare/v0.10.1...v0.11.0
 [0.10.1]: https://github.com/Invoca/declare_schema/compare/v0.10.0...v0.10.1
