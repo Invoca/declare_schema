@@ -4,7 +4,7 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.12.0] - Unreleased
+## [0.12.0] - 2021-04-28
 ### Added
 - `belongs_to` now always infers the `limit:` of the foreign key to match that of the primary key it points to.
  Note: this isn't possible for polymorphic foreign keys, so it assumes `limit: 8` there...unless the schema
