@@ -6,7 +6,7 @@ rescue LoadError
 end
 
 RSpec.describe DeclareSchema::Model::FieldSpec do
-  let(:model) { double('model', _table_options: {}, _declared_primary_key: 'id') }
+  let(:model) { double('model', _table_options: {}, _declared_primary_key: 'id', name: 'model') }
   let(:col_spec) { double('col_spec', type: :string) }
 
   before do
@@ -115,15 +115,6 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
       end
     end
 
-    if defined?(Mysql2)
-      describe 'varbinary' do # TODO: :varbinary is an Invoca addition to Rails; make it a configurable option
-        it 'is supported' do
-          subject = described_class.new(model, :binary_dump, :varbinary, limit: 200, null: false, position: 2)
-          expect(subject.schema_attributes(col_spec)).to eq(type: :varbinary, limit: 200, null: false)
-        end
-      end
-    end
-
     describe 'decimal' do
       it 'allows precision: and scale:' do
         subject = described_class.new(model, :quantity, :decimal, precision: 8, scale: 10, null: true, position: 3)
@@ -141,7 +132,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
       end
     end
 
-    [:integer, :bigint, :string, :text, :binary, :datetime, :date, :time, (:varbinary if defined?(Mysql2))].compact.each do |t|
+    [:integer, :bigint, :string, :text, :binary, :datetime, :date, :time].each do |t|
       describe t.to_s do
         let(:extra) { t == :string ? { limit: 100 } : {} }
 

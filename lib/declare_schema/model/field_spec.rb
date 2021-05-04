@@ -47,40 +47,42 @@ module DeclareSchema
       end
 
       def initialize(model, name, type, position: 0, **options)
+        qualified_name = -> { "#{model.name}##{name}" }
+
         _declared_primary_key = model._declared_primary_key
 
-        name.to_s == _declared_primary_key and raise ArgumentError, "you may not provide a field spec for the primary key #{name.inspect}"
+        name.to_s == _declared_primary_key and raise ArgumentError, "#{qualified_name.()}: you may not provide a field spec for the primary key #{name.inspect}"
 
         @model = model
         @name = name.to_sym
-        type.is_a?(Symbol) or raise ArgumentError, "type must be a Symbol; got #{type.inspect}"
+        type.is_a?(Symbol) or raise ArgumentError, "#{qualified_name.()}: type must be a Symbol; got #{type.inspect}"
         @type = TYPE_SYNONYMS[type] || type
         @position = position
         @options = options.dup
 
         @options.has_key?(:null) or @options[:null] = ::DeclareSchema.default_null
-        @options[:null].nil? and raise "null: must be provided for field #{model}##{@name}: #{@options.inspect} since ::DeclareSchema#default_null is set to 'nil'; do you want `null: false`?"
+        @options[:null].nil? and raise "#{qualified_name.()}: null: must be provided for field #{model}##{@name}: #{@options.inspect} since ::DeclareSchema#default_null is set to 'nil'; do you want `null: false`?"
 
         case @type
         when :text
           if self.class.mysql_text_limits?
-            @options[:default].nil? or raise MysqlTextMayNotHaveDefault, "when using MySQL, non-nil default may not be given for :text field #{model}##{@name}"
+            @options[:default].nil? or raise MysqlTextMayNotHaveDefault, "#{qualified_name.()}: when using MySQL, non-nil default may not be given for :text field #{model}##{@name}"
             @options[:limit] ||= ::DeclareSchema.default_text_limit or
-                  raise("limit: must be provided for :text field #{model}##{@name}: #{@options.inspect} since ::DeclareSchema#default_text_limit is set to 'nil'; do you want `limit: 0xffff_ffff`?")
+                  raise("#{qualified_name.()}: limit: must be provided for :text field #{model}##{@name}: #{@options.inspect} since ::DeclareSchema#default_text_limit is set to 'nil'; do you want `limit: 0xffff_ffff`?")
             @options[:limit] = self.class.round_up_mysql_text_limit(@options[:limit])
           else
             @options.delete(:limit)
           end
         when :string
-          @options[:limit] ||= ::DeclareSchema.default_string_limit or raise "limit: must be provided for :string field #{model}##{@name}: #{@options.inspect} since ::DeclareSchema#default_string_limit is set to 'nil'; do you want `limit: 255`?"
+          @options[:limit] ||= ::DeclareSchema.default_string_limit or raise "#{qualified_name.()}: limit: must be provided for :string field #{model}##{@name}: #{@options.inspect} since ::DeclareSchema#default_string_limit is set to 'nil'; do you want `limit: 255`?"
         when :bigint
           @type = :integer
           @options[:limit] = 8
         end
 
-        Column.native_type?(@type) or raise UnknownTypeError, "#{@type.inspect} not found in #{Column.native_types.inspect} for adapter #{ActiveRecord::Base.connection.class.name}"
+        Column.native_type?(@type) or raise UnknownTypeError, "#{qualified_name.()}: #{@type.inspect} not found in #{Column.native_types.inspect} for adapter #{::ActiveRecord::Base.connection.class.name}"
 
-        if @type.in?([:string, :text, :binary, :varbinary, :integer, :enum])
+        if @type.in?([:string, :text, :binary, :integer, :enum])
           @options[:limit] ||= Column.native_types.dig(@type, :limit)
         else
           @type != :decimal && @options.has_key?(:limit) and warn("unsupported limit: for SQL type #{@type} in field #{model}##{@name}")
