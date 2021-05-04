@@ -29,6 +29,10 @@ module DeclareSchema
         @connection = connection
       end
 
+      def name
+        "HABTM-#{table_name}"
+      end
+
       def _table_options
         {}
       end

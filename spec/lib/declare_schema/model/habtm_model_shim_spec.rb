@@ -53,6 +53,12 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
       end
     end
 
+    describe '#name' do
+      it 'returns name' do
+        expect(subject.name).to eq("HABTM-#{join_table}")
+      end
+    end
+
     describe '#table_options' do
       it 'returns empty hash' do
         expect(subject._table_options).to eq({})
