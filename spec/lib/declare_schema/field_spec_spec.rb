@@ -115,6 +115,27 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
       end
     end
 
+    describe 'enum' do
+      before do
+        allow(::DeclareSchema::Model::Column).to receive(:native_types).and_wrap_original do |m, *_args|
+          result = m.call
+          if result.has_key?(:enum)
+            result
+          else
+            result.merge(enum: { name: "enum" })
+          end
+        end
+      end
+
+      it 'raises ArgumentError if any of the limit values are not Symbols' do
+        [['first', 'second', 'third'], [1, 2, 3], nil, []].each do |limit|
+          expect do
+            described_class.new(model, :status, :enum, limit: limit, null: false, position: 2)
+          end.to raise_exception(ArgumentError, /enum limit: must be an array of 1 or more Symbols; got #{Regexp.escape(limit.inspect)}/)
+        end
+      end
+    end
+
     if defined?(Mysql2)
       describe 'varbinary' do # TODO: :varbinary is an Invoca addition to Rails; make it a configurable option
         it 'is supported' do
