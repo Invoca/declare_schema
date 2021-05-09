@@ -127,11 +127,32 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
         end
       end
 
-      it 'raises ArgumentError if any of the limit values are not Symbols' do
-        [['first', 'second', 'third'], [1, 2, 3], nil, []].each do |limit|
-          expect do
-            described_class.new(model, :status, :enum, limit: limit, null: false, position: 2)
-          end.to raise_exception(ArgumentError, /enum limit: must be an array of 1 or more Symbols; got #{Regexp.escape(limit.inspect)}/)
+      describe 'default' do
+        it 'allows default of nil or a Symbol' do
+          [nil, :first].each do |default|
+            expect do
+              subject = described_class.new(model, :status, :enum, limit: [:first, :second, :third], default: default, null: false, position: 2)
+              expect(subject.default).to eq(default)
+            end.to_not raise_exception
+          end
+        end
+
+        it 'raises ArgumentError if default is not nil or a Symbol' do
+          ["first", 1].each do |default|
+            expect do
+              described_class.new(model, :status, :enum, limit: [:first, :second, :third], default: default, null: false, position: 2)
+            end.to raise_exception(ArgumentError, /enum default: must be nil or a Symbol; got #{Regexp.escape(default.inspect)}/)
+          end
+        end
+      end
+
+      describe 'limit' do
+        it 'raises ArgumentError if any of the limit values are not Symbols' do
+          [['first', 'second', 'third'], [1, 2, 3], nil, []].each do |limit|
+            expect do
+              described_class.new(model, :status, :enum, limit: limit, null: false, position: 2)
+            end.to raise_exception(ArgumentError, /enum limit: must be an array of 1 or more Symbols; got #{Regexp.escape(limit.inspect)}/)
+          end
         end
       end
     end
