@@ -77,6 +77,8 @@ module DeclareSchema
           @type = :integer
           @options[:limit] = 8
         when :enum
+          @options[:default].nil? || @options[:default].is_a?(Symbol) or
+            raise ArgumentError, "enum default: must be nil or a Symbol; got #{@options[:default].inspect}"
           @options[:limit].is_a?(Array) && @options[:limit].size >= 1 && @options[:limit].all? { |value| value.is_a?(Symbol) } or
             raise ArgumentError, "enum limit: must be an array of 1 or more Symbols; got #{@options[:limit].inspect}"
         end
