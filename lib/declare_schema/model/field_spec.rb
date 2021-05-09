@@ -76,12 +76,17 @@ module DeclareSchema
         when :bigint
           @type = :integer
           @options[:limit] = 8
+        when :enum
+          @options[:limit].is_a?(Array) && @options[:limit].size >= 1 && @options[:limit].all? { |value| value.is_a?(Symbol) } or
+            raise ArgumentError, "enum limit: must be an array of 1 or more Symbols; got #{@options[:limit].inspect}"
         end
 
         Column.native_type?(@type) or raise UnknownTypeError, "#{@type.inspect} not found in #{Column.native_types.inspect} for adapter #{ActiveRecord::Base.connection.class.name}"
 
-        if @type.in?([:string, :text, :binary, :varbinary, :integer, :enum])
+        if @type.in?([:string, :text, :binary, :varbinary, :integer])
           @options[:limit] ||= Column.native_types.dig(@type, :limit)
+        elsif @type.in?([:enum])
+          # nothing to do
         else
           @type != :decimal && @options.has_key?(:limit) and warn("unsupported limit: for SQL type #{@type} in field #{model}##{@name}")
           @options.delete(:limit)
