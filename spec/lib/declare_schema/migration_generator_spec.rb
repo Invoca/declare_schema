@@ -2491,5 +2491,57 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         end
       end
     end
+
+    context 'default_schema' do
+      let(:default_schema_block) { nil }
+      let(:declare_model) do
+        -> do
+          class Advert < active_record_base_class.constantize
+            declare_schema do
+              integer :price, limit: 8
+            end
+          end
+        end
+      end
+
+      before do
+        DeclareSchema.default_schema = default_schema_block
+      end
+
+      after do
+        DeclareSchema.default_schema = nil
+      end
+
+      context 'when unset' do
+        it 'adds nothing' do
+          declare_model.call
+
+          expect(Advert.field_specs.keys).to eq(['price'])
+        end
+      end
+
+      context 'when set to a block' do
+        let(:default_schema_block) do
+          -> do
+            timestamps
+            field :lock_version, :integer, default: 1
+          end
+        end
+
+        it 'adds the fields in that block' do
+          declare_model.call
+
+          expect(Advert.field_specs.keys).to eq(['price', 'created_at', 'updated_at', 'lock_version'])
+        end
+
+        context 'and the model sets default_schema: false' do
+          it 'is a no-op'
+        end
+
+        context 'and the block is redundant' do
+          it 'is a no-op'
+        end
+      end
+    end
   end
 end

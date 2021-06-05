@@ -37,10 +37,9 @@ module DeclareSchema
 
       if block
         dsl = DeclareSchema::Dsl.new(self, null: false)
-        if block.arity == 1
-          yield dsl
-        else
-          dsl.instance_eval(&block)
+        dsl.instance_eval(&block)
+        if DeclareSchema.default_schema
+          dsl.instance_exec(&DeclareSchema.default_schema)
         end
       end
     end
