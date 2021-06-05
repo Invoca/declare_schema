@@ -7,7 +7,7 @@ module DeclareSchema
     include ::Kernel      # but we need the basic class methods
 
     instance_methods.each do |m|
-      unless m.to_s.starts_with?('__') || m.in?([:object_id, :instance_eval])
+      unless m.to_s.starts_with?('__') || m.in?([:object_id, :instance_eval, :instance_exec])
         undef_method(m)
       end
     end
@@ -32,8 +32,10 @@ module DeclareSchema
       @model.declare_field(name, type, *(args + [@options.merge(options)]))
     end
 
-    def method_missing(type, name, *args)
-      field(name, type, *args)
+    def method_missing(*args, **options)
+      args.count(&:itself) == 2 or raise ::ArgumentError, "fields in declare_schema block must be declared as: type name, options (got #{args.inspect}, #{options.inspect})"
+      type, name = args
+      field(name, type, options)
     end
   end
 end
