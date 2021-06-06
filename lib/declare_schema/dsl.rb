@@ -32,10 +32,11 @@ module DeclareSchema
       @model.declare_field(name, type, *(args + [@options.merge(options)]))
     end
 
+    # TODO: make [:required] just another option. Either 'required: true] or 'optional: false'?
     def method_missing(*args, **options)
-      args.count(&:itself) == 2 or raise ::ArgumentError, "fields in declare_schema block must be declared as: type name, options (got #{args.inspect}, #{options.inspect})"
-      type, name = args
-      field(name, type, options)
+      args.count(&:itself) >= 2 or raise ::ArgumentError, "fields in declare_schema block must be declared as: type name, [:required], options (got #{args.inspect}, #{options.inspect})"
+      type, name, *required = args
+      field(name, type, *required, options)
     end
   end
 end
