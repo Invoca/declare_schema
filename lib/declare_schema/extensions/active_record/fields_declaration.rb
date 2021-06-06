@@ -27,7 +27,7 @@ module DeclareSchema
     end
     deprecate :fields, deprecator: ActiveSupport::Deprecation.new('1.0', 'DeclareSchema')
 
-    def declare_schema(table_options = {}, &block)
+    def declare_schema(default_schema: true, **table_options, &block)
       # Any model that calls 'fields' gets DeclareSchema::Model behavior
       DeclareSchema::Model.mix_in(self)
 
@@ -38,7 +38,7 @@ module DeclareSchema
       if block
         dsl = DeclareSchema::Dsl.new(self, null: false)
         dsl.instance_eval(&block)
-        if DeclareSchema.default_schema
+        if default_schema && DeclareSchema.default_schema
           dsl.instance_exec(&DeclareSchema.default_schema)
         end
       end
