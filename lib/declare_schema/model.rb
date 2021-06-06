@@ -34,19 +34,16 @@ module DeclareSchema
           # supported options include :charset and :collation
           inheriting_cattr_reader table_options: HashWithIndifferentAccess.new
 
-          # eval avoids the ruby 1.9.2 "super from singleton method ..." error
-
-          eval <<~EOS
-            def self.inherited(klass)
-              unless klass.field_specs.has_key?(inheritance_column)
-                declare_schema do |f|
-                  f.field(inheritance_column, :string, limit: 255, null: true)
-                end
-                index(inheritance_column)
+          def self.inherited(klass)
+            unless klass.field_specs.has_key?(inheritance_column)
+              ic = inheritance_column
+              declare_schema do
+                field(ic, :string, limit: 255, null: true)
               end
-              super
+              index(ic)
             end
-          EOS
+            super
+          end
         end
       end
     end
