@@ -1860,6 +1860,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       class SuperFancyAdvert < FancyAdvert
       end
 
+      expect(Generators::DeclareSchema::Migration::Migrator.run.first).to be_present
+
       up, _ = Generators::DeclareSchema::Migration::Migrator.run do |migrations|
         expect(migrations).to(
           migrate_up(<<~EOS.strip)
@@ -2535,11 +2537,32 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         end
 
         context 'and the model sets default_schema: false' do
-          it 'is a no-op'
+          before do
+            class Advert < active_record_base_class.constantize
+              declare_schema default_schema: false do
+                integer :price, limit: 8
+              end
+            end
+          end
+
+          it 'does not add the default schema fields' do
+            expect(Advert.field_specs.keys).to eq(['price'])
+          end
         end
 
-        context 'and the block is redundant' do
-          it 'is a no-op'
+        context 'and the block has redundant fields' do
+          before do
+            class Advert < active_record_base_class.constantize
+              declare_schema do
+                integer :price, limit: 8
+                timestamps
+              end
+            end
+          end
+
+          it 'is a no-op' do
+            expect(Advert.field_specs.keys).to eq(['price', 'created_at', 'updated_at', 'lock_version'])
+          end
         end
       end
     end
