@@ -62,11 +62,31 @@ trigger the `eager_load!` on the `Rails` application and all `Rails::Engine`s lo
 into scope.  If you need to generate migrations for models that aren't automatically loaded by `eager_load!`,
 load them in the `before_generating_migration` block.
 
-**Example Configuration**
+For example:
 
 ```ruby
 DeclareSchema::Migration::Migrator.before_generating_migration do
   require 'lib/some/hidden/models.rb'
+end
+```
+
+### default_schema
+If there are default columns you would like in the schema for every model, you can define them in a block that is registered with
+`DeclareSchema.default_schema =`. For example:
+
+```ruby
+DeclareSchema.default_schema = -> do
+  timestamps
+  optimistic_lock
+end
+```
+This will add these fields to the schema of each model (if not already there).
+If you have a model where you don't want the defaults applied, that can be set with the `default_schema:` boolean option to `declare_schema` (the default value is true). For example:
+```ruby
+class User < ActiveRecord::Base
+  declare_schema default_schema: false do
+    ...
+  end
 end
 ```
 
