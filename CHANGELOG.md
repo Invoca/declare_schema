@@ -6,7 +6,7 @@ Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0
 
 ## [0.13.0] - Unreleased
 ### Added
-- Added support for `default_schema =` to apply a default schema to every model, unless disabld for that model with `declare_schema: false`.
+- Added support for `default_schema` block to apply a default schema to every model, unless disabled for that model with `declare_schema: false`.
 
 ## [0.12.1] - 2021-05-10
 ### Fixed

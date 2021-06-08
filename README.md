@@ -72,10 +72,10 @@ end
 
 ### default_schema
 If there are default columns you would like in the schema for every model, you can define them in a block that is registered with
-`DeclareSchema.default_schema =`. For example:
+`DeclareSchema.default_schema`. For example:
 
 ```ruby
-DeclareSchema.default_schema = -> do
+DeclareSchema.default_schema do
   timestamps
   optimistic_lock
 end
