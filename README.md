@@ -90,6 +90,12 @@ class User < ActiveRecord::Base
 end
 ```
 
+### clear_default_schema
+This method clears out any previously declared `default_schema`.
+```ruby
+DeclareSchema.clear_default_schema
+```
+
 ### Global Configuration
 Configurations can be set at the global level to customize default declaration for the following values:
 
