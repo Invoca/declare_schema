@@ -2507,11 +2507,11 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
 
       before do
-        DeclareSchema.default_schema = default_schema_block
+        DeclareSchema.default_schema(&default_schema_block)
       end
 
       after do
-        DeclareSchema.default_schema = nil
+        DeclareSchema.clear_default_schema
       end
 
       context 'when unset' do

@@ -37,7 +37,7 @@ module DeclareSchema
 
   class << self
     attr_reader :default_charset, :default_collation, :default_text_limit, :default_string_limit, :default_null,
-                :default_generate_foreign_keys, :default_generate_indexing, :default_schema, :db_migrate_command
+                :default_generate_foreign_keys, :default_generate_indexing, :db_migrate_command
 
     def to_class(type)
       case type
@@ -85,9 +85,17 @@ module DeclareSchema
       @default_generate_indexing = generate_indexing
     end
 
-    def default_schema=(default_schema)
-      default_schema.nil? || default_schema.respond_to?(:call) or raise "default_schema must be nil or a block that responds to call"
-      @default_schema = default_schema
+    def default_schema(&block)
+      if block.nil?
+        @default_schema # equivalent to attr_reader :default_schema
+      else
+        block.respond_to?(:call) or raise "default_schema must be passed a block that responds to call"
+        @default_schema = block
+      end
+    end
+
+    def clear_default_schema
+      @default_schema = nil
     end
 
     def db_migrate_command=(db_migrate_command)
