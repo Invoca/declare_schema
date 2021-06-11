@@ -4,7 +4,7 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.13.0] - Unreleased
+## [0.13.0] - 2020-06-11
 ### Added
 - Added support for `default_schema` block to apply a default schema to every model, unless disabled for that model with `default_schema: false`.
 
