@@ -4,12 +4,12 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.13.1] - Unreleased
+## [0.13.1] - 2021-08-02
 ### Fixed
 - Fixed migration file indentation bug in Rails 5 where the first line was indented an extra 4 characters.
  And fixed the longstanding triple-spacing bug to use double spacing.
 
-## [0.13.0] - 2020-06-11
+## [0.13.0] - 2021-06-11
 ### Added
 - Added support for `default_schema` block to apply a default schema to every model, unless disabled for that model with `default_schema: false`.
 
@@ -188,6 +188,7 @@ using the appropriate Rails configuration attributes.
 ### Added
 - Initial version from https://github.com/Invoca/hobo_fields v4.1.0.
 
+[0.13.1]: https://github.com/Invoca/declare_schema/compare/v0.13.0...v0.13.1
 [0.13.0]: https://github.com/Invoca/declare_schema/compare/v0.12.1...v0.13.0
 [0.12.1]: https://github.com/Invoca/declare_schema/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/Invoca/declare_schema/compare/v0.11.1...v0.12.0
