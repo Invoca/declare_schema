@@ -299,7 +299,7 @@ module Generators
           up   = migration_commands.map(&:up  ).select(&:present?)
           down = migration_commands.map(&:down).select(&:present?).reverse
 
-          [up * "\n\n", down * "\n\n"]
+          [up * "\n", down * "\n"]
         end
 
         def create_table_options(model, disable_auto_increment)
