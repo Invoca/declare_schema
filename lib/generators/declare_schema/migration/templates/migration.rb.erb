@@ -1,9 +1,9 @@
 class <%= @migration_class_name %> < (ActiveSupport::VERSION::MAJOR >= 5 ? ActiveRecord::Migration[4.2] : ActiveRecord::Migration)
   def self.up
-    <%= @up.presence or raise "no @up given!" %>
+<%= @up.presence or raise "no @up given!" %>
   end
 
   def self.down
-    <%= @down.presence or raise "no @down given!" %>
+<%= @down.presence or raise "no @down given!" %>
   end
 end
