@@ -803,8 +803,33 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         EOS
       )
 
+      Advert.connection.schema_cache.clear!
+      Advert.reset_column_information
+
       nuke_model_class(Advert)
       ActiveRecord::Base.connection.execute("drop table `adverts`;")
+
+      class Advert < ActiveRecord::Base
+        def self.disable_auto_increment
+          true
+        end
+
+        fields do
+          description :text, limit: 250, null: true
+        end
+      end
+
+      up, _ = Generators::DeclareSchema::Migration::Migrator.run.tap do |migrations|
+        expect(migrations).to(
+          migrate_up(<<~EOS.strip)
+            create_table :adverts, id: false do |t|
+              t.integer :id, limit: 8, auto_increment: false, primary_key: true
+              t.text    :description, limit: nil, null: true
+            end
+          EOS
+            .and migrate_down("drop_table :adverts")
+        )
+      end
 
       ## DSL
 

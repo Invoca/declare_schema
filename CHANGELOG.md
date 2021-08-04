@@ -4,6 +4,10 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.2] - 2021-08-04
+### Fixed
+- Fixed issue with disable_auto_increment support for new tables.
+
 ## [0.13.1] - 2021-08-02
 ### Fixed
 - Fixed migration file indentation bug in Rails 5 where the first line was indented an extra 4 characters.
