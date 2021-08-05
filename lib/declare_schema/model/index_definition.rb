@@ -68,7 +68,7 @@ module DeclareSchema
 
         # This is the old approach which is still needed for MySQL in Rails 4 and SQLite
         def fallback_find_primary_key(model, table)
-          ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/) || ActiveSupport::VERSION::MAJOR < 5 or return nil
+          ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/) or return nil
 
           connection = model.connection.dup
 
