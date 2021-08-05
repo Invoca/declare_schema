@@ -110,16 +110,6 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
             let(:model_class) { IndexDefinitionCompoundIndexModel }
 
             it 'returns the indexes for the model' do
-              if ActiveSupport::VERSION::MAJOR < 5
-                expect(model_class.connection).to receive(:primary_key).with('index_definition_compound_index_models').and_return(nil)
-                connection_stub = instance_double(ActiveRecord::Base.connection.class, "connection")
-                expect(connection_stub).to receive(:indexes).
-                  with('index_definition_compound_index_models').
-                  and_return([DeclareSchema::Model::IndexDefinition.new(model_class, ['fk1_id', 'fk2_id'], name: 'PRIMARY')])
-
-                expect(model_class.connection).to receive(:dup).and_return(connection_stub)
-              end
-
               expect(subject.size).to eq(1), subject.inspect
               expect([:name, :columns, :unique].map { |attr| subject[0].send(attr) }).to eq(
                 ['PRIMARY', ['fk1_id', 'fk2_id'], true]
@@ -219,16 +209,6 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
             let(:model_class) { IndexDefinitionCompoundIndexModel }
 
             it 'returns the indexes for the model' do
-              if ActiveSupport::VERSION::MAJOR < 5
-                expect(model_class.connection).to receive(:primary_key).with('index_definition_compound_index_models').and_return(nil)
-                connection_stub = instance_double(ActiveRecord::Base.connection.class, "connection")
-                expect(connection_stub).to receive(:indexes).
-                    with('index_definition_compound_index_models').
-                    and_return([DeclareSchema::Model::IndexDefinition.new(model_class, ['fk1_id', 'fk2_id'], name: 'PRIMARY')])
-
-                expect(model_class.connection).to receive(:dup).and_return(connection_stub)
-              end
-
               expect(subject.size).to eq(1), subject.inspect
               expect([:name, :columns, :unique].map { |attr| subject[0].send(attr) }).to eq(
                                                                                              ['PRIMARY', ['fk1_id', 'fk2_id'], true]

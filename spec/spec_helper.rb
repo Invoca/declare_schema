@@ -27,11 +27,7 @@ RSpec.configure do |config|
   RSpec::Support::ObjectFormatter.default_instance.max_formatted_output_length = 2_000
 
   def active_record_base_class
-    if ActiveSupport::VERSION::MAJOR == 4
-      'ActiveRecord::Base'
-    else
-      'ApplicationRecord'
-    end
+    'ApplicationRecord'
   end
 
   def migrate(renames = {})

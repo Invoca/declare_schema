@@ -14,11 +14,8 @@ RSpec.describe DeclareSchema::Model::Column do
 
   describe 'class methods' do
     describe '.native_type?' do
-      if ActiveSupport::VERSION::MAJOR >= 5
-        let(:native_types) { [:string, :text, :integer, :float, :decimal, :datetime, :time, :date, :binary, :boolean, :json] }
-      else
-        let(:native_types) { [:string, :text, :integer, :float, :decimal, :datetime, :time, :date, :binary, :boolean] }
-      end
+      let(:native_types) { [:string, :text, :integer, :float, :decimal, :datetime, :time, :date, :binary, :boolean, :json] }
+    
 
       it 'is falsey for :primary_key' do
         expect(described_class.native_type?(:primary_key)).to be_falsey
@@ -63,7 +60,6 @@ RSpec.describe DeclareSchema::Model::Column do
     end
 
     describe '.deserialize_default_value' do
-      if ::ActiveSupport::VERSION::MAJOR >= 5
         it 'deserializes :boolean' do
           expect(described_class.deserialize_default_value(nil, :boolean, 'true')).to eq(true)
           expect(described_class.deserialize_default_value(nil, :boolean, 'false')).to eq(false)
@@ -76,7 +72,6 @@ RSpec.describe DeclareSchema::Model::Column do
         it 'deserializes :json' do
           expect(described_class.deserialize_default_value(nil, :json, '{}')).to eq({})
         end
-      end
     end
   end
 

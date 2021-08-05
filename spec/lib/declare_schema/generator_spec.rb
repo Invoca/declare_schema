@@ -28,7 +28,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     EOS
 
     case ActiveSupport::VERSION::MAJOR
-    when 4, 5
+    when 5
       expect_test_definition_to_eq('alpha/beta', <<~EOS)
         require "test_helper"
 
@@ -51,20 +51,6 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     end
 
     case ActiveSupport::VERSION::MAJOR
-    when 4
-      expect_test_fixture_to_eq('alpha/beta', <<~EOS)
-        # Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
-
-        # This model initially had no columns defined.  If you add columns to the
-        # model remove the '{}' from the fixture names and add the columns immediately
-        # below each fixture, per the syntax in the comments below
-        #
-        one: {}
-        # column: value
-        #
-        two: {}
-        #  column: value
-      EOS
     when 5
       expect_test_fixture_to_eq('alpha/beta', <<~EOS)
         # Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html

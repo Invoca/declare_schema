@@ -83,11 +83,7 @@ module DeclareSchema
       if options[:migrate]
         say db_migrate_command
         bare_rails_command = db_migrate_command.sub(/\Abundle exec +/, '').sub(/\Arake +|rails +/, '')
-        if ActiveSupport::VERSION::MAJOR < 5
-          rake(bare_rails_command)
-        else
-          rails_command(bare_rails_command)
-        end
+        rails_command(bare_rails_command)
       else
         say "\nNot running migration since --migrate not given. When you are ready, run:\n\n   #{db_migrate_command}\n\n"
       end
@@ -97,24 +93,15 @@ module DeclareSchema
 
     private
 
-    if ActiveSupport::VERSION::MAJOR < 5
-      def indent(string, columns)
-        whitespace = ' ' * columns
-        string.gsub("\n", "\n#{whitespace}").gsub(/ +\n/, "\n")
-      end
-    end
-
     def migrations_pending?
       migrations = case ActiveSupport::VERSION::MAJOR
-                   when 4
-                     ActiveRecord::Migrator.migrations('db/migrate')
                    when 5
                      ActiveRecord::MigrationContext.new(ActiveRecord::Migrator.migrations_paths).migrations
                    else
                      ActiveRecord::MigrationContext.new(ActiveRecord::Migrator.migrations_paths, ActiveRecord::SchemaMigration).migrations
                    end
       pending_migrations = case ActiveSupport::VERSION::MAJOR
-                           when 4, 5
+                           when 5
                              ActiveRecord::Migrator.new(:up, migrations).pending_migrations
                            else
                              ActiveRecord::Migrator.new(:up, migrations, ActiveRecord::SchemaMigration).pending_migrations

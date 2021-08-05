@@ -487,11 +487,7 @@ module Generators
             parent_columns = connection.columns(parent_table) rescue []
             pk_limit =
               if (pk_column = parent_columns.find { |column| column.name.to_s == "id" }) # right now foreign keys assume id is the target
-                if ActiveSupport::VERSION::MAJOR < 5
-                  pk_column.cast_type.limit
-                else
-                  pk_column.limit
-                end
+                pk_column.limit
               else
                 8
               end
@@ -553,12 +549,8 @@ module Generators
           end
         end
 
-        SchemaDumper = case ActiveSupport::VERSION::MAJOR
-                       when 4
-                         ActiveRecord::SchemaDumper
-                       else
-                         ActiveRecord::ConnectionAdapters::SchemaDumper
-                       end
+        SchemaDumper = ActiveRecord::ConnectionAdapters::SchemaDumper
+                      
 
         def add_table_back(table)
           dumped_schema_stream = StringIO.new
