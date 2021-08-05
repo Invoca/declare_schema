@@ -30,7 +30,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     end
   end
   let(:datetime_precision) do
-    if defined?(Mysql2) && ActiveSupport::VERSION::MAJOR >= 5
+    if defined?(Mysql2)
       ', precision: 0'
     end
   end
@@ -1164,7 +1164,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         migration_content = File.read(migrations.first)
         first_line = migration_content.split("\n").first
         base_class = first_line.split(' < ').last
-        expect(base_class).to eq("(ActiveSupport::VERSION::MAJOR >= 5 ? ActiveRecord::Migration[4.2] : ActiveRecord::Migration)")
+        expect(base_class).to eq("(ActiveRecord::Migration[4.2])")
       end
     end
 
