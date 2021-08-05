@@ -11,15 +11,11 @@ jobs:
       matrix:
         ruby: [ 2.4.5, 2.5.8, 2.6.5, 2.7.1 ]
         gemfile:
-        - gemfiles/rails_4_mysql.gemfile
-        - gemfiles/rails_4_sqlite.gemfile
         - gemfiles/rails_5_mysql.gemfile
         - gemfiles/rails_5_sqlite.gemfile
         - gemfiles/rails_6_mysql.gemfile
         - gemfiles/rails_6_sqlite.gemfile
         exclude:
-        - { gemfile: gemfiles/rails_4_mysql.gemfile, ruby: 2.7.1 }
-        - { gemfile: gemfiles/rails_4_sqlite.gemfile, ruby: 2.7.1 }
         - { gemfile: gemfiles/rails_5_mysql.gemfile, ruby: 2.4.5 }
         - { gemfile: gemfiles/rails_5_sqlite.gemfile, ruby: 2.4.5 }
         - { gemfile: gemfiles/rails_6_mysql.gemfile, ruby: 2.4.5 }
