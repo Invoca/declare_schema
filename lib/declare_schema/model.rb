@@ -258,8 +258,10 @@ module DeclareSchema
                   ActiveRecord::Coders::JSON
                 elsif [:load, :dump].all? { |x| class_name_or_coder.respond_to?(x) }
                   class_name_or_coder
-                else 
+                elsif ActiveSupport::VERSION::MAJOR >= 5
                   ActiveRecord::Coders::YAMLColumn.new(attr_name, class_name_or_coder)
+                else
+                  ActiveRecord::Coders::YAMLColumn.new(class_name_or_coder)
                 end
 
         if default == coder.load(nil)
