@@ -30,7 +30,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     end
   end
   let(:datetime_precision) do
-    if defined?(Mysql2)
+    if defined?(Mysql2) && ActiveSupport::VERSION::MAJOR >= 5
       ', precision: 0'
     end
   end
@@ -1164,30 +1164,32 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         migration_content = File.read(migrations.first)
         first_line = migration_content.split("\n").first
         base_class = first_line.split(' < ').last
-        expect(base_class).to eq("ActiveRecord::Migration[4.2]")
+        expect(base_class).to eq("(ActiveSupport::VERSION::MAJOR >= 5 ? ActiveRecord::Migration[4.2] : ActiveRecord::Migration)")
       end
     end
 
     context 'Does not generate migrations' do
       it 'for aliased fields bigint -> integer limit 8' do
-        class Advert < active_record_base_class.constantize
-          fields do
-            price :bigint
+        if ActiveSupport::VERSION::MAJOR >= 5 || !ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
+          class Advert < active_record_base_class.constantize
+            fields do
+              price :bigint
+            end
           end
-        end
 
-        generate_migrations '-n', '-m'
+          generate_migrations '-n', '-m'
 
-        migrations = Dir.glob('db/migrate/*declare_schema_migration*.rb')
-        expect(migrations.size).to eq(1), migrations.inspect
+          migrations = Dir.glob('db/migrate/*declare_schema_migration*.rb')
+          expect(migrations.size).to eq(1), migrations.inspect
 
-        class Advert < active_record_base_class.constantize
-          fields do
-            price :integer, limit: 8
+          class Advert < active_record_base_class.constantize
+            fields do
+              price :integer, limit: 8
+            end
           end
-        end
 
-        expect { generate_migrations '-n', '-g' }.to output("Database and models match -- nothing to change\n").to_stdout
+          expect { generate_migrations '-n', '-g' }.to output("Database and models match -- nothing to change\n").to_stdout
+        end
       end
     end
   end
@@ -2312,9 +2314,9 @@ RSpec.describe 'DeclareSchema Migration Generator' do
             end
             class Fk < ActiveRecord::Base
               declare_schema { }
-              belongs_to :id_default, ({})
-              belongs_to :id4, ({})
-              belongs_to :id8, ({})
+              belongs_to :id_default, (ActiveSupport::VERSION::MAJOR < 5 ? { constraint: false } : {})
+              belongs_to :id4, (ActiveSupport::VERSION::MAJOR < 5 ? { constraint: false } : {})
+              belongs_to :id8, (ActiveSupport::VERSION::MAJOR < 5 ? { constraint: false } : {})
             end
           end
 
@@ -2425,7 +2427,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         migration_content = File.read(migrations.first)
         first_line = migration_content.split("\n").first
         base_class = first_line.split(' < ').last
-        expect(base_class).to eq("ActiveRecord::Migration[4.2]")
+        expect(base_class).to eq("(ActiveSupport::VERSION::MAJOR >= 5 ? ActiveRecord::Migration[4.2] : ActiveRecord::Migration)")
       end
     end
 
