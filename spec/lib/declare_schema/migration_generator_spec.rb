@@ -819,15 +819,36 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         end
       end
 
-      up, _ = Generators::DeclareSchema::Migration::Migrator.run.tap do |migrations|
-        expect(migrations).to(
-          migrate_up(<<~EOS.strip)
+        case ActiveSupport::VERSION::MAJOR
+        when 4
+          expected = <<~EOS.strip
             create_table :adverts, id: false do |t|
               t.integer :id, limit: 8, auto_increment: false, primary_key: true
               t.text    :description, limit: nil, null: true
             end
           EOS
-            .and migrate_down("drop_table :adverts")
+        when 5
+          expected = <<~EOS.strip
+            create_table :adverts, id: false, options: "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin" do |t|
+              t.integer :id, limit: 8, auto_increment: false, primary_key: true
+              t.text    :description, limit: 255, null: true, charset: "utf8mb4", collation: "utf8mb4_bin"
+            end
+          EOS
+        when 6
+          expected = <<~EOS.strip
+            create_table :adverts, id: false, options: "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin" do |t|
+              t.integer :id, limit: 8, auto_increment: false, primary_key: true
+              t.text    :description, limit: 255, null: true, charset: "utf8mb4", collation: "utf8mb4_bin"
+            end
+          EOS
+        else
+          raise "unexpected rails version #{ActiveSupport::VERSION::MAJOR}"
+        end
+
+      up, _ = Generators::DeclareSchema::Migration::Migrator.run.tap do |migrations|
+        expect(migrations).to(
+          migrate_up(expected)
+          .and migrate_down("drop_table :adverts")
         )
       end
 
