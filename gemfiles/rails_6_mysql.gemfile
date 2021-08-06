@@ -12,7 +12,6 @@ gem "responders"
 gem "rspec"
 gem "rubocop"
 gem "yard"
-gem "sqlite3", "~> 1.4"
 gem "mysql2"
 
 group :testapp do
