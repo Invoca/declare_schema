@@ -809,7 +809,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       nuke_model_class(Advert)
       ActiveRecord::Base.connection.execute("drop table `adverts`;")
 
-      unless defined?(SQLite3)
+      unless defined?(SQLite3) && ActiveSupport::VERSION::MAJOR >= 5
         class Advert < ActiveRecord::Base
           def self.disable_auto_increment
             true
@@ -820,36 +820,14 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           end
         end
 
-        case ActiveSupport::VERSION::MAJOR
-        when 4
-          expected = <<~EOS.strip
-            create_table :adverts, id: false do |t|
-              t.integer :id, limit: 8, auto_increment: false, primary_key: true
-              t.text    :description, limit: nil, null: true
-            end
-          EOS
-        when 5
-          expected = <<~EOS.strip
-            create_table :adverts, id: false, options: "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin" do |t|
-              t.integer :id, limit: 8, auto_increment: false, primary_key: true
-              t.text    :description, limit: 255, null: true, charset: "utf8mb4", collation: "utf8mb4_bin"
-            end
-          EOS
-        when 6
-          expected = <<~EOS.strip
-            create_table :adverts, id: false, options: "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin" do |t|
-              t.integer :id, limit: 8, auto_increment: false, primary_key: true
-              t.text    :description, limit: 255, null: true, charset: "utf8mb4", collation: "utf8mb4_bin"
-            end
-          EOS
-        else
-          raise "unexpected rails version #{ActiveSupport::VERSION::MAJOR}"
-        end
-
-
         up, _ = Generators::DeclareSchema::Migration::Migrator.run.tap do |migrations|
           expect(migrations).to(
-            migrate_up(expected)
+            migrate_up(<<~EOS.strip)
+                create_table :adverts, id: false, options: "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin" do |t|
+                  t.integer :id, limit: 8, auto_increment: false, primary_key: true
+                  t.text    :description, limit: 255, null: true, charset: "utf8mb4", collation: "utf8mb4_bin"
+                end
+              EOS
               .and migrate_down("drop_table :adverts")
           )
         end
