@@ -809,7 +809,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       nuke_model_class(Advert)
       ActiveRecord::Base.connection.execute("drop table `adverts`;")
 
-      unless defined?(SQLite3) && ActiveSupport::VERSION::MAJOR >= 5
+      if !defined?(SQLite3) && ActiveSupport::VERSION::MAJOR >= 5
         class Advert < ActiveRecord::Base
           def self.disable_auto_increment
             true
