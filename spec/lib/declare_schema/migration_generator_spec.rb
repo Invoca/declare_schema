@@ -809,15 +809,16 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       nuke_model_class(Advert)
       ActiveRecord::Base.connection.execute("drop table `adverts`;")
 
-      class Advert < ActiveRecord::Base
-        def self.disable_auto_increment
-          true
-        end
+      if !defined?(SQLite3)
+        class Advert < ActiveRecord::Base
+          def self.disable_auto_increment
+            true
+          end
 
-        fields do
-          description :text, limit: 250, null: true
+          fields do
+            description :text, limit: 250, null: true
+          end
         end
-      end
 
         case ActiveSupport::VERSION::MAJOR
         when 4
@@ -845,14 +846,17 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           raise "unexpected rails version #{ActiveSupport::VERSION::MAJOR}"
         end
 
-      up, _ = Generators::DeclareSchema::Migration::Migrator.run.tap do |migrations|
-        expect(migrations).to(
-          migrate_up(expected)
-          .and migrate_down("drop_table :adverts")
-        )
+
+        up, _ = Generators::DeclareSchema::Migration::Migrator.run.tap do |migrations|
+          expect(migrations).to(
+            migrate_up(expected)
+              .and migrate_down("drop_table :adverts")
+          )
+        end
       end
 
-      ## DSL
+
+        ## DSL
 
       # The DSL allows lambdas and constants
 
