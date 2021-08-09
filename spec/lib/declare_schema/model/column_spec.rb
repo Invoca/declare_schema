@@ -60,18 +60,18 @@ RSpec.describe DeclareSchema::Model::Column do
     end
 
     describe '.deserialize_default_value' do
-        it 'deserializes :boolean' do
-          expect(described_class.deserialize_default_value(nil, :boolean, 'true')).to eq(true)
-          expect(described_class.deserialize_default_value(nil, :boolean, 'false')).to eq(false)
-        end
+      it 'deserializes :boolean' do
+        expect(described_class.deserialize_default_value(nil, :boolean, 'true')).to eq(true)
+        expect(described_class.deserialize_default_value(nil, :boolean, 'false')).to eq(false)
+      end
 
-        it 'deserializes :integer' do
-          expect(described_class.deserialize_default_value(nil, :integer, '12')).to eq(12)
-        end
+      it 'deserializes :integer' do
+        expect(described_class.deserialize_default_value(nil, :integer, '12')).to eq(12)
+      end
 
-        it 'deserializes :json' do
-          expect(described_class.deserialize_default_value(nil, :json, '{}')).to eq({})
-        end
+      it 'deserializes :json' do
+        expect(described_class.deserialize_default_value(nil, :json, '{}')).to eq({})
+      end
     end
   end
 

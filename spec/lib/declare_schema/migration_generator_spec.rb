@@ -876,7 +876,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         nuke_model_class(Advertiser)
         nuke_model_class(Affiliate)
       end
-    end if !defined?(SQLite3) && ActiveRecord::VERSION::MAJOR >= 5
+    end if !defined?(SQLite3)
 
     describe 'serialize' do
       before do
@@ -2015,7 +2015,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         nuke_model_class(Advertiser)
         nuke_model_class(Affiliate)
       end
-    end if !defined?(SQLite3) && ActiveRecord::VERSION::MAJOR >= 5
+    end if !defined?(SQLite3)
 
     describe 'serialize' do
       before do
@@ -2431,26 +2431,24 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     context 'Does not generate migrations' do
       it 'for aliased fields bigint -> integer limit 8' do
-        if !ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
-          class Advert < active_record_base_class.constantize
-            declare_schema do
-              bigint :price
-            end
+        class Advert < active_record_base_class.constantize
+          declare_schema do
+            bigint :price
           end
-
-          generate_migrations '-n', '-m'
-
-          migrations = Dir.glob('db/migrate/*declare_schema_migration*.rb')
-          expect(migrations.size).to eq(1), migrations.inspect
-
-          class Advert < active_record_base_class.constantize
-            declare_schema do
-              integer :price, limit: 8
-            end
-          end
-
-          expect { generate_migrations '-n', '-g' }.to output("Database and models match -- nothing to change\n").to_stdout
         end
+
+        generate_migrations '-n', '-m'
+
+        migrations = Dir.glob('db/migrate/*declare_schema_migration*.rb')
+        expect(migrations.size).to eq(1), migrations.inspect
+
+        class Advert < active_record_base_class.constantize
+          declare_schema do
+            integer :price, limit: 8
+          end
+        end
+
+        expect { generate_migrations '-n', '-g' }.to output("Database and models match -- nothing to change\n").to_stdout
       end
     end
 
