@@ -3,6 +3,9 @@
 Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.14.0] - 2021-08-09
+### Deprecated
+- Support for Rails < 5
 
 ## [0.13.1] - 2021-08-02
 ### Fixed
