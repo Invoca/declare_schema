@@ -63,32 +63,6 @@ module DeclareSchema
         def index_name(columns)
           "on_#{Array(columns).join("_and_")}"
         end
-
-        private
-
-        # This is the old approach which is still needed for MySQL in Rails 4 and SQLite
-        def fallback_find_primary_key(model, table)
-          ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/) or return nil
-
-          connection = model.connection.dup
-
-          class << connection   # defeat Rails MySQL driver code that skips the primary key by changing its name to a symbol
-            def each_hash(result)
-              super do |hash|
-                if hash[:Key_name] == PRIMARY_KEY_NAME
-                  hash[:Key_name] = PRIMARY_KEY_NAME.to_sym
-                end
-                yield hash
-              end
-            end
-          end
-
-          if (pk_index = connection.indexes(table).find { |index| index.name.to_s == PRIMARY_KEY_NAME })
-            Array(pk_index.columns)
-          elsif model.connection.columns(table).any? { |col| col.name == 'id' }
-            ['id']
-          end
-        end
       end
 
       def primary_key?
