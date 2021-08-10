@@ -226,7 +226,9 @@ module Generators
 
             primary_key_definition =
               if disable_auto_increment
-                [:integer, :id, limit: 8, auto_increment: false, primary_key: true]
+                [[:integer, :id, limit: 8, auto_increment: false, primary_key: true]]
+              else
+                []
               end
 
             field_definitions = model.field_specs.values.sort_by(&:position).map do |f|
@@ -237,7 +239,7 @@ module Generators
             table_options = create_table_options(model, disable_auto_increment)
 
             table_add = ::DeclareSchema::SchemaChange::TableAdd.new(t,
-                                                                    Array(primary_key_definition) + field_definitions,
+                                                                    primary_key_definition + field_definitions,
                                                                     table_options,
                                                                     sql_options: table_options_definition.settings)
             [
