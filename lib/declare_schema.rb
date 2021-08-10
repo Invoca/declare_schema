@@ -28,12 +28,7 @@ module DeclareSchema
   @default_null                  = false
   @default_generate_foreign_keys = true
   @default_generate_indexing     = true
-  @db_migrate_command            =
-    if ActiveSupport::VERSION::MAJOR < 5
-      "bundle exec rake db:migrate"
-    else
-      "bundle exec rails db:migrate"
-    end
+  @db_migrate_command            = "bundle exec rails db:migrate"
 
   class << self
     attr_reader :default_charset, :default_collation, :default_text_limit, :default_string_limit, :default_null,

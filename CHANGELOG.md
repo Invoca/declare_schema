@@ -3,6 +3,9 @@
 Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.14.0] - 2021-08-10
+### Deprecated
+- Dropped support for Rails versions less than 5. 
 
 ## [0.13.2] - 2021-08-04
 ### Fixed
@@ -192,6 +195,7 @@ using the appropriate Rails configuration attributes.
 ### Added
 - Initial version from https://github.com/Invoca/hobo_fields v4.1.0.
 
+[0.14.0]: https://github.com/Invoca/declare_schema/compare/v0.13.1...v0.14.0
 [0.13.1]: https://github.com/Invoca/declare_schema/compare/v0.13.0...v0.13.1
 [0.13.0]: https://github.com/Invoca/declare_schema/compare/v0.12.1...v0.13.0
 [0.12.1]: https://github.com/Invoca/declare_schema/compare/v0.12.0...v0.12.1

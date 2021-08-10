@@ -52,17 +52,9 @@ module DeclareSchema
 
         def deserialize_default_value(column, type, default_value)
           type or raise ArgumentError, "must pass type; got #{type.inspect}"
-
-          case ActiveSupport::VERSION::MAJOR
-          when 4
-            # TODO: Delete this Rails 4 support ASAP! This could be wrong, since it's using the type of the old column...which
-            # might be getting migrated to a new type. We should be using just type as below. -Colin
-            column.type_cast_from_database(default_value)
-          else
-            cast_type = ActiveRecord::Base.connection.send(:lookup_cast_type, type.to_s) or
-              raise "cast_type not found for #{type}"
-            cast_type.deserialize(default_value)
-          end
+          cast_type = ActiveRecord::Base.connection.send(:lookup_cast_type, type.to_s) or
+            raise "cast_type not found for #{type}"
+          cast_type.deserialize(default_value)
         end
 
         # Normalizes schema attributes for the given database adapter name.

@@ -30,7 +30,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     end
   end
   let(:datetime_precision) do
-    if defined?(Mysql2) && ActiveSupport::VERSION::MAJOR >= 5
+    if defined?(Mysql2)
       ', precision: 0'
     end
   end
@@ -43,7 +43,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           ''
         end
     else
-      ", id: :integer" unless ActiveSupport::VERSION::MAJOR < 5
+      ", id: :integer"
     end
   end
   let(:lock_version_limit) do
@@ -90,16 +90,6 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       ActiveRecord::Migration.class_eval(up)
       expect(Advert.columns.map(&:name)).to eq(["id", "name"])
-
-      if ActiveSupport::VERSION::MAJOR < 5
-        # Rails 4 drivers don't always create PK properly. Fix that by dropping and recreating.
-        ActiveRecord::Base.connection.execute("drop table adverts")
-        if defined?(Mysql2)
-          ActiveRecord::Base.connection.execute("CREATE TABLE adverts (id integer PRIMARY KEY AUTO_INCREMENT NOT NULL, name varchar(250)) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin")
-        else
-          ActiveRecord::Base.connection.execute("CREATE TABLE adverts (id integer PRIMARY KEY AUTOINCREMENT  NOT NULL, name varchar(250))")
-        end
-      end
 
       class Advert < ActiveRecord::Base
         fields do
@@ -913,7 +903,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         nuke_model_class(Advertiser)
         nuke_model_class(Affiliate)
       end
-    end if !defined?(SQLite3) && ActiveRecord::VERSION::MAJOR >= 5
+    end if !defined?(SQLite3)
 
     describe 'serialize' do
       before do
@@ -1100,13 +1090,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     end
 
     context "for Rails #{ActiveSupport::VERSION::MAJOR}" do
-      if ActiveSupport::VERSION::MAJOR >= 5
-        let(:optional_true) { { optional: true } }
-        let(:optional_false) { { optional: false } }
-      else
-        let(:optional_true) { {} }
-        let(:optional_false) { {} }
-      end
+      let(:optional_true) { { optional: true } }
+      let(:optional_false) { { optional: false } }
       let(:optional_flag) { { false => optional_false, true => optional_true } }
 
       describe 'belongs_to' do
@@ -1206,36 +1191,30 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         migration_content = File.read(migrations.first)
         first_line = migration_content.split("\n").first
         base_class = first_line.split(' < ').last
-        expect(base_class).to eq("(ActiveSupport::VERSION::MAJOR >= 5 ? ActiveRecord::Migration[4.2] : ActiveRecord::Migration)")
+        expect(base_class).to eq("(ActiveRecord::Migration[4.2])")
       end
     end
 
     context 'Does not generate migrations' do
       it 'for aliased fields bigint -> integer limit 8' do
-        if ActiveSupport::VERSION::MAJOR >= 5 || !ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
-          class Advert < active_record_base_class.constantize
-            fields do
-              price :bigint
-            end
+        class Advert < active_record_base_class.constantize
+          fields do
+            price :bigint
           end
-
-          generate_migrations '-n', '-m'
-
-          migrations = Dir.glob('db/migrate/*declare_schema_migration*.rb')
-          expect(migrations.size).to eq(1), migrations.inspect
-
-          if defined?(Mysql2) && ActiveSupport::VERSION::MAJOR < 5
-            ActiveRecord::Base.connection.execute("ALTER TABLE adverts ADD PRIMARY KEY (id)")
-          end
-
-          class Advert < active_record_base_class.constantize
-            fields do
-              price :integer, limit: 8
-            end
-          end
-
-          expect { generate_migrations '-n', '-g' }.to output("Database and models match -- nothing to change\n").to_stdout
         end
+
+        generate_migrations '-n', '-m'
+
+        migrations = Dir.glob('db/migrate/*declare_schema_migration*.rb')
+        expect(migrations.size).to eq(1), migrations.inspect
+
+        class Advert < active_record_base_class.constantize
+          fields do
+            price :integer, limit: 8
+          end
+        end
+
+        expect { generate_migrations '-n', '-g' }.to output("Database and models match -- nothing to change\n").to_stdout
       end
     end
   end
@@ -1276,16 +1255,6 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       ActiveRecord::Migration.class_eval(up)
       expect(Advert.columns.map(&:name)).to eq(["id", "name"])
-
-      if ActiveSupport::VERSION::MAJOR < 5
-        # Rails 4 drivers don't always create PK properly. Fix that by dropping and recreating.
-        ActiveRecord::Base.connection.execute("drop table adverts")
-        if defined?(Mysql2)
-          ActiveRecord::Base.connection.execute("CREATE TABLE adverts (id integer PRIMARY KEY AUTO_INCREMENT NOT NULL, name varchar(250)) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin")
-        else
-          ActiveRecord::Base.connection.execute("CREATE TABLE adverts (id integer PRIMARY KEY AUTOINCREMENT  NOT NULL, name varchar(250))")
-        end
-      end
 
       class Advert < ActiveRecord::Base
         declare_schema do
@@ -2073,7 +2042,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         nuke_model_class(Advertiser)
         nuke_model_class(Affiliate)
       end
-    end if !defined?(SQLite3) && ActiveRecord::VERSION::MAJOR >= 5
+    end if !defined?(SQLite3)
 
     describe 'serialize' do
       before do
@@ -2260,13 +2229,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     end
 
     context "for Rails #{ActiveSupport::VERSION::MAJOR}" do
-      if ActiveSupport::VERSION::MAJOR >= 5
-        let(:optional_true) { { optional: true } }
-        let(:optional_false) { { optional: false } }
-      else
-        let(:optional_true) { {} }
-        let(:optional_false) { {} }
-      end
+      let(:optional_true) { { optional: true } }
+      let(:optional_false) { { optional: false } }
       let(:optional_flag) { { false => optional_false, true => optional_true } }
 
       describe 'belongs_to' do
@@ -2375,9 +2339,9 @@ RSpec.describe 'DeclareSchema Migration Generator' do
             end
             class Fk < ActiveRecord::Base
               declare_schema { }
-              belongs_to :id_default, (ActiveSupport::VERSION::MAJOR < 5 ? { constraint: false } : {})
-              belongs_to :id4, (ActiveSupport::VERSION::MAJOR < 5 ? { constraint: false } : {})
-              belongs_to :id8, (ActiveSupport::VERSION::MAJOR < 5 ? { constraint: false } : {})
+              belongs_to :id_default, ({})
+              belongs_to :id4, ({})
+              belongs_to :id8, ({})
             end
           end
 
@@ -2488,36 +2452,30 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         migration_content = File.read(migrations.first)
         first_line = migration_content.split("\n").first
         base_class = first_line.split(' < ').last
-        expect(base_class).to eq("(ActiveSupport::VERSION::MAJOR >= 5 ? ActiveRecord::Migration[4.2] : ActiveRecord::Migration)")
+        expect(base_class).to eq("(ActiveRecord::Migration[4.2])")
       end
     end
 
     context 'Does not generate migrations' do
       it 'for aliased fields bigint -> integer limit 8' do
-        if ActiveSupport::VERSION::MAJOR >= 5 || !ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
-          class Advert < active_record_base_class.constantize
-            declare_schema do
-              bigint :price
-            end
+        class Advert < active_record_base_class.constantize
+          declare_schema do
+            bigint :price
           end
-
-          generate_migrations '-n', '-m'
-
-          migrations = Dir.glob('db/migrate/*declare_schema_migration*.rb')
-          expect(migrations.size).to eq(1), migrations.inspect
-
-          if defined?(Mysql2) && ActiveSupport::VERSION::MAJOR < 5
-            ActiveRecord::Base.connection.execute("ALTER TABLE adverts ADD PRIMARY KEY (id)")
-          end
-
-          class Advert < active_record_base_class.constantize
-            declare_schema do
-              integer :price, limit: 8
-            end
-          end
-
-          expect { generate_migrations '-n', '-g' }.to output("Database and models match -- nothing to change\n").to_stdout
         end
+
+        generate_migrations '-n', '-m'
+
+        migrations = Dir.glob('db/migrate/*declare_schema_migration*.rb')
+        expect(migrations.size).to eq(1), migrations.inspect
+
+        class Advert < active_record_base_class.constantize
+          declare_schema do
+            integer :price, limit: 8
+          end
+        end
+
+        expect { generate_migrations '-n', '-g' }.to output("Database and models match -- nothing to change\n").to_stdout
       end
     end
 

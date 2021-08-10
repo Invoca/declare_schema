@@ -131,11 +131,7 @@ module DeclareSchema
 
         fk_options[:dependent] = options.delete(:far_end_dependent) if options.has_key?(:far_end_dependent)
 
-        if ActiveSupport::VERSION::MAJOR >= 5
-          super
-        else
-          super(name, scope, options.except(:optional))
-        end
+        super
 
         refl = reflections[name.to_s] or raise "Couldn't find reflection #{name} in #{reflections.keys}"
         fkey = refl.foreign_key or raise "Couldn't find foreign_key for #{name} in #{refl.inspect}"
@@ -187,12 +183,6 @@ module DeclareSchema
               end
             end
           end
-        end
-      end
-
-      if ::ActiveSupport::VERSION::MAJOR < 5
-        def primary_key
-          super || 'id'
         end
       end
 
@@ -268,10 +258,8 @@ module DeclareSchema
                   ActiveRecord::Coders::JSON
                 elsif [:load, :dump].all? { |x| class_name_or_coder.respond_to?(x) }
                   class_name_or_coder
-                elsif ActiveSupport::VERSION::MAJOR >= 5
+                else 
                   ActiveRecord::Coders::YAMLColumn.new(attr_name, class_name_or_coder)
-                else
-                  ActiveRecord::Coders::YAMLColumn.new(class_name_or_coder)
                 end
 
         if default == coder.load(nil)

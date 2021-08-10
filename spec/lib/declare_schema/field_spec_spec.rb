@@ -11,10 +11,6 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
 
   before do
     load File.expand_path('prepare_testapp.rb', __dir__)
-
-    if ActiveSupport::VERSION::MAJOR < 5
-      allow(col_spec).to receive(:type_cast_from_database, &:itself)
-    end
   end
 
   describe '#initialize' do
@@ -226,14 +222,8 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
 
   describe '#schema_attributes' do
     let(:col_spec) do
-      case ActiveSupport::VERSION::MAJOR
-      when 4
-        cast_type = ActiveRecord::Type::Integer.new(limit: 8)
-        ActiveRecord::ConnectionAdapters::Column.new("price", nil, cast_type, "integer(8)", false)
-      else
-        sql_type_metadata = ActiveRecord::ConnectionAdapters::SqlTypeMetadata.new(sql_type: "integer(8)", type: :integer, limit: 8)
-        ActiveRecord::ConnectionAdapters::Column.new("price", nil, sql_type_metadata, false, "adverts")
-      end
+      sql_type_metadata = ActiveRecord::ConnectionAdapters::SqlTypeMetadata.new(sql_type: "integer(8)", type: :integer, limit: 8)
+      ActiveRecord::ConnectionAdapters::Column.new("price", nil, sql_type_metadata, false, "adverts")
     end
 
     it 'returns the attributes except name, position, and non-SQL options' do
