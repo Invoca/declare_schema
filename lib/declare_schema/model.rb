@@ -152,7 +152,7 @@ module DeclareSchema
           end
         end
 
-        declare_field(fkey.to_sym, :bigint, fkey_id_column_options)
+        declare_field(fkey.to_sym, :bigint, **fkey_id_column_options)
 
         if refl.options[:polymorphic]
           foreign_type = options[:foreign_type] || "#{name}_type"
@@ -214,7 +214,7 @@ module DeclareSchema
       # Declares the "foo_type" field that accompanies the "foo_id"
       # field for a polymorphic belongs_to
       def _declare_polymorphic_type_field(foreign_type, column_options)
-        declare_field(foreign_type, :string, column_options.merge(limit: 255))
+        declare_field(foreign_type, :string, **column_options.merge(limit: 255))
         # FIXME: Before declare_schema was extracted, this used to now do:
         # never_show(type_col)
         # That needs doing somewhere
