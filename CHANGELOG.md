@@ -3,8 +3,13 @@
 Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.14.1] - 2021-09-01
+### Fixed
+- Fixed Ruby 2.7 warning about needing `**options` when calling a method that has `**options` in its signature.
+
 ## [0.14.0] - 2021-08-10
-### Deprecated
+### Removed
 - Dropped support for Rails versions less than 5. 
 
 ## [0.13.2] - 2021-08-04
@@ -195,6 +200,7 @@ using the appropriate Rails configuration attributes.
 ### Added
 - Initial version from https://github.com/Invoca/hobo_fields v4.1.0.
 
+[0.14.1]: https://github.com/Invoca/declare_schema/compare/v0.14.0...v0.14.1
 [0.14.0]: https://github.com/Invoca/declare_schema/compare/v0.13.1...v0.14.0
 [0.13.1]: https://github.com/Invoca/declare_schema/compare/v0.13.0...v0.13.1
 [0.13.0]: https://github.com/Invoca/declare_schema/compare/v0.12.1...v0.13.0
