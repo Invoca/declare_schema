@@ -36,7 +36,7 @@ module DeclareSchema
     def method_missing(*args, **options)
       args.count(&:itself) >= 2 or raise ::ArgumentError, "fields in declare_schema block must be declared as: type name, [:required], options (got #{args.inspect}, #{options.inspect})"
       type, name, *required = args
-      field(name, type, *required, options)
+      field(name, type, *required, **options)
     end
   end
 end
