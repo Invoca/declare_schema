@@ -12,7 +12,7 @@ RSpec.describe DeclareSchema::SchemaChange::ColumnAdd do
   let(:column_type) { :integer }
   let(:column_options) { { limit: 8 } }
   let(:column_options_string) { "limit: 8" }
-  subject { described_class.new(table_name, column_name, column_type, column_options) }
+  subject { described_class.new(table_name, column_name, column_type, **column_options) }
 
   describe '#up/down' do
     describe '#up' do

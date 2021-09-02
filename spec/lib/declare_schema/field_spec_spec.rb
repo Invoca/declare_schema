@@ -185,12 +185,12 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
 
         it 'does not allow precision:' do
           expect_any_instance_of(described_class).to receive(:warn).with(/precision: only allowed for :decimal type/)
-          described_class.new(model, :quantity, t, { precision: 8, null: true, position: 3 }.merge(extra))
+          described_class.new(model, :quantity, t, **{ precision: 8, null: true, position: 3 }.merge(extra))
         end unless t == :datetime
 
         it 'does not allow scale:' do
           expect_any_instance_of(described_class).to receive(:warn).with(/scale: only allowed for :decimal type/)
-          described_class.new(model, :quantity, t, { scale: 10, null: true, position: 3 }.merge(extra))
+          described_class.new(model, :quantity, t, **{ scale: 10, null: true, position: 3 }.merge(extra))
         end
       end
     end

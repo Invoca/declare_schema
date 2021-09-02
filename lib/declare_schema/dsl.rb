@@ -29,7 +29,7 @@ module DeclareSchema
     end
 
     def field(name, type, *args, **options)
-      @model.declare_field(name, type, *(args + [@options.merge(options)]))
+      @model.declare_field(name, type, *args, **@options.merge(options))
     end
 
     # TODO: make [:required] just another option. Either 'required: true] or 'optional: false'?
