@@ -8,10 +8,10 @@ Make a model and declare your schema within a `declare_schema do ... end` block:
 ```ruby
 class Company < ActiveRecord::Base
   declare_schema do
-    company_name :string, limit: 100
-    ticker_symbol :string, limit: 4, null: true, index: true, unique: true
-    employee_count :integer
-    comments :text
+    string  :company_name,  limit: 100
+    string  :ticker_symbol, limit: 4, null: true, index: true, unique: true
+    integer :employee_count
+    text    :comments
 
     timestamps
   end
@@ -224,8 +224,8 @@ like the following:
 
 class Comment < ActiveRecord::Base
   declare_schema charset: "utf8mb4", collation: "utf8mb4_bin" do
-    subject :string, limit: 255
-    content :text,   limit: 0xffff_ffff
+    string :subject, limit: 255
+    text   :content, limit: 0xffff_ffff
   end
 end
 ```
@@ -244,8 +244,8 @@ look like the following:
 
 class Comment < ActiveRecord::Base
   declare_schema do
-    subject :string, limit: 255
-    context :text,   limit: 0xffff_ffff, charset: "utf8mb4", collation: "utf8mb4_bin"
+    string :subject, limit: 255
+    text   :context, limit: 0xffff_ffff, charset: "utf8mb4", collation: "utf8mb4_bin"
   end
 end
 ```
