@@ -50,6 +50,16 @@ Migration filename: [<enter>=declare_schema_migration_1|<custom_name>]: add_comp
 ```
 Note that the migration generator is interactive -- it can't tell the difference between renaming something vs. adding one thing and removing another, so sometimes it will ask you to clarify.
 
+## declare_schema macro options
+
+Any options provided to the `declare_schema` macro will be passed on to `create_table`. For example, to set the `id` column of the table explicitly to `:bigint`:
+```
+declare_schema id: :bigint do
+  string  :company_name,  limit: 100
+  ...
+end
+```
+
 ## Migrator Configuration
 
 The following configuration options are available for the gem and can be used
