@@ -10,7 +10,6 @@ group :testapp do
 end
 
 gem 'appraisal'
-gem 'bundler',          '< 2'
 gem "climate_control",  '~> 0.2'
 gem 'pry'
 gem 'pry-byebug'

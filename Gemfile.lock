@@ -48,7 +48,7 @@ GEM
       i18n (>= 0.7, < 2)
       minitest (~> 5.1)
       tzinfo (~> 1.1)
-    appraisal (2.3.0)
+    appraisal (2.4.1)
       bundler
       rake
       thor (>= 0.14.0)
@@ -183,7 +183,6 @@ PLATFORMS
 DEPENDENCIES
   appraisal
   bootsnap (>= 1.1.0)
-  bundler (< 2)
   climate_control (~> 0.2)
   declare_schema!
   listen
@@ -197,4 +196,4 @@ DEPENDENCIES
   yard
 
 BUNDLED WITH
-   1.17.3
+   2.2.29
