@@ -11,9 +11,11 @@ end
 
 gem 'appraisal'
 gem "climate_control",  '~> 0.2'
+gem 'mail'
+gem 'net-smtp'
 gem 'pry'
 gem 'pry-byebug'
-gem 'rails',            '~> 5.2', '>= 5.2.4.3'
+gem 'rails',            '~> 6.0'
 gem 'responders'
 gem 'rspec'
 gem 'rubocop'

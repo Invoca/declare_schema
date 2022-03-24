@@ -10,7 +10,7 @@ module DeclareSchema
       attr_reader :constraint_name, :model, :foreign_key, :foreign_key_name, :parent_table_name, :child_table_name, :options, :on_delete_cascade
 
 
-      def initialize(model, foreign_key, options = {})
+      def initialize(model, foreign_key, **options)
         @model = model
         @foreign_key = foreign_key.to_s.presence
         @options = options
@@ -38,7 +38,7 @@ module DeclareSchema
             }
             options[:dependent] = :delete if fkc['ON DELETE CASCADE']
 
-            new(model, foreign_key, options)
+            new(model, foreign_key, **options)
           end
         end
       end

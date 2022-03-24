@@ -16,7 +16,7 @@ module DeclareSchema
     EOS
 
     class << self
-      def run(gem, args, version, gemfile_options = {})
+      def run(gem, args, version, **gemfile_options)
         command = args.shift
 
         case command

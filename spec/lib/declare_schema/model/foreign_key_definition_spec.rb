@@ -23,7 +23,7 @@ RSpec.describe DeclareSchema::Model::ForeignKeyDefinition do
       let(:model) { instance_double('Model', table_name: 'models', connection: connection) }
       let(:foreign_key) { :network_id }
       let(:options) { {} }
-      subject { described_class.new(model, foreign_key, options)}
+      subject { described_class.new(model, foreign_key, **options)}
 
       before do
         allow(model.connection).to receive(:index_name).with(any_args) { 'index_on_network_id' }

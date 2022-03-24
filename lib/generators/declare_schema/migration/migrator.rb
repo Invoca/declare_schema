@@ -24,7 +24,7 @@ module Generators
             @active_record_class
           end
 
-          def run(renames = {})
+          def run(**renames)
             Migrator.new(renames: renames).generate
           end
 
@@ -235,7 +235,7 @@ module Generators
               [f.type, f.name, f.sql_options]
             end
 
-            table_options_definition = ::DeclareSchema::Model::TableOptionsDefinition.new(model.table_name, table_options_for_model(model))
+            table_options_definition = ::DeclareSchema::Model::TableOptionsDefinition.new(model.table_name, **table_options_for_model(model))
             table_options = create_table_options(model, disable_auto_increment)
 
             table_add = ::DeclareSchema::SchemaChange::TableAdd.new(t,
@@ -374,12 +374,12 @@ module Generators
               else
                 [:integer, {}]
               end
-            ::DeclareSchema::SchemaChange::ColumnAdd.new(new_table_name, c, type, options)
+            ::DeclareSchema::SchemaChange::ColumnAdd.new(new_table_name, c, type, **options)
           end
 
           removes = to_remove.map do |c|
             old_type, old_options = add_column_back(model, current_table_name, c)
-            ::DeclareSchema::SchemaChange::ColumnRemove.new(new_table_name, c, old_type, old_options)
+            ::DeclareSchema::SchemaChange::ColumnRemove.new(new_table_name, c, old_type, **old_options)
           end
 
           old_names = to_rename.invert
@@ -502,7 +502,7 @@ module Generators
 
         def change_table_options(model, current_table_name)
           old_options_definition = ::DeclareSchema::Model::TableOptionsDefinition.for_model(model, current_table_name)
-          new_options_definition = ::DeclareSchema::Model::TableOptionsDefinition.new(model.table_name, table_options_for_model(model))
+          new_options_definition = ::DeclareSchema::Model::TableOptionsDefinition.new(model.table_name, **table_options_for_model(model))
 
           if old_options_definition.equivalent?(new_options_definition)
             []
@@ -552,7 +552,7 @@ module Generators
         end
 
         SchemaDumper = ActiveRecord::ConnectionAdapters::SchemaDumper
-                      
+
 
         def add_table_back(table)
           dumped_schema_stream = StringIO.new

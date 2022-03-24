@@ -10,13 +10,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby: [2.5, 2.6, 2.7]
+        ruby: [2.5, 2.6, 2.7, '3.0', 3.1]
         gemfile:
         - Gemfile
         - gemfiles/rails_5_mysql.gemfile
         - gemfiles/rails_5_sqlite.gemfile
         - gemfiles/rails_6_mysql.gemfile
         - gemfiles/rails_6_sqlite.gemfile
+        except:
+        - gemfile: gemfiles/rails_5_mysql.gemfile
+          ruby: '3.0'
+        - gemfile: gemfiles/rails_5_mysql.gemfile
+          ruby: 3.1
+        - gemfile: gemfiles/rails_5_sqlite.gemfile
+          ruby: '3.0'
+        - gemfile: gemfiles/rails_5_sqlite.gemfile
+          ruby: 3.1
     env:
       BUNDLE_GEMFILE: "${{ matrix.gemfile }}"
     services:

@@ -12,7 +12,7 @@ module DeclareSchema
       end
     end
 
-    def initialize(model, options = {})
+    def initialize(model, **options)
       @model = model
       @options = options
     end
@@ -29,11 +29,11 @@ module DeclareSchema
     end
 
     def field(name, type, *args, **options)
-      @model.declare_field(name, type, *[*args, @options.merge(options)])
+      @model.declare_field(name, type, *args, **@options.merge(options))
     end
 
-    def method_missing(name, *args)
-      field(name, *args)
+    def method_missing(name, *args, **options)
+      field(name, *args, **options)
     end
   end
 end

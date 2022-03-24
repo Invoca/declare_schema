@@ -19,7 +19,7 @@ module DeclareSchema
                             {}
                           end
 
-          new(table_name, table_options)
+          new(table_name, **table_options)
         end
 
         private
@@ -48,7 +48,7 @@ module DeclareSchema
 
       attr_reader :table_name, :table_options
 
-      def initialize(table_name, table_options = {})
+      def initialize(table_name, **table_options)
         @table_name    = table_name
         @table_options = table_options
       end

@@ -1174,9 +1174,9 @@ RSpec.describe 'DeclareSchema Migration Generator' do
             end
             class Fk < ActiveRecord::Base
               declare_schema { }
-              belongs_to :id_default, ({})
-              belongs_to :id4, ({})
-              belongs_to :id8, ({})
+              belongs_to :id_default
+              belongs_to :id4
+              belongs_to :id8
             end
           end
 

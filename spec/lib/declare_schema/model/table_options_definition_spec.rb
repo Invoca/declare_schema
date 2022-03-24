@@ -23,7 +23,7 @@ RSpec.describe DeclareSchema::Model::TableOptionsDefinition do
 
     context 'instance methods' do
       let(:table_options) { { charset: "utf8", collation: "utf8_general"} }
-      let(:model) { described_class.new('table_options_definition_test_models', table_options) }
+      let(:model) { described_class.new('table_options_definition_test_models', **table_options) }
 
       describe '#to_key' do
         subject { model.to_key }
@@ -67,7 +67,7 @@ RSpec.describe DeclareSchema::Model::TableOptionsDefinition do
             generate_migrations '-n', '-m'
           end
 
-          it { should eq(described_class.new(model_class.table_name, options)) }
+          it { should eq(described_class.new(model_class.table_name, **options)) }
         end
       end
     end

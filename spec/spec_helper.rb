@@ -31,7 +31,7 @@ RSpec.configure do |config|
   end
 
   def migrate(renames = {})
-    up, down = Generators::DeclareSchema::Migration::Migrator.run(renames)
+    up, down = Generators::DeclareSchema::Migration::Migrator.run(**renames)
     ActiveRecord::Migration.class_eval(up)
     ActiveRecord::Base.send(:descendants).each { |model| model.reset_column_information }
     [up, down]
