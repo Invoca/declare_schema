@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    declare_schema (0.14.3)
+    declare_schema (1.0.0)
       rails (>= 5.0)
 
 GEM
