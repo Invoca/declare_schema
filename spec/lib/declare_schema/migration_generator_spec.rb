@@ -835,18 +835,18 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       before do
         class Category < ActiveRecord::Base
           declare_schema do
-            name :string, limit: 250, null: true
+            string :name, limit: 250, null: true
           end
         end
         class Advertiser < ActiveRecord::Base
           declare_schema do
-            name :string, limit: 250, null: true
+            string :name, limit: 250, null: true
           end
           belongs_to :category, limit: 8
         end
         class Affiliate < ActiveRecord::Base
           declare_schema do
-            name :string, limit: 250, null: true
+            string :name, limit: 250, null: true
           end
           belongs_to :category, limit: 8
         end
