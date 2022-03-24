@@ -593,7 +593,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       Advert.connection.schema_cache.clear!
       Advert.reset_column_information
 
-      expect(Generators::DeclareSchema::Migration::Migrator.run("adverts" => "ads")).to(
+      expect(Generators::DeclareSchema::Migration::Migrator.run(adverts: "ads")).to(
         migrate_up(<<~EOS.strip)
           rename_table :adverts, :ads
           add_column :ads, :title, :string, limit: 250, null: true#{charset_and_collation}
@@ -637,7 +637,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         end
       end
 
-      expect(Generators::DeclareSchema::Migration::Migrator.run("adverts" => "advertisements")).to(
+      expect(Generators::DeclareSchema::Migration::Migrator.run(adverts: "advertisements")).to(
         migrate_up(<<~EOS.strip)
           rename_table :adverts, :advertisements
           add_column :advertisements, :title, :string, limit: 250, null: true#{charset_and_collation}
