@@ -9,24 +9,6 @@ module DeclareSchema
   module Macros
     attr_reader :_table_options
 
-    def fields(table_options = {}, &block)
-      # Any model that calls 'fields' gets DeclareSchema::Model behavior
-      DeclareSchema::Model.mix_in(self)
-
-      @include_in_migration = true
-      @_table_options        = table_options
-
-      if block
-        dsl = DeclareSchema::FieldDeclarationDsl.new(self)
-        if block.arity == 1
-          yield dsl
-        else
-          dsl.instance_eval(&block)
-        end
-      end
-    end
-    deprecate :fields, deprecator: ActiveSupport::Deprecation.new('1.0', 'DeclareSchema')
-
     def declare_schema(default_schema: true, **table_options, &block)
       # Any model that calls 'fields' gets DeclareSchema::Model behavior
       DeclareSchema::Model.mix_in(self)
