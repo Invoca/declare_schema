@@ -14,7 +14,7 @@ module DeclareSchema
       PRIMARY_KEY_NAME = "PRIMARY"
       MYSQL_INDEX_NAME_MAX_LENGTH = 64
 
-      def initialize(model, fields, options = {})
+      def initialize(model, fields, **options)
         @model = model
         @table = options.delete(:table_name) || model.table_name
         @fields = Array.wrap(fields).map(&:to_s)

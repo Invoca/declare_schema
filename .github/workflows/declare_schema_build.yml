@@ -8,18 +8,29 @@ jobs:
     name: DeclareSchema Build
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        ruby: [ 2.4.5, 2.5.8, 2.6.5, 2.7.1 ]
+        ruby: [2.6, 2.7, '3.0', 3.1]
         gemfile:
         - gemfiles/rails_5_mysql.gemfile
         - gemfiles/rails_5_sqlite.gemfile
         - gemfiles/rails_6_mysql.gemfile
         - gemfiles/rails_6_sqlite.gemfile
+        include:
+        - gemfile: gemfiles/rails_5_mysql.gemfile
+          ruby: 2.5
+        - gemfile: gemfiles/rails_5_sqlite.gemfile
+          ruby: 2.5
         exclude:
-        - { gemfile: gemfiles/rails_5_mysql.gemfile, ruby: 2.4.5 }
-        - { gemfile: gemfiles/rails_5_sqlite.gemfile, ruby: 2.4.5 }
-        - { gemfile: gemfiles/rails_6_mysql.gemfile, ruby: 2.4.5 }
-        - { gemfile: gemfiles/rails_6_sqlite.gemfile, ruby: 2.4.5 }
+        - ruby: '3.0'
+          gemfile: gemfiles/rails_5_mysql.gemfile
+        - ruby: 3.1
+          gemfile: gemfiles/rails_5_mysql.gemfile
+        - ruby: '3.0'
+          gemfile: gemfiles/rails_5_sqlite.gemfile
+        - ruby: 3.1
+          gemfile: gemfiles/rails_5_sqlite.gemfile
+
     env:
       BUNDLE_GEMFILE: "${{ matrix.gemfile }}"
     services:
@@ -30,27 +41,15 @@ jobs:
         ports:
           - 3306:3306
     steps:
-      - name: Checkout Branch
-        id: checkout_branch
-        uses: actions/checkout@v2
-      - name: Setup Ruby
-        id: setup_ruby
-        uses: ruby/setup-ruby@v1
+      - uses: actions/checkout@v2
+      - uses: ruby/setup-ruby@v1
         with:
-          bundler: 1.17.3
           ruby-version: ${{matrix.ruby}}
-      - name: Remove Bundler 2
-        id: remove_bundler_2
-        if: ${{ matrix.ruby >= '2.6.5' }}
+          bundler: 2.2.29
+          bundler-cache: true
+      - name: Setup
         run: |
-          rm -f /opt/hostedtoolcache/Ruby/2.*/x64/lib/ruby/gems/2.*/specifications/default/bundler-2.*.gemspec
-          gem install bundler:1.17.3 --force --default
-          gem install bundler -v 1.17.3
-      - name: Appraisals
-        id: appraisals
-        run: |
-          bundle install --jobs=3 --retry=3 --path=${BUNDLE_PATH:-vendor/bundle} --gemfile=${{ matrix.gemfile }}
           git config --global user.email "dummy@example.com"
           git config --global user.name "dummy"
           MYSQL_PORT=3306 bundle exec rake test:prepare_testapp[force]
-          bundle exec rake test:all
+      - run: bundle exec rake test:all

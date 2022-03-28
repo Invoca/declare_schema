@@ -15,7 +15,7 @@ RSpec.describe DeclareSchema::Model::Column do
   describe 'class methods' do
     describe '.native_type?' do
       let(:native_types) { [:string, :text, :integer, :float, :decimal, :datetime, :time, :date, :binary, :boolean, :json] }
-    
+
 
       it 'is falsey for :primary_key' do
         expect(described_class.native_type?(:primary_key)).to be_falsey
@@ -90,33 +90,6 @@ RSpec.describe DeclareSchema::Model::Column do
                           default: nil,
                           sql_type_metadata: {}) }
     subject { described_class.new(model, current_table_name, column) }
-
-    context 'Using fields' do
-      before do
-        class ColumnTestModel < ActiveRecord::Base
-          fields do
-            title :string, limit: 127, null: false
-            count :integer, null: false
-          end
-        end
-      end
-
-      describe '#type' do
-        it 'returns type' do
-          expect(subject.type).to eq(type)
-        end
-      end
-
-      describe '#schema_attributes' do
-        it 'returns a hash with relevant key/values' do
-          if defined?(Mysql2)
-            expect(subject.schema_attributes).to eq(type: :integer, null: false, limit: 4)
-          else
-            expect(subject.schema_attributes).to eq(type: :integer, null: false)
-          end
-        end
-      end
-    end
 
     context 'Using declare_schema' do
       before do

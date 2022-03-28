@@ -4,6 +4,13 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - Unreleased
+### Added
+- Added support for Ruby 3+
+
+### Removed
+- Removed deprecated `fields` block declaration
+
 ## [0.14.3] - 2021-09-01
 ### Fixed
 - Fixed more Ruby 2.7 warnings about needing `**options` when calling a method that has `**options` in its signature.
@@ -18,7 +25,7 @@ Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0
 
 ## [0.14.0] - 2021-08-10
 ### Removed
-- Dropped support for Rails versions less than 5. 
+- Dropped support for Rails versions less than 5.
 
 ## [0.13.2] - 2021-08-04
 ### Fixed
@@ -55,7 +62,7 @@ Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0
  The migration will be run if `--migrate` is passed; otherwise, the migrate command will be displayed to be run later.
 ### Added
 - Added the new configuration option `DeclareSchema.@db_migrate_command =`.
-### Fixed 
+### Fixed
 - Fixed bug where foreign key constraint names are not globally unique
 
 ## [0.10.1] - 2021-03-18
@@ -109,7 +116,7 @@ i.e. `declare schema { string :title }`. Otherwise, there is no difference betwe
 ### Fixed
 - Fixed a bug in migration generation caused by `DeclareSchema::Migration#create_constraints`
   calling `DeclareSchema::Model::ForeignKeyDefinition#to_add_statement` with unused parameters.
- 
+
 - Fixed a bug in `DeclareSchema::Migration#remove_foreign_key` where special characters would not be quoted properly.
 
 ## [0.6.2] - 2021-01-06
@@ -134,7 +141,7 @@ because all of the existing primary key columns are being removed.
 - FieldSpec#initialize interface now includes `position` keyword argument and `**options` hash.
 
 ### Fixed
-- Fixed cycle in which FieldSpec#initialize was calling `model.field_specs` 
+- Fixed cycle in which FieldSpec#initialize was calling `model.field_specs`
 
 ### Changed
 - Changed ci support from Travis to Github Workflow
@@ -208,6 +215,7 @@ using the appropriate Rails configuration attributes.
 ### Added
 - Initial version from https://github.com/Invoca/hobo_fields v4.1.0.
 
+[1.0.0]: https://github.com/Invoca/declare_schema/compare/v0.14.3...v1.0.0
 [0.14.3]: https://github.com/Invoca/declare_schema/compare/v0.14.2...v0.14.3
 [0.14.2]: https://github.com/Invoca/declare_schema/compare/v0.14.1...v0.14.2
 [0.14.1]: https://github.com/Invoca/declare_schema/compare/v0.14.0...v0.14.1

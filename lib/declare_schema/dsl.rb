@@ -12,7 +12,7 @@ module DeclareSchema
       end
     end
 
-    def initialize(model, options = {})
+    def initialize(model, **options)
       @model = model
       @options = options
     end

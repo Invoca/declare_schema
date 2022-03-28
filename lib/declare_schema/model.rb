@@ -49,11 +49,11 @@ module DeclareSchema
     end
 
     module ClassMethods
-      def index(fields, options = {})
+      def index(fields, **options)
         # make index idempotent
         index_fields_s = Array.wrap(fields).map(&:to_s)
         unless index_definitions.any? { |index_spec| index_spec.fields == index_fields_s }
-          index_definitions << ::DeclareSchema::Model::IndexDefinition.new(self, fields, options)
+          index_definitions << ::DeclareSchema::Model::IndexDefinition.new(self, fields, **options)
         end
       end
 
@@ -61,10 +61,10 @@ module DeclareSchema
         index(fields.flatten, unique: true, name: ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME)
       end
 
-      def constraint(fkey, options = {})
+      def constraint(fkey, **options)
         fkey_s = fkey.to_s
         unless constraint_specs.any? { |constraint_spec| constraint_spec.foreign_key == fkey_s }
-          constraint_specs << DeclareSchema::Model::ForeignKeyDefinition.new(self, fkey, options)
+          constraint_specs << DeclareSchema::Model::ForeignKeyDefinition.new(self, fkey, **options)
         end
       end
 
@@ -157,10 +157,10 @@ module DeclareSchema
         if refl.options[:polymorphic]
           foreign_type = options[:foreign_type] || "#{name}_type"
           _declare_polymorphic_type_field(foreign_type, column_options)
-          index([foreign_type, fkey], index_options) if index_options[:name] != false
+          index([foreign_type, fkey], **index_options) if index_options[:name] != false
         else
-          index(fkey, index_options) if index_options[:name] != false
-          constraint(fkey, fk_options) if fk_options[:constraint_name] != false
+          index(fkey, **index_options) if index_options[:name] != false
+          constraint(fkey, **fk_options) if fk_options[:constraint_name] != false
         end
       end
 
@@ -258,7 +258,7 @@ module DeclareSchema
                   ActiveRecord::Coders::JSON
                 elsif [:load, :dump].all? { |x| class_name_or_coder.respond_to?(x) }
                   class_name_or_coder
-                else 
+                else
                   ActiveRecord::Coders::YAMLColumn.new(attr_name, class_name_or_coder)
                 end
 
@@ -287,7 +287,7 @@ module DeclareSchema
             }
           # support index: true declaration
           index_opts[:name] = to_name unless to_name == true
-          index(name, index_opts)
+          index(name, **index_opts)
         end
       end
 

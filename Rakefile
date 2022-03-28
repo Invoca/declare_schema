@@ -50,7 +50,7 @@ namespace "test" do
            echo \"gem 'irb', :group => :development\") >> Gemfile"
       sh "echo '' > app/models/.gitignore" # because git reset --hard would rm the dir
       rm ".gitignore" # we need to reset everything in a testapp
-      sh "git init && git add . && git commit -m \"initial commit\""
+      sh "git init && git add . && git commit -nm \"initial commit\""
       sh "rake db:create"
       puts "The testapp has been created in '#{TESTAPP_PATH}'"
     else
