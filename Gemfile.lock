@@ -71,8 +71,8 @@ GEM
       rake
       thor (>= 0.14.0)
     ast (2.4.1)
-    bootsnap (1.7.2)
-      msgpack (~> 1.0)
+    bootsnap (1.12.0)
+      msgpack (~> 1.2)
     builder (3.2.4)
     byebug (11.1.3)
     climate_control (0.2.0)
@@ -101,7 +101,7 @@ GEM
     mini_mime (1.1.2)
     mini_portile2 (2.8.0)
     minitest (5.15.0)
-    msgpack (1.4.2)
+    msgpack (1.5.2)
     net-protocol (0.1.2)
       io-wait
       timeout
