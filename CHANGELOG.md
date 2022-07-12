@@ -4,7 +4,7 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.1] - Unreleased
+## [1.0.1] - 2022-07-12
 ### Fixed
 - Remove lingering usage of `fallback_find_primary_key` method that was removed in `0.14.0`
 
@@ -219,6 +219,7 @@ using the appropriate Rails configuration attributes.
 ### Added
 - Initial version from https://github.com/Invoca/hobo_fields v4.1.0.
 
+[1.0.1]: https://github.com/Invoca/declare_schema/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/Invoca/declare_schema/compare/v0.14.3...v1.0.0
 [0.14.3]: https://github.com/Invoca/declare_schema/compare/v0.14.2...v0.14.3
 [0.14.2]: https://github.com/Invoca/declare_schema/compare/v0.14.1...v0.14.2
