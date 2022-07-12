@@ -37,7 +37,7 @@ module DeclareSchema
         def for_model(model, old_table_name = nil)
           t = old_table_name || model.table_name
 
-          primary_key_columns = Array(model.connection.primary_key(t)).presence || fallback_find_primary_key(model, t) or
+          primary_key_columns = Array(model.connection.primary_key(t)).presence or
             raise "could not find primary key for table #{t} in #{model.connection.columns(t).inspect}"
 
           primary_key_found = false
