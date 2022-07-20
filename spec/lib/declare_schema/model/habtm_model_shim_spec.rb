@@ -97,26 +97,21 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
     end
 
     describe '#index_definitions_with_primary_key' do
-      it 'returns 2 index definitions' do
+      it 'returns one index definition' do
         result = subject.index_definitions_with_primary_key
-        expect(result.size).to eq(2), result.inspect
+        expect(result.size).to eq(1), result.inspect
 
         expect(result.first).to be_a(::DeclareSchema::Model::IndexDefinition)
-        expect(result.first.name).to eq('PRIMARY')
+        expect(result.first.name).to eq('index_parent_1_parent_2_on_parent_1_id_parent_2_id')
         expect(result.first.fields).to eq(['parent_1_id', 'parent_2_id'])
         expect(result.first.unique).to be_truthy
-
-        expect(result.last).to be_a(::DeclareSchema::Model::IndexDefinition)
-        expect(result.last.name).to eq('on_parent_2_id')
-        expect(result.last.unique).to be_falsey
-        expect(result.last.fields).to eq(['parent_2_id'])
       end
     end
 
     describe '#index_definitions' do
       it 'returns index_definitions_with_primary_key' do
         result = subject.index_definitions
-        expect(result.size).to eq(2), result.inspect
+        expect(result.size).to eq(1), result.inspect
       end
     end
 
@@ -134,12 +129,12 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
         expect(result.first).to be_a(::DeclareSchema::Model::ForeignKeyDefinition)
         expect(result.first.foreign_key).to eq(foreign_keys.first)
         expect(result.first.parent_table_name).to be(Parent1.table_name)
-        expect(result.first.on_delete_cascade).to be_truthy
+        expect(result.first.on_delete_cascade).to be_falsey
 
         expect(result.last).to be_a(::DeclareSchema::Model::ForeignKeyDefinition)
         expect(result.last.foreign_key).to eq(foreign_keys.last)
         expect(result.last.parent_table_name).to be(Parent2.table_name)
-        expect(result.last.on_delete_cascade).to be_truthy
+        expect(result.last.on_delete_cascade).to be_falsey
       end
     end
   end
