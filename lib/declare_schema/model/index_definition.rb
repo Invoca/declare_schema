@@ -39,13 +39,14 @@ module DeclareSchema
 
           habtm_model = model.is_a?(DeclareSchema::Model::HabtmModelShim)
 
-          primary_key_columns = Array(model.connection.primary_key(t)).presence || habtm_model or
-            raise "could not find primary key for table #{t} in #{model.connection.columns(t).inspect}"
+          primary_key_columns = Array(model.connection.primary_key(t)).presence
+            primary_key_columns || habtm_model or
+              raise "could not find primary key for table #{t} in #{model.connection.columns(t).inspect}"
 
           primary_key_found = false
           index_definitions = model.connection.indexes(t).map do |i|
             model.ignore_indexes.include?(i.name) and next
-            if i.name == PRIMARY_KEY_NAME && !habtm_model
+            if i.name == PRIMARY_KEY_NAME
               i.columns == primary_key_columns && i.unique or
                 raise "primary key on #{t} was not unique on #{primary_key_columns} (was unique=#{i.unique} on #{i.columns})"
               primary_key_found = true

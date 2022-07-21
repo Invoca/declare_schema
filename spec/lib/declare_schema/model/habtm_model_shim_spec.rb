@@ -129,12 +129,12 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
         expect(result.first).to be_a(::DeclareSchema::Model::ForeignKeyDefinition)
         expect(result.first.foreign_key).to eq(foreign_keys.first)
         expect(result.first.parent_table_name).to be(Parent1.table_name)
-        expect(result.first.on_delete_cascade).to be_falsey
+        expect(result.first.on_delete_cascade).to be_truthy
 
         expect(result.last).to be_a(::DeclareSchema::Model::ForeignKeyDefinition)
         expect(result.last.foreign_key).to eq(foreign_keys.last)
         expect(result.last.parent_table_name).to be(Parent2.table_name)
-        expect(result.last.on_delete_cascade).to be_falsey
+        expect(result.last.on_delete_cascade).to be_truthy
       end
     end
   end
