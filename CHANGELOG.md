@@ -4,7 +4,7 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.0] - Unreleased
+## [1.1.0] - 2022-07-22
 ### Changed
 - Fixed a bug where `DeclareSchema::Model::HabtmModelShim` `indexes` and `integer limits` were not being generated properly. Use `limit 8` for ids and primary composite key for habtm model.
 - `index_definitions_with_primary_key`
