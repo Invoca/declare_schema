@@ -36,7 +36,7 @@ module DeclareSchema
               parent_table:    parent_table,
               foreign_key:     foreign_key
             }
-            options[:dependent] = :delete if fkc['ON DELETE CASCADE']
+            options[:dependent] = :delete if fkc['ON DELETE CASCADE'] || model.is_a?(DeclareSchema::Model::HabtmModelShim)
 
             new(model, foreign_key, **options)
           end
