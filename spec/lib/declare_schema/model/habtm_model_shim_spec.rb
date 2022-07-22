@@ -102,14 +102,9 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
         expect(result.size).to eq(2), result.inspect
 
         expect(result.first).to be_a(::DeclareSchema::Model::IndexDefinition)
-        expect(result.first.name).to eq('PRIMARY')
+        expect(result.first.name).to eq('index_parent_1_parent_2_on_parent_1_id_parent_2_id')
         expect(result.first.fields).to eq(['parent_1_id', 'parent_2_id'])
         expect(result.first.unique).to be_truthy
-
-        expect(result.last).to be_a(::DeclareSchema::Model::IndexDefinition)
-        expect(result.last.name).to eq('on_parent_2_id')
-        expect(result.last.unique).to be_falsey
-        expect(result.last.fields).to eq(['parent_2_id'])
       end
     end
 

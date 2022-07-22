@@ -33,11 +33,14 @@ module DeclareSchema
 
       class << self
         # extract IndexSpecs from an existing table
-        # always includes the PRIMARY KEY index
+        # always includes the PRIMARY KEY index for Model unless it is a HABTM Model.
         def for_model(model, old_table_name = nil)
           t = old_table_name || model.table_name
 
-          primary_key_columns = Array(model.connection.primary_key(t)).presence or
+          habtm_model = model.is_a?(DeclareSchema::Model::HabtmModelShim)
+
+          primary_key_columns = Array(model.connection.primary_key(t)).presence
+          primary_key_columns || habtm_model or
             raise "could not find primary key for table #{t} in #{model.connection.columns(t).inspect}"
 
           primary_key_found = false
@@ -47,14 +50,14 @@ module DeclareSchema
               i.columns == primary_key_columns && i.unique or
                 raise "primary key on #{t} was not unique on #{primary_key_columns} (was unique=#{i.unique} on #{i.columns})"
               primary_key_found = true
-            elsif i.columns == primary_key_columns && i.unique
+            elsif i.columns == primary_key_columns && i.unique && !habtm_model
               # skip this primary key index since we'll create it below, with PRIMARY_KEY_NAME
               next
             end
             new(model, i.columns, name: i.name, unique: i.unique, where: i.where, table_name: old_table_name)
           end.compact
 
-          if !primary_key_found
+          if !primary_key_found && !habtm_model
             index_definitions << new(model, primary_key_columns, name: PRIMARY_KEY_NAME, unique: true, where: nil, table_name: old_table_name)
           end
           index_definitions
