@@ -425,6 +425,7 @@ module Generators
 
           new_table_name = model.table_name
           existing_indexes = ::DeclareSchema::Model::IndexDefinition.for_model(model, old_table_name)
+          model.is_a?(::DeclareSchema::Model::HabtmModelShim) && existing_indexes.pop
           model_indexes_with_equivalents = model.index_definitions_with_primary_key
           model_indexes = model_indexes_with_equivalents.map do |i|
             if i.explicit_name.nil?
