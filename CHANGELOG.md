@@ -6,7 +6,7 @@ Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0
 
 ## [1.1.0] - Unreleased
 ### Changed
-- Fixed a bug where `DeclareSchema::Model::HabtmModelShim` `indexes` and `integer limits` were not being generated properly. Use `limit 8` for ids and declare one primary composite key for habtm model.
+- Fixed a bug where `DeclareSchema::Model::HabtmModelShim` `indexes` and `integer limits` were not being generated properly. Use `limit 8` for ids and primary composite key for habtm model.
 - `index_definitions_with_primary_key`
 
 ## [1.0.2] - 2022-07-18
