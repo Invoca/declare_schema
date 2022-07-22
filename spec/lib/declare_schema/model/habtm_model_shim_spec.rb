@@ -97,9 +97,9 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
     end
 
     describe '#index_definitions_with_primary_key' do
-      it 'returns one index definition' do
+      it 'returns 2 index definitions' do
         result = subject.index_definitions_with_primary_key
-        expect(result.size).to eq(1), result.inspect
+        expect(result.size).to eq(2), result.inspect
 
         expect(result.first).to be_a(::DeclareSchema::Model::IndexDefinition)
         expect(result.first.name).to eq('index_parent_1_parent_2_on_parent_1_id_parent_2_id')
@@ -111,7 +111,7 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
     describe '#index_definitions' do
       it 'returns index_definitions_with_primary_key' do
         result = subject.index_definitions
-        expect(result.size).to eq(1), result.inspect
+        expect(result.size).to eq(2), result.inspect
       end
     end
 

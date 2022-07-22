@@ -40,8 +40,8 @@ module DeclareSchema
           habtm_model = model.is_a?(DeclareSchema::Model::HabtmModelShim)
 
           primary_key_columns = Array(model.connection.primary_key(t)).presence
-            primary_key_columns || habtm_model or
-              raise "could not find primary key for table #{t} in #{model.connection.columns(t).inspect}"
+          primary_key_columns || habtm_model or
+            raise "could not find primary key for table #{t} in #{model.connection.columns(t).inspect}"
 
           primary_key_found = false
           index_definitions = model.connection.indexes(t).map do |i|
