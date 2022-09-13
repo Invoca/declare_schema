@@ -6,6 +6,10 @@ require "declare_schema/schema_change/column_remove"
 require "generators/declare_schema/migration/migrator"
 require "erb"
 
+# This is a set of Rake tasks that can be used to generate migrations when using
+# ActiveRecord, but not within a Rails application. If using Rails, you should
+# use the built-in generators that come with the gem instead.
+
 namespace :declare_schema do
   desc 'Generate migrations for the database schema'
   task :generate => 'db:load_config' do
