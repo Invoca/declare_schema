@@ -55,9 +55,10 @@ module Generators
 
         def load_rails_models
           ActiveRecord::Migration.verbose = false
-
-          Rails.application.eager_load!
-          Rails::Engine.subclasses.each(&:eager_load!)
+          if defined?(Rails)
+            Rails.application.eager_load!
+            Rails::Engine.subclasses.each(&:eager_load!)
+          end
           self.class.before_generating_migration_callback&.call
         end
 
