@@ -132,7 +132,7 @@ module DeclareSchema
         database_name = connection.current_database
 
         defaults = connection.select_one(<<~EOS)
-          SELECT C.character_set_name, C.collation_name
+          SELECT C.character_set_name as character_set_name, C.collation_name as collation_name
           FROM information_schema.`COLUMNS` C
           WHERE C.table_schema = '#{connection.quote_string(database_name)}' AND
                 C.table_name = '#{connection.quote_string(current_table_name)}' AND

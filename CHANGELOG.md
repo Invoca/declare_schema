@@ -9,6 +9,10 @@ Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0
 - Added a rake task definition that can be optionally included into a non-Rails project to generate
   schema migrations.
 
+### Fixed
+- Fixed a bug where not aliasing column names was allowing mysql to return them using their uppercase
+  variants
+
 ## [1.1.0] - 2022-07-22
 ### Changed
 - Fixed a bug where `DeclareSchema::Model::HabtmModelShim` `indexes` and `integer limits` were not being generated properly. Use `limit 8` for ids and primary composite key for habtm model.

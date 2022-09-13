@@ -27,7 +27,7 @@ module DeclareSchema
         def mysql_table_options(connection, table_name)
           database = connection.current_database
           defaults = connection.select_one(<<~EOS) or raise "no defaults found for table #{table_name}"
-            SELECT CCSA.character_set_name, CCSA.collation_name
+            SELECT CCSA.character_set_name as character_set_name, CCSA.collation_name as collation_name
             FROM information_schema.TABLES as T
               JOIN information_schema.COLLATION_CHARACTER_SET_APPLICABILITY as CCSA
                 ON CCSA.collation_name = T.table_collation
