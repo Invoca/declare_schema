@@ -1,6 +1,6 @@
 # DeclareSchema
 
-Declare your Rails/active_record model schemas and have database migrations generated for you!
+Declare your Rails/ActiveRecord model schemas and have database migrations generated for you!
 
 ## Example
 
@@ -60,6 +60,20 @@ declare_schema id: :bigint do
 end
 ```
 
+## Usage without Rails
+
+When using `DeclareSchema` without Rails, you can use the `declare_schema/rake` task to generate the migration file.
+
+To do so, add the following require to your Rakefile:
+```ruby
+require 'declare_schema/rake'
+```
+
+Then, run the task:
+```sh
+rake declare_schema:generate
+```
+
 ## Migrator Configuration
 
 The following configuration options are available for the gem and can be used
@@ -117,7 +131,7 @@ declaration.
 
 For example, adding the following to your `config/initializers` directory will
 set the default `text limit` value to `0xffff`:
- 
+
 **declare_schema.rb**
 ```ruby
 # frozen_string_literal: true
@@ -133,7 +147,7 @@ declaration.
 
 For example, adding the following to your `config/initializers` directory will
 set the default `string limit` value to `255`:
- 
+
 **declare_schema.rb**
 ```ruby
 # frozen_string_literal: true
@@ -149,7 +163,7 @@ declaration.
 
 For example, adding the following to your `config/initializers` directory will
 set the default `null` value to `true`:
- 
+
 **declare_schema.rb**
 ```ruby
 # frozen_string_literal: true
@@ -163,7 +177,7 @@ This value defaults to `true` and can only be set at the global level.
 
 For example, adding the following to your `config/initializers` directory will set
 the default `generate foreign keys` value to `false`:
- 
+
 **declare_schema.rb**
 ```ruby
 # frozen_string_literal: true
@@ -177,7 +191,7 @@ This value defaults to `true` and can only be set at the global level.
 
 For example, adding the following to your `config/initializers` directory will
 set the default `generate indexing` value to `false`:
- 
+
 **declare_schema.rb**
 ```ruby
 # frozen_string_literal: true

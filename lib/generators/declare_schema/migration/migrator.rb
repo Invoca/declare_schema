@@ -28,9 +28,8 @@ module Generators
             Migrator.new(renames: renames).generate
           end
 
-          def default_migration_name
-            existing = Dir["#{Rails.root}/db/migrate/*declare_schema_migration*"]
-            max = existing.grep(/([0-9]+)\.rb$/) { Regexp.last_match(1).to_i }.max.to_i
+          def default_migration_name(existing_migrations = Dir["#{Rails.root}/db/migrate/*declare_schema_migration*"])
+            max = existing_migrations.grep(/([0-9]+)\.rb$/) { Regexp.last_match(1).to_i }.max.to_i
             "declare_schema_migration_#{max + 1}"
           end
 
@@ -55,9 +54,10 @@ module Generators
 
         def load_rails_models
           ActiveRecord::Migration.verbose = false
-
-          Rails.application.eager_load!
-          Rails::Engine.subclasses.each(&:eager_load!)
+          if defined?(Rails)
+            Rails.application.eager_load!
+            Rails::Engine.subclasses.each(&:eager_load!)
+          end
           self.class.before_generating_migration_callback&.call
         end
 
