@@ -27,6 +27,10 @@ module DeclareSchema
       }.freeze
 
       def alter_table(table_name, options)
+				# TODO: figure out why sms-messaging is passing options as a string instead of an array
+				# options is "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin" here
+				options = [options] if options.is_a? String
+
         sql_options = options.map { |key, value| [TABLE_OPTIONS_TO_SQL_MAPPINGS[key], value] }
         statement = "ALTER TABLE #{ActiveRecord::Base.connection.quote_table_name(table_name)} #{sql_options.join(' ')}"
         "execute #{statement.inspect}"

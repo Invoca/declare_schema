@@ -54,10 +54,11 @@ module Generators
 
         def load_rails_models
           ActiveRecord::Migration.verbose = false
-          if defined?(Rails)
-            Rails.application.eager_load!
-            Rails::Engine.subclasses.each(&:eager_load!)
-          end
+          # TODO: figure out how to get past this in sms-messaging — why is Rails defined in that Sinatra app?
+					# if defined?(Rails)
+          #   Rails.application.eager_load!
+          #   Rails::Engine.subclasses.each(&:eager_load!)
+          # end
           self.class.before_generating_migration_callback&.call
         end
 
