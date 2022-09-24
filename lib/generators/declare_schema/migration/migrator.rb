@@ -55,6 +55,7 @@ module Generators
         def load_rails_models
           ActiveRecord::Migration.verbose = false
           if defined?(Rails)
+            Rails.application or raise "Rails is defined, so Rails.application must be set"
             Rails.application.eager_load!
             Rails::Engine.subclasses.each(&:eager_load!)
           end
