@@ -224,6 +224,39 @@ If your repo has a different command to run for migrations, you can configure it
 `DeclareSchema.db_migrate_command = "bundle exec rails db:migrate_immediate"`
 ```
 
+## The `belongs_to` Relation and Indexes
+By default, `declare_schema` creates an index for `belongs_to` relations. If an index
+subsequently needs to be removed, it must be specifically updated in the relation statement.
+For example:
+
+```ruby
+belongs_to :other_table, null: false, index: false
+```
+
+The schema should then be updated, e.g.:
+
+```shell
+bundle exec rails g declare_schema:migration
+```
+
+## Ignored Tables
+`declare_schema` by default ignores these tables:
+- The ActiveRecord `schema_info` table
+- The ActiveRecord schema migrations table (generally named `schema_migrations`)
+- The ActiveRecord internal metadata table (generally named `ar_internal_metadata`)
+- If defined/configured, the CGI ActiveRecordStore session table
+
+Additional tables can be ignored by configuring `Generators::DeclareSchema::Migration::Migrator.ignore_tables`.
+For example:
+
+```ruby
+::Generators::DeclareSchema::Migration::Migrator.ignore_tables = [
+  "delayed_jobs",
+  "my_snowflake_table",
+  ...
+]
+```
+
 ## Declaring Character Set and Collation
 _Note: This feature currently only works for MySQL database configurations._
 
