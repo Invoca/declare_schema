@@ -227,7 +227,7 @@ module DeclareSchema
         validates_uniqueness_of name, allow_nil: !:required.in?(args) if :unique.in?(args)
 
         if (validates_options = options[:validates])
-          validates name, validates_options
+          validates(name, **validates_options)
         end
 
         # Support for custom validations
