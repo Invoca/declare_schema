@@ -4,6 +4,17 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - Unreleased
+### Changed
+- Documented `belongs_to` and `has_and_belongs_to_many` behavior
+- Documented configurable ignored tables behavior
+
+### Fixed
+- Ruby 3.x kwargs issue when calling `validates`
+
+### Removed
+- Ruby 2.5 from test matrix
+
 ## [1.2.1] - 2022-09-25
 ### Fixed
 - If Rails is defined, raise if `Rails.application` is `nil`.
