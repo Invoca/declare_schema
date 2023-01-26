@@ -224,22 +224,23 @@ If your repo has a different command to run for migrations, you can configure it
 `DeclareSchema.db_migrate_command = "bundle exec rails db:migrate_immediate"`
 ```
 
-## The `belongs_to` Relation and Indexes
-By default, `declare_schema` creates an index for `belongs_to` relations. If an index
-subsequently needs to be removed, it must be specifically updated in the relation statement.
-For example:
+## The `belongs_to` Association
+The foreign key for a `belongs_to` association refers to the primary key of the associated model. The `belongs_to`
+association is outside of the `declare_schema do` block, so `declare_schema` intercepts the `belongs_to` macro to
+infer the foreign key column.
 
-```ruby
-belongs_to :other_table, null: false, index: false
-```
+By default, `declare_schema` creates an index for `belongs_to` relations. If this default index is not desired,
+you can use `index: false` in the `belongs_to` expression. This may be the case if for example a different index
+already accounts for it.
 
-The schema should then be updated, e.g.:
-
-```shell
-bundle exec rails g declare_schema:migration
-```
+## The `has_and_belongs_to_many` Association
+Like the `belongs_to` association, `has_and_belongs_to_many` is outside of the `declare_schema ` block. `declare_schema` similarly
+infers foreign keys (and the intersection table).
 
 ## Ignored Tables
+If a table's schema or metadata are managed elsewhere, `declare_schema` probably should not alter it. Accordingly,
+`declare_schema` can be configured to ignore tables.
+
 `declare_schema` by default ignores these tables:
 - The ActiveRecord `schema_info` table
 - The ActiveRecord schema migrations table (generally named `schema_migrations`)
