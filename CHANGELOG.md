@@ -4,7 +4,7 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.2] - Unreleased
+## [1.2.2] - 2023-01-27
 ### Changed
 - Documented `belongs_to` and `has_and_belongs_to_many` behavior
 - Documented configurable ignored tables behavior
