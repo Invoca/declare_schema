@@ -224,6 +224,40 @@ If your repo has a different command to run for migrations, you can configure it
 `DeclareSchema.db_migrate_command = "bundle exec rails db:migrate_immediate"`
 ```
 
+## The `belongs_to` Association
+The foreign key for a `belongs_to` association refers to the primary key of the associated model. The `belongs_to`
+association is outside of the `declare_schema do` block, so `declare_schema` intercepts the `belongs_to` macro to
+infer the foreign key column.
+
+By default, `declare_schema` creates an index for `belongs_to` relations. If this default index is not desired,
+you can use `index: false` in the `belongs_to` expression. This may be the case if for example a different index
+already accounts for it.
+
+## The `has_and_belongs_to_many` Association
+Like the `belongs_to` association, `has_and_belongs_to_many` is outside of the `declare_schema ` block. `declare_schema` similarly
+infers foreign keys (and the intersection table).
+
+## Ignored Tables
+If a table's schema or metadata are managed elsewhere, `declare_schema` probably should not alter it. Accordingly,
+`declare_schema` can be configured to ignore tables.
+
+`declare_schema` by default ignores these tables:
+- The ActiveRecord `schema_info` table
+- The ActiveRecord schema migrations table (generally named `schema_migrations`)
+- The ActiveRecord internal metadata table (generally named `ar_internal_metadata`)
+- If defined/configured, the CGI ActiveRecordStore session table
+
+Additional tables can be ignored by configuring `Generators::DeclareSchema::Migration::Migrator.ignore_tables`.
+For example:
+
+```ruby
+::Generators::DeclareSchema::Migration::Migrator.ignore_tables = [
+  "delayed_jobs",
+  "my_snowflake_table",
+  ...
+]
+```
+
 ## Declaring Character Set and Collation
 _Note: This feature currently only works for MySQL database configurations._
 

@@ -16,11 +16,6 @@ jobs:
         - gemfiles/rails_5_sqlite.gemfile
         - gemfiles/rails_6_mysql.gemfile
         - gemfiles/rails_6_sqlite.gemfile
-        include:
-        - gemfile: gemfiles/rails_5_mysql.gemfile
-          ruby: 2.5
-        - gemfile: gemfiles/rails_5_sqlite.gemfile
-          ruby: 2.5
         exclude:
         - ruby: '3.0'
           gemfile: gemfiles/rails_5_mysql.gemfile
