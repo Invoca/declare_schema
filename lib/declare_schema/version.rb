@@ -1,5 +1,5 @@
 # frozen_string_literal: true
 
 module DeclareSchema
-  VERSION = "1.2.2"
+  VERSION = "1.2.3.pre.ga.0"
 end
