@@ -454,6 +454,21 @@ module Generators
           indexes_to_drop = existing_indexes_without_primary_key - model_indexes_without_primary_key
           indexes_to_add = model_indexes_without_primary_key - existing_indexes_without_primary_key
 
+          renamed_indexes_to_drop, renamed_indexes_to_add = index_changes_due_to_column_renames(indexes_to_drop, indexes_to_add, to_rename)
+
+          drop_indexes = (indexes_to_drop - renamed_indexes_to_drop).map do |i|
+            ::DeclareSchema::SchemaChange::IndexRemove.new(new_table_name, i.columns, unique: i.unique, where: i.where, name: i.name)
+          end
+
+          add_indexes = (indexes_to_add - renamed_indexes_to_add).map do |i|
+            ::DeclareSchema::SchemaChange::IndexAdd.new(new_table_name, i.columns, unique: i.unique, where: i.where, name: i.name)
+          end
+
+          # the order is important here - adding a :unique, for instance needs to remove then add
+          [Array(change_primary_key) + drop_indexes + add_indexes]
+        end
+
+        def index_changes_due_to_column_renames(indexes_to_drop, indexes_to_add, to_rename)
           renamed_indexes_to_drop = []
           renamed_indexes_to_add = []
 
@@ -470,16 +485,7 @@ module Generators
             }
           }
 
-          drop_indexes = (indexes_to_drop - renamed_indexes_to_drop).map do |i|
-            ::DeclareSchema::SchemaChange::IndexRemove.new(new_table_name, i.columns, unique: i.unique, where: i.where, name: i.name)
-          end
-
-          add_indexes = (indexes_to_add - renamed_indexes_to_add).map do |i|
-            ::DeclareSchema::SchemaChange::IndexAdd.new(new_table_name, i.columns, unique: i.unique, where: i.where, name: i.name)
-          end
-
-          # the order is important here - adding a :unique, for instance needs to remove then add
-          [Array(change_primary_key) + drop_indexes + add_indexes]
+          [renamed_indexes_to_drop, renamed_indexes_to_add]
         end
 
         def change_foreign_key_constraints(model, old_table_name, to_rename)
@@ -492,6 +498,23 @@ module Generators
           fks_to_drop = existing_fks - model_fks
           fks_to_add = model_fks - existing_fks
 
+          renamed_fks_to_drop, renamed_fks_to_add = foreign_key_changes_due_to_column_renames(fks_to_drop, fks_to_add, to_rename)
+
+          drop_fks = (fks_to_drop - renamed_fks_to_drop).map do |fk|
+            ::DeclareSchema::SchemaChange::ForeignKeyRemove.new(fk.child_table_name, fk.parent_table_name,
+                                                                column_name: fk.foreign_key_name, name: fk.constraint_name)
+          end
+
+          add_fks = (fks_to_add - renamed_fks_to_add).map do |fk|
+            # next if fk.parent.constantize.abstract_class || fk.parent == fk.model.class_name
+            ::DeclareSchema::SchemaChange::ForeignKeyAdd.new(fk.child_table_name, fk.parent_table_name,
+                                                             column_name: fk.foreign_key_name, name: fk.constraint_name)
+          end
+
+          [drop_fks + add_fks]
+        end
+
+        def foreign_key_changes_due_to_column_renames(fks_to_drop, fks_to_add, to_rename)
           renamed_fks_to_drop = []
           renamed_fks_to_add = []
 
@@ -507,18 +530,7 @@ module Generators
             }
           }
 
-          drop_fks = (fks_to_drop - renamed_fks_to_drop).map do |fk|
-            ::DeclareSchema::SchemaChange::ForeignKeyRemove.new(fk.child_table_name, fk.parent_table_name,
-                                                                column_name: fk.foreign_key_name, name: fk.constraint_name)
-          end
-
-          add_fks = (fks_to_add - renamed_fks_to_add).map do |fk|
-            # next if fk.parent.constantize.abstract_class || fk.parent == fk.model.class_name
-            ::DeclareSchema::SchemaChange::ForeignKeyAdd.new(fk.child_table_name, fk.parent_table_name,
-                                                             column_name: fk.foreign_key_name, name: fk.constraint_name)
-          end
-
-          [drop_fks + add_fks]
+          [renamed_fks_to_drop, renamed_fks_to_add]
         end
 
         def fk_field_options(model, field_name)
