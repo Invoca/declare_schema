@@ -463,7 +463,7 @@ module Generators
             end
 
             indexes_to_add.each { |index_to_add|
-              if renamed_columns == index_to_add.columns
+              if Set.new(renamed_columns) == Set.new(index_to_add.columns)
                 renamed_indexes_to_drop.append(index_to_drop)
                 renamed_indexes_to_add.append(index_to_add)
               end
