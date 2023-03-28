@@ -459,7 +459,7 @@ module Generators
 
           indexes_to_drop.each { |index_to_drop|
             renamed_columns = index_to_drop.columns.map do |column|
-              to_rename[column]
+              to_rename[column] || column
             end
 
             indexes_to_add.each { |index_to_add|
