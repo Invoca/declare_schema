@@ -522,6 +522,7 @@ module Generators
             fks_to_add.each { |fk_to_add|
               if fk_to_add.child_table_name == fk_to_drop.child_table_name &&
                 fk_to_add.parent_table_name == fk_to_drop.parent_table_name &&
+                !fk_to_add.foreign_key.nil? &&
                 fk_to_add.foreign_key == to_rename[fk_to_drop.foreign_key]
 
                 renamed_fks_to_drop.append(fk_to_drop)
