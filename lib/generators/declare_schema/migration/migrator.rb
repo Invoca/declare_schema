@@ -469,7 +469,7 @@ module Generators
         end
 
         def index_changes_due_to_column_renames(indexes_to_drop, indexes_to_add, to_rename)
-          indexes_to_drop.each_with_object([], []) do |index_to_drop, (renamed_indexes_to_drop, renamed_indexes_to_add)|
+          indexes_to_drop.each_with_object([[], []]) do |index_to_drop, (renamed_indexes_to_drop, renamed_indexes_to_add)|
             renamed_columns = index_to_drop.columns.map do |column|
               to_rename.fetch(column, column)
             end.sort
@@ -508,16 +508,15 @@ module Generators
         end
 
         def foreign_key_changes_due_to_column_renames(fks_to_drop, fks_to_add, to_rename)
-          fks_to_drop.each_with_object([], []) do |fk_to_drop, (renamed_fks_to_drop, renamed_fks_to_add)|
-            if (fks_to_add = fks_to_add.find do |fk_to_add|
+          fks_to_drop.each_with_object([[], []]) do |fk_to_drop, (renamed_fks_to_drop, renamed_fks_to_add)|
+            if (fk_to_add = fks_to_add.find do |fk_to_add|
               fk_to_add.foreign_key.nil? and raise "Foreign key is not allowed to be nil for #{fk_to_add.inspect}"
-              if fk_to_add.child_table_name == fk_to_drop.child_table_name &&
-                fk_to_add.parent_table_name == fk_to_drop.parent_table_name &&
-                fk_to_add.foreign_key == to_rename[fk_to_drop.foreign_key]
-              end
+              fk_to_add.child_table_name == fk_to_drop.child_table_name &&
+              fk_to_add.parent_table_name == fk_to_drop.parent_table_name &&
+              fk_to_add.foreign_key == to_rename[fk_to_drop.foreign_key]
             end)
               renamed_fks_to_drop << fk_to_drop
-              renamed_fks_to_add << fks_to_add
+              renamed_fks_to_add << fk_to_add
             end
           end
         end
