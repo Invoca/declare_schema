@@ -102,7 +102,7 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
         expect(result.size).to eq(2), result.inspect
 
         expect(result.first).to be_a(::DeclareSchema::Model::IndexDefinition)
-        expect(result.first.name).to eq('PRIMARY KEY')
+        expect(result.first.name).to eq('PRIMARY')
         expect(result.first.fields).to eq(['parent_1_id', 'parent_2_id'])
         expect(result.first.unique).to be_truthy
       end
@@ -127,7 +127,7 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
         result = subject.index_definitions_with_primary_key
         expect(result.size).to eq(2), result.inspect
         expect(result.first).to be_a(::DeclareSchema::Model::IndexDefinition)
-        expect(result.first.name).to eq('PRIMARY KEY')
+        expect(result.first.name).to eq('PRIMARY')
         expect(result.first.fields).to eq(['advertiser_campaign', 'tracking_pixel'])
         expect(result.first.unique).to be_truthy
       end
