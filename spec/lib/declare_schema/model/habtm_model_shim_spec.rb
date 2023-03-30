@@ -102,8 +102,33 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
         expect(result.size).to eq(2), result.inspect
 
         expect(result.first).to be_a(::DeclareSchema::Model::IndexDefinition)
-        expect(result.first.name).to eq('index_parent_1_parent_2_on_parent_1_id_parent_2_id')
+        expect(result.first.name).to eq('PRIMARY KEY')
         expect(result.first.fields).to eq(['parent_1_id', 'parent_2_id'])
+        expect(result.first.unique).to be_truthy
+      end
+    end
+
+    context 'when table and foreign key names are long' do
+      let(:join_table) { "advertiser_campaigns_tracking_pixels" }
+      let(:foreign_keys) { ['advertiser_campaign', 'tracking_pixel'] }
+      let(:foreign_key_classes) { [Table1, Table2] }
+
+      before do
+        class Table1 < ActiveRecord::Base
+          self.table_name = 'advertiser_campaign'
+        end
+
+        class Table2 < ActiveRecord::Base
+          self.table_name = 'tracking_pixel'
+        end
+      end
+
+      it 'returns two index definitions and does not raise a IndexNameTooLongError' do
+        result = subject.index_definitions_with_primary_key
+        expect(result.size).to eq(2), result.inspect
+        expect(result.first).to be_a(::DeclareSchema::Model::IndexDefinition)
+        expect(result.first.name).to eq('PRIMARY KEY')
+        expect(result.first.fields).to eq(['advertiser_campaign', 'tracking_pixel'])
         expect(result.first.unique).to be_truthy
       end
     end
