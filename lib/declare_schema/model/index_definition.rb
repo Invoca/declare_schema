@@ -19,7 +19,7 @@ module DeclareSchema
         @table = options.delete(:table_name) || model.table_name
         @fields = Array.wrap(fields).map(&:to_s)
         @explicit_name = options[:name] unless options.delete(:allow_equivalent)
-        @name = options.delete(:name) || self.class.index_name(@fields)
+        @name = options.delete(:name) || self.class.default_index_name(@fields)
         @unique = options.delete(:unique) || name == PRIMARY_KEY_NAME || false
 
         if @name.length > MYSQL_INDEX_NAME_MAX_LENGTH
@@ -60,7 +60,7 @@ module DeclareSchema
           index_definitions
         end
 
-        def index_name(columns)
+        def default_index_name(columns)
           "on_#{Array(columns).join("_and_")}"
         end
       end
