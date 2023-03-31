@@ -47,9 +47,6 @@ module DeclareSchema
               i.columns == primary_key_columns && i.unique or
                 raise "primary key on #{t} was not unique on #{primary_key_columns} (was unique=#{i.unique} on #{i.columns})"
               primary_key_found = true
-            elsif i.columns == primary_key_columns && i.unique
-              # skip this primary key index since we'll create it below, with PRIMARY_KEY_NAME
-              next
             end
             new(model, i.columns, name: i.name, unique: i.unique, where: i.where, table_name: old_table_name)
           end.compact
