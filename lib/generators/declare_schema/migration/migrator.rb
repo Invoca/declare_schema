@@ -510,7 +510,6 @@ module Generators
         def foreign_key_changes_due_to_column_renames(fks_to_drop, fks_to_add, to_rename)
           fks_to_drop.each_with_object([[], []]) do |fk_to_drop, (renamed_fks_to_drop, renamed_fks_to_add)|
             fk_to_add = fks_to_add.find do |fk_to_add|
-              fk_to_add.foreign_key.nil? and raise "Foreign key is not allowed to be nil for #{fk_to_add.inspect}"
               fk_to_add.child_table_name == fk_to_drop.child_table_name &&
                 fk_to_add.parent_table_name == fk_to_drop.parent_table_name &&
                 fk_to_add.foreign_key == to_rename[fk_to_drop.foreign_key]
