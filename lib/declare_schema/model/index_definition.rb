@@ -33,6 +33,7 @@ module DeclareSchema
 
       class << self
         # extract IndexSpecs from an existing table
+        # includes the PRIMARY KEY index
         def for_model(model, old_table_name = nil)
           t = old_table_name || model.table_name
 
