@@ -4,7 +4,7 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.3] - Unreleased
+## [1.2.3] - 2023-04-04
 ### Changed
 - Fixed a bug where renaming a foreign key resulted in an incorrect migration
 
