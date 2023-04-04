@@ -19,7 +19,7 @@ module DeclareSchema
         @table = options.delete(:table_name) || model.table_name
         @fields = Array.wrap(fields).map(&:to_s)
         @explicit_name = options[:name] unless options.delete(:allow_equivalent)
-        @name = options.delete(:name) || self.class.index_name(@fields)
+        @name = options.delete(:name) || self.class.default_index_name(@fields)
         @unique = options.delete(:unique) || name == PRIMARY_KEY_NAME || false
 
         if @name.length > MYSQL_INDEX_NAME_MAX_LENGTH
@@ -33,15 +33,12 @@ module DeclareSchema
 
       class << self
         # extract IndexSpecs from an existing table
-        # always includes the PRIMARY KEY index for Model unless it is a HABTM Model.
+        # includes the PRIMARY KEY index
         def for_model(model, old_table_name = nil)
           t = old_table_name || model.table_name
 
-          habtm_model = model.is_a?(DeclareSchema::Model::HabtmModelShim)
-
           primary_key_columns = Array(model.connection.primary_key(t)).presence
-          primary_key_columns || habtm_model or
-            raise "could not find primary key for table #{t} in #{model.connection.columns(t).inspect}"
+          primary_key_columns or raise "could not find primary key for table #{t} in #{model.connection.columns(t).inspect}"
 
           primary_key_found = false
           index_definitions = model.connection.indexes(t).map do |i|
@@ -50,20 +47,17 @@ module DeclareSchema
               i.columns == primary_key_columns && i.unique or
                 raise "primary key on #{t} was not unique on #{primary_key_columns} (was unique=#{i.unique} on #{i.columns})"
               primary_key_found = true
-            elsif i.columns == primary_key_columns && i.unique && !habtm_model
-              # skip this primary key index since we'll create it below, with PRIMARY_KEY_NAME
-              next
             end
             new(model, i.columns, name: i.name, unique: i.unique, where: i.where, table_name: old_table_name)
           end.compact
 
-          if !primary_key_found && !habtm_model
+          if !primary_key_found
             index_definitions << new(model, primary_key_columns, name: PRIMARY_KEY_NAME, unique: true, where: nil, table_name: old_table_name)
           end
           index_definitions
         end
 
-        def index_name(columns)
+        def default_index_name(columns)
           "on_#{Array(columns).join("_and_")}"
         end
       end

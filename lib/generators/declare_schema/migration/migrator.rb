@@ -407,7 +407,7 @@ module Generators
           fk_changes = if ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
                          []
                        else
-                         change_foreign_key_constraints(model, current_table_name)
+                         change_foreign_key_constraints(model, current_table_name, to_rename)
                        end
           table_options_changes = if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
                                     change_table_options(model, current_table_name)
@@ -446,16 +446,21 @@ module Generators
           if !ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
             change_primary_key =
               if (existing_primary_key || defined_primary_key) &&
-                existing_primary_key_columns != defined_primary_key&.columns
+                 existing_primary_key_columns != defined_primary_key&.columns
                 ::DeclareSchema::SchemaChange::PrimaryKeyChange.new(new_table_name, existing_primary_key_columns, defined_primary_key&.columns)
               end
           end
 
-          drop_indexes = (existing_indexes_without_primary_key - model_indexes_without_primary_key).map do |i|
+          indexes_to_drop = existing_indexes_without_primary_key - model_indexes_without_primary_key
+          indexes_to_add = model_indexes_without_primary_key - existing_indexes_without_primary_key
+
+          renamed_indexes_to_drop, renamed_indexes_to_add = index_changes_due_to_column_renames(indexes_to_drop, indexes_to_add, to_rename)
+
+          drop_indexes = (indexes_to_drop - renamed_indexes_to_drop).map do |i|
             ::DeclareSchema::SchemaChange::IndexRemove.new(new_table_name, i.columns, unique: i.unique, where: i.where, name: i.name)
           end
 
-          add_indexes = (model_indexes_without_primary_key - existing_indexes_without_primary_key).map do |i|
+          add_indexes = (indexes_to_add - renamed_indexes_to_add).map do |i|
             ::DeclareSchema::SchemaChange::IndexAdd.new(new_table_name, i.columns, unique: i.unique, where: i.where, name: i.name)
           end
 
@@ -463,25 +468,58 @@ module Generators
           [Array(change_primary_key) + drop_indexes + add_indexes]
         end
 
-        def change_foreign_key_constraints(model, old_table_name)
+        def index_changes_due_to_column_renames(indexes_to_drop, indexes_to_add, to_rename)
+          indexes_to_drop.each_with_object([[], []]) do |index_to_drop, (renamed_indexes_to_drop, renamed_indexes_to_add)|
+            renamed_columns = index_to_drop.columns.map do |column|
+              to_rename.fetch(column, column)
+            end.sort
+
+            if (index_to_add = indexes_to_add.find { |index_to_add| renamed_columns == index_to_add.columns.sort })
+              renamed_indexes_to_drop << index_to_drop
+              renamed_indexes_to_add << index_to_add
+            end
+          end
+        end
+
+        def change_foreign_key_constraints(model, old_table_name, to_rename)
           ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/) and raise ArgumentError, 'SQLite does not support foreign keys'
           ::DeclareSchema.default_generate_foreign_keys or return []
 
           existing_fks = ::DeclareSchema::Model::ForeignKeyDefinition.for_model(model, old_table_name)
           model_fks = model.constraint_specs
 
-          drop_fks = (existing_fks - model_fks).map do |fk|
+          fks_to_drop = existing_fks - model_fks
+          fks_to_add = model_fks - existing_fks
+
+          renamed_fks_to_drop, renamed_fks_to_add = foreign_key_changes_due_to_column_renames(fks_to_drop, fks_to_add, to_rename)
+
+          drop_fks = (fks_to_drop - renamed_fks_to_drop).map do |fk|
             ::DeclareSchema::SchemaChange::ForeignKeyRemove.new(fk.child_table_name, fk.parent_table_name,
                                                                 column_name: fk.foreign_key_name, name: fk.constraint_name)
           end
 
-          add_fks = (model_fks - existing_fks).map do |fk|
+          add_fks = (fks_to_add - renamed_fks_to_add).map do |fk|
             # next if fk.parent.constantize.abstract_class || fk.parent == fk.model.class_name
             ::DeclareSchema::SchemaChange::ForeignKeyAdd.new(fk.child_table_name, fk.parent_table_name,
                                                              column_name: fk.foreign_key_name, name: fk.constraint_name)
           end
 
           [drop_fks + add_fks]
+        end
+
+        def foreign_key_changes_due_to_column_renames(fks_to_drop, fks_to_add, to_rename)
+          fks_to_drop.each_with_object([[], []]) do |fk_to_drop, (renamed_fks_to_drop, renamed_fks_to_add)|
+            fk_to_add = fks_to_add.find do |fk_to_add|
+              fk_to_add.child_table_name == fk_to_drop.child_table_name &&
+                fk_to_add.parent_table_name == fk_to_drop.parent_table_name &&
+                fk_to_add.foreign_key == to_rename[fk_to_drop.foreign_key]
+            end
+
+            if fk_to_add
+              renamed_fks_to_drop << fk_to_drop
+              renamed_fks_to_add << fk_to_add
+            end
+          end
         end
 
         def fk_field_options(model, field_name)

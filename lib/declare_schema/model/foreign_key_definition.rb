@@ -12,7 +12,7 @@ module DeclareSchema
 
       def initialize(model, foreign_key, **options)
         @model = model
-        @foreign_key = foreign_key.to_s.presence
+        @foreign_key = foreign_key.to_s.presence or raise ArgumentError "Foreign key must not be empty: #{foreign_key.inspect}"
         @options = options
 
         @child_table_name = model.table_name # unless a table rename, which would happen when a class is renamed??

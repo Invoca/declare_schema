@@ -49,11 +49,10 @@ RSpec.describe DeclareSchema::Model::ForeignKeyDefinition do
         end
 
         context 'when all options passed' do
-          let(:foreign_key) { nil }
           let(:options) { { parent_table: :networks, foreign_key: :the_network_id, constraint_name: :constraint_1, dependent: :delete } }
 
           it 'normalizes symbols to strings' do
-            expect(subject.foreign_key).to be_nil
+            expect(subject.foreign_key).to eq('network_id')
             expect(subject.foreign_key_name).to eq('the_network_id')
             expect(subject.parent_table_name).to eq('networks')
             expect(subject.constraint_name).to eq('constraint_1')
