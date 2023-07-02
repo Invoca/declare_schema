@@ -40,22 +40,22 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
 
       it 'has index_definitions' do
         expect(model_class.index_definitions).to be_kind_of(Array)
-        expect(model_class.index_definitions.map(&:name)).to eq(['on_name'])
+        expect(model_class.index_definitions.map(&:name)).to eq(['index_index_definition_test_models_on_name'])
         expect([:name, :fields, :unique].map { |attr| model_class.index_definitions[0].send(attr)}).to eq(
-                                                                                                           ['on_name', ['name'], false]
-                                                                                                       )
+          ['index_index_definition_test_models_on_name', ['name'], false]
+        )
       end
 
       it 'has index_definitions_with_primary_key' do
         expect(model_class.index_definitions_with_primary_key).to be_kind_of(Array)
         result = model_class.index_definitions_with_primary_key.sort_by(&:name)
-        expect(result.map(&:name)).to eq(['PRIMARY', 'on_name'])
+        expect(result.map(&:name)).to eq(['PRIMARY', 'index_index_definition_test_models_on_name'])
         expect([:name, :fields, :unique].map { |attr| result[0].send(attr)}).to eq(
-                                                                                    ['PRIMARY', ['id'], true]
-                                                                                )
+          ['PRIMARY', ['id'], true]
+        )
         expect([:name, :fields, :unique].map { |attr| result[1].send(attr)}).to eq(
-                                                                                    ['on_name', ['name'], false]
-                                                                                )
+          ['index_index_definition_test_models_on_name', ['name'], false]
+        )
       end
     end
 

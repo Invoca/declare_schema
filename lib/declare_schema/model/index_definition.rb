@@ -12,18 +12,17 @@ module DeclareSchema
       class IndexNameTooLongError < RuntimeError; end
 
       PRIMARY_KEY_NAME = "PRIMARY"
-      MYSQL_INDEX_NAME_MAX_LENGTH = 64
 
       def initialize(model, fields, **options)
         @model = model
         @table = options.delete(:table_name) || model.table_name
         @fields = Array.wrap(fields).map(&:to_s)
         @explicit_name = options[:name] unless options.delete(:allow_equivalent)
-        @name = options.delete(:name) || self.class.default_index_name(@fields)
+        @name = options.delete(:name) || self.class.default_index_name(@table, @fields)
         @unique = options.delete(:unique) || name == PRIMARY_KEY_NAME || false
 
-        if @name.length > MYSQL_INDEX_NAME_MAX_LENGTH
-          raise IndexNameTooLongError, "Index '#{@name}' exceeds MySQL limit of #{MYSQL_INDEX_NAME_MAX_LENGTH} characters. Give it a shorter name."
+        if @name.length > DeclareSchema.max_index_and_constraint_name_length
+          raise IndexNameTooLongError, "Index '#{@name}' exceeds configured limit of #{DeclareSchema.max_index_and_constraint_name_length} characters. Give it a shorter name, or adjust DeclareSchema.max_index_and_constraint_name_length if you know your database can accept longer names."
         end
 
         if (where = options[:where])
@@ -57,8 +56,12 @@ module DeclareSchema
           index_definitions
         end
 
-        def default_index_name(columns)
-          "on_#{Array(columns).join("_and_")}"
+        def default_index_name(table, fields)
+          long_default_index_name(table, fields)
+        end
+
+        def long_default_index_name(table_name, columns)
+          "index_#{table_name}_on_#{Array(columns).join("_and_")}"
         end
       end
 
