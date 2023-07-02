@@ -5,13 +5,13 @@ RSpec.describe DeclareSchema do
     subject { described_class.default_charset }
 
     context 'when not explicitly set' do
-      it { should eq("utf8mb4") }
+      it { is_expected.to eq("utf8mb4") }
     end
 
     context 'when explicitly set' do
       before { described_class.default_charset = "utf8" }
       after  { described_class.default_charset = "utf8mb4" }
-      it     { should eq("utf8") }
+      it     { is_expected.to eq("utf8") }
     end
   end
 
@@ -19,13 +19,13 @@ RSpec.describe DeclareSchema do
     subject { described_class.default_collation }
 
     context 'when not explicitly set' do
-      it { should eq("utf8mb4_bin") }
+      it { is_expected.to eq("utf8mb4_bin") }
     end
 
     context 'when explicitly set' do
       before { described_class.default_collation = "utf8mb4_general_ci" }
       after  { described_class.default_collation = "utf8mb4_bin" }
-      it     { should eq("utf8mb4_general_ci") }
+      it     { is_expected.to eq("utf8mb4_general_ci") }
     end
   end
 
@@ -33,13 +33,13 @@ RSpec.describe DeclareSchema do
     subject { described_class.default_text_limit }
 
     context 'when not explicitly set' do
-      it { should eq(0xffff_ffff) }
+      it { is_expected.to eq(0xffff_ffff) }
     end
 
     context 'when explicitly set' do
       before { described_class.default_text_limit = 0xffff }
       after  { described_class.default_text_limit = 0xffff_ffff }
-      it     { should eq(0xffff) }
+      it     { is_expected.to eq(0xffff) }
     end
   end
 
@@ -47,13 +47,13 @@ RSpec.describe DeclareSchema do
     subject { described_class.default_string_limit }
 
     context 'when not explicitly set' do
-      it { should eq(nil) }
+      it { is_expected.to eq(nil) }
     end
 
     context 'when explicitly set' do
       before { described_class.default_string_limit = 225 }
       after  { described_class.default_string_limit = nil }
-      it     { should eq(225) }
+      it     { is_expected.to eq(225) }
     end
   end
 
@@ -61,13 +61,13 @@ RSpec.describe DeclareSchema do
     subject { described_class.default_null }
 
     context 'when not explicitly set' do
-      it { should eq(false) }
+      it { is_expected.to eq(false) }
     end
 
     context 'when explicitly set' do
       before { described_class.default_null = true }
       after  { described_class.default_null = false }
-      it     { should eq(true) }
+      it     { is_expected.to eq(true) }
     end
   end
 
@@ -75,13 +75,13 @@ RSpec.describe DeclareSchema do
     subject { described_class.default_generate_foreign_keys }
 
     context 'when not explicitly set' do
-      it { should eq(true) }
+      it { is_expected.to eq(true) }
     end
 
     context 'when explicitly set' do
       before { described_class.default_generate_foreign_keys = false }
       after  { described_class.default_generate_foreign_keys = true }
-      it     { should eq(false) }
+      it     { is_expected.to eq(false) }
     end
   end
 
@@ -89,13 +89,43 @@ RSpec.describe DeclareSchema do
     subject { described_class.default_generate_indexing }
 
     context 'when not explicitly set' do
-      it { should eq(true) }
+      it { is_expected.to eq(true) }
     end
 
     context 'when explicitly set' do
       before { described_class.default_generate_indexing = false }
       after  { described_class.default_generate_indexing = true }
-      it     { should eq(false) }
+      it     { is_expected.to eq(false) }
+    end
+  end
+
+  describe '#max_index_and_constraint_name_length' do
+    subject { described_class.max_index_and_constraint_name_length }
+
+    context 'when not explicitly set' do
+      it { is_expected.to eq(64) }
+    end
+
+    context 'when explicitly set' do
+      around do |spec|
+        orig_value = described_class.max_index_and_constraint_name_length
+        described_class.max_index_and_constraint_name_length = max_index_and_constraint_name_length
+        spec.run
+      rescue
+        described_class.max_index_and_constraint_name_length = orig_value
+      end
+
+      context 'when set to an Integer' do
+        let(:max_index_and_constraint_name_length) { 255 }
+
+        it { is_expected.to eq(255)}
+      end
+
+      context 'when set to nil' do
+        let(:max_index_and_constraint_name_length) { nil }
+
+        it { is_expected.to eq(nil)}
+      end
     end
   end
 end
