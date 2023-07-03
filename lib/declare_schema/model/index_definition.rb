@@ -21,7 +21,7 @@ module DeclareSchema
         @name = options.delete(:name) || self.class.default_index_name(@table, @fields)
         @unique = options.delete(:unique) || name == PRIMARY_KEY_NAME || false
 
-        if @name.length > DeclareSchema.max_index_and_constraint_name_length
+        if DeclareSchema.max_index_and_constraint_name_length && @name.length > DeclareSchema.max_index_and_constraint_name_length
           raise IndexNameTooLongError, "Index '#{@name}' exceeds configured limit of #{DeclareSchema.max_index_and_constraint_name_length} characters. Give it a shorter name, or adjust DeclareSchema.max_index_and_constraint_name_length if you know your database can accept longer names."
         end
 
@@ -57,11 +57,24 @@ module DeclareSchema
         end
 
         def default_index_name(table, fields)
-          long_default_index_name(table, fields)
+          index_name = nil
+          [:long_index_name, :short_index_name].find do |method_name|
+            index_name = send(method_name, table, fields)
+            if DeclareSchema.max_index_and_constraint_name_length.nil? || index_name.length <= DeclareSchema.max_index_and_constraint_name_length
+              break index_name
+            end
+          end or raise IndexNameTooLongError,
+                       "Index '#{index_name}' exceeds configured limit of #{DeclareSchema.max_index_and_constraint_name_length} characters."
         end
 
-        def long_default_index_name(table_name, columns)
+        private
+
+        def long_index_name(table_name, columns)
           "index_#{table_name}_on_#{Array(columns).join("_and_")}"
+        end
+
+        def short_index_name(table_name, columns)
+          "#{table_name}__#{Array(columns).join("_")}"
         end
       end
 
