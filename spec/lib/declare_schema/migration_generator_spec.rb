@@ -866,8 +866,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
             t.string  :name, limit: 250, null: true, charset: "utf8mb4", collation: "utf8mb4_bin"
             t.integer :category_id, limit: 8, null: false
           end
-          add_index :advertisers, [:category_id], name: :index_adverts_on_category_id
-          add_index :affiliates, [:category_id], name: :index_adverts_on_category_id
+          add_index :advertisers, [:category_id], name: :index_advertisers_on_category_id
+          add_index :affiliates, [:category_id], name: :index_affiliates_on_category_id
           add_foreign_key :advertisers, :categories, column: :category_id, name: :index_advertisers_on_category_id
           add_foreign_key :affiliates, :categories, column: :category_id, name: :index_affiliates_on_category_id
         EOS
