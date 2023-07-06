@@ -106,6 +106,71 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
                                                                                          )
             end
           end
+
+          context 'with habtm models' do
+            let(:model_class) do
+              DeclareSchema::Model::HabtmModelShim.new(
+                'index_definition_pizzas_index_definition_toppings',
+                ['index_definition_pizza_id', 'index_definition_topping_id'],
+                [IndexDefinitionPizza, IndexDefinitionTopping],
+                ActiveRecord::Base.connection
+              )
+            end
+
+            before do
+              class IndexDefinitionPizza < ActiveRecord::Base
+                has_and_belongs_to_many :index_definition_toppings
+              end
+
+              class IndexDefinitionTopping < ActiveRecord::Base
+                has_and_belongs_to_many :index_definition_pizzas
+              end
+            end
+
+            context 'with a primary key' do
+              before do
+                ActiveRecord::Base.connection.execute <<~EOS
+                  CREATE TABLE index_definition_pizzas_index_definition_toppings (
+                    index_definition_pizza_id INTEGER NOT NULL,
+                    index_definition_topping_id INTEGER NOT NULL,
+                    PRIMARY KEY (index_definition_pizza_id, index_definition_topping_id)
+                  )
+                EOS
+                ActiveRecord::Base.connection.schema_cache.clear!
+              end
+
+              it 'returns the indexes for the model' do
+                expect(subject.size).to eq(1), subject.inspect
+                expect([:name, :columns, :unique].map { |attr| subject[0].send(attr) }).to eq(
+                                                                                               ['PRIMARY', ['index_definition_pizza_id', 'index_definition_topping_id'], true]
+                                                                                           )
+              end
+            end
+
+            context 'without a primary key' do
+              before do
+                ActiveRecord::Base.connection.execute <<~EOS
+                  CREATE TABLE index_definition_pizzas_index_definition_toppings (
+                    index_definition_pizza_id INTEGER NOT NULL,
+                    index_definition_topping_id INTEGER NOT NULL
+                  )
+                EOS
+                ActiveRecord::Base.connection.execute <<~EOS
+                  CREATE UNIQUE INDEX index_index_definition_pizzas_index_definition_toppings
+                    ON index_definition_pizzas_index_definition_toppings(index_definition_pizza_id, index_definition_topping_id)
+                EOS
+                ActiveRecord::Base.connection.schema_cache.clear!
+              end
+
+              it 'returns the indexes for the model' do
+                expect(subject.size).to eq(2), subject.inspect
+                expect([:name, :columns, :unique].map { |attr| subject[0].send(attr) })
+                  .to eq(['index_index_definition_pizzas_index_definition_toppings', ['index_definition_pizza_id', 'index_definition_topping_id'], true])
+                expect([:name, :columns, :unique].map { |attr| subject[1].send(attr) })
+                  .to eq(['PRIMARY', [], true])
+              end
+            end
+          end
         end
       end
     end
