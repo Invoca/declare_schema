@@ -37,6 +37,10 @@ module DeclareSchema
         join_table
       end
 
+      def index_name
+        "index_#{table_name}_on_#{foreign_keys.first}_#{foreign_keys.last}"
+      end
+
       def field_specs
         foreign_keys.each_with_index.each_with_object({}) do |(v, position), result|
           result[v] = ::DeclareSchema::Model::FieldSpec.new(self, v, :bigint, position: position, null: false)
@@ -53,7 +57,7 @@ module DeclareSchema
 
       def index_definitions_with_primary_key
         [
-          IndexDefinition.new(self, foreign_keys, unique: true, name: Model::IndexDefinition::PRIMARY_KEY_NAME), # creates a primary composite key on both foreign keys
+          IndexDefinition.new(self, foreign_keys, unique: true, name: index_name), # creates a primary composite key on both foreign keys
           IndexDefinition.new(self, foreign_keys.last) # not unique by itself; combines with primary key to be unique
         ]
       end

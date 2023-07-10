@@ -139,11 +139,8 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
                 ActiveRecord::Base.connection.schema_cache.clear!
               end
 
-              it 'returns the indexes for the model' do
-                expect(subject.size).to eq(1), subject.inspect
-                expect([:name, :columns, :unique].map { |attr| subject[0].send(attr) }).to eq(
-                                                                                               ['PRIMARY', ['index_definition_pizza_id', 'index_definition_topping_id'], true]
-                                                                                           )
+              it 'returns an empty array' do
+                expect(subject).to eq([]), subject.inspect
               end
             end
 
@@ -163,11 +160,9 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
               end
 
               it 'returns the indexes for the model' do
-                expect(subject.size).to eq(2), subject.inspect
+                expect(subject.size).to eq(1), subject.inspect
                 expect([:name, :columns, :unique].map { |attr| subject[0].send(attr) })
                   .to eq(['index_index_definition_pizzas_index_definition_toppings', ['index_definition_pizza_id', 'index_definition_topping_id'], true])
-                expect([:name, :columns, :unique].map { |attr| subject[1].send(attr) })
-                  .to eq(['PRIMARY', [], true])
               end
             end
           end

@@ -33,13 +33,15 @@ module DeclareSchema
 
       class << self
         # extract IndexSpecs from an existing table
-        # includes the PRIMARY KEY index
+        # includes the PRIMARY KEY index for Model unless it is a HABTM Model.
+        # It's best practice for HABTM tables not to include a primary key.
+        # https://guides.rubyonrails.org/association_basics.html#creating-join-tables-for-has-and-belongs-to-many-associations
         def for_model(model, old_table_name = nil)
           t = old_table_name || model.table_name
+          habtm_model = model.is_a?(DeclareSchema::Model::HabtmModelShim)
+
           primary_key_columns = Array(model.connection.primary_key(t)).presence
-          # Needed for backwards compatibility with HABTM models that were generated without a PRIMARY KEY
-          # This allows the migrator to replace the unique index on both foreign keys with a composite primary key
-          primary_key_columns || model.is_a?(DeclareSchema::Model::HabtmModelShim) or raise "could not find primary key for table #{t} in #{model.connection.columns(t).inspect}"
+          primary_key_columns || habtm_model or raise "could not find primary key for table #{t} in #{model.connection.columns(t).inspect}"
 
           primary_key_found = false
           index_definitions = model.connection.indexes(t).map do |i|
@@ -52,7 +54,7 @@ module DeclareSchema
             new(model, i.columns, name: i.name, unique: i.unique, where: i.where, table_name: old_table_name)
           end.compact
 
-          if !primary_key_found
+          if !primary_key_found && !habtm_model
             index_definitions << new(model, primary_key_columns, name: PRIMARY_KEY_NAME, unique: true, where: nil, table_name: old_table_name)
           end
           index_definitions
