@@ -469,8 +469,8 @@ module Generators
 
         def index_changes_due_to_column_renames(indexes_to_drop, indexes_to_add, to_rename)
           indexes_to_drop.each_with_object([[], []]) do |index_to_drop, (renamed_indexes_to_drop, renamed_indexes_to_add)|
-            renamed_columns = index_to_drop.columns.map do |column|
-              to_rename.fetch(column, column)
+            renamed_columns = index_to_drop.columns.map_compact do |column|
+              to_rename[column]
             end.sort
 
             if (index_to_add = indexes_to_add.find { |index_to_add| renamed_columns == index_to_add.columns.sort })
