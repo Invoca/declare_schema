@@ -90,10 +90,10 @@ module Generators
                 ColumnRename
                 ColumnChange
                 PrimaryKeyChange
+                IndexRemove
                 IndexAdd
                 ForeignKeyAdd
                 ForeignKeyRemove
-                IndexRemove
                 ColumnRemove
                 TableRemove ]
             end

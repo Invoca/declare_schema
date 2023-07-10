@@ -281,10 +281,10 @@ module Generators
                                 ColumnRename
                                 ColumnChange
                                   PrimaryKeyChange
+                                  IndexRemove
                                   IndexAdd
                                     ForeignKeyAdd
                                     ForeignKeyRemove
-                                  IndexRemove
                                 ColumnRemove
                               TableRemove ]
 
@@ -464,7 +464,6 @@ module Generators
             ::DeclareSchema::SchemaChange::IndexAdd.new(new_table_name, i.columns, unique: i.unique, where: i.where, name: i.name)
           end
 
-          # the order is important here - adding a :unique, for instance needs to remove then add
           [Array(change_primary_key) + drop_indexes + add_indexes]
         end
 
