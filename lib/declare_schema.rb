@@ -29,10 +29,12 @@ module DeclareSchema
   @default_generate_foreign_keys = true
   @default_generate_indexing     = true
   @db_migrate_command            = "bundle exec rails db:migrate"
+  @max_index_and_constraint_name_length = 64  # limit for MySQL
 
   class << self
     attr_reader :default_charset, :default_collation, :default_text_limit, :default_string_limit, :default_null,
-                :default_generate_foreign_keys, :default_generate_indexing, :db_migrate_command
+                :default_generate_foreign_keys, :default_generate_indexing, :db_migrate_command,
+                :max_index_and_constraint_name_length
 
     def to_class(type)
       case type
@@ -96,6 +98,11 @@ module DeclareSchema
     def db_migrate_command=(db_migrate_command)
       db_migrate_command.is_a?(String) or raise ArgumentError, "db_migrate_command must be a string (got #{db_migrate_command.inspect})"
       @db_migrate_command = db_migrate_command
+    end
+
+    def max_index_and_constraint_name_length=(length)
+      length.is_a?(Integer) || length.nil? or raise ArgumentError, "max_index_and_constraint_name_length must be an Integer or nil (meaning unlimited)"
+      @max_index_and_constraint_name_length = length
     end
   end
 end

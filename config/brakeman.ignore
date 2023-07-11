@@ -1,0 +1,71 @@
+{
+  "ignored_warnings": [
+    {
+      "warning_type": "Command Injection",
+      "warning_code": 14,
+      "fingerprint": "43f4448f6da2dd7f73909a4456c73c52f8f1d65e83bc188b9b3d624ba9470766",
+      "check_name": "Execute",
+      "message": "Possible command injection",
+      "file": "lib/declare_schema/command.rb",
+      "line": 61,
+      "link": "https://brakemanscanner.org/docs/warning_types/command_injection/",
+      "code": "system(\"bundle exec rails #{Regexp.last_match(1)} declare_schema:#{(args * \" \")}\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "DeclareSchema::Command",
+        "method": "run"
+      },
+      "user_input": "Regexp.last_match(1)",
+      "confidence": "Medium",
+      "cwe_id": [
+        77
+      ],
+      "note": ""
+    },
+    {
+      "warning_type": "Command Injection",
+      "warning_code": 14,
+      "fingerprint": "601f18b634f67229235d6e91434d1ea4c3c845876c4786d27380034e66178ee6",
+      "check_name": "Execute",
+      "message": "Possible command injection",
+      "file": "lib/declare_schema/command.rb",
+      "line": 51,
+      "link": "https://brakemanscanner.org/docs/warning_types/command_injection/",
+      "code": "system(\"rails new #{\"new\"} #{(args * \" \")} -m #{File.join(Dir.tmpdir, \"declare_schema_app_template\")}#{begin\n  (require(\"mysql2\")\n  \" -d mysql\")\nrescue LoadError\n  # do nothing\nend}\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "DeclareSchema::Command",
+        "method": "run"
+      },
+      "user_input": "(args * \" \")",
+      "confidence": "Medium",
+      "cwe_id": [
+        77
+      ],
+      "note": ""
+    },
+    {
+      "warning_type": "Unmaintained Dependency",
+      "warning_code": 121,
+      "fingerprint": "edf687f759ec9765bd5db185dbc615c80af77d6e7e19386fc42934e7a80307af",
+      "check_name": "EOLRuby",
+      "message": "Support for Ruby 2.7.5 ended on 2023-03-31",
+      "file": ".ruby-version",
+      "line": 1,
+      "link": "https://brakemanscanner.org/docs/warning_types/unmaintained_dependency/",
+      "code": null,
+      "render_path": null,
+      "location": null,
+      "user_input": null,
+      "confidence": "High",
+      "cwe_id": [
+        1104
+      ],
+      "note": ""
+    }
+  ],
+  "updated": "2023-07-02 21:29:31 -0700",
+  "brakeman_version": "5.4.1"
+}

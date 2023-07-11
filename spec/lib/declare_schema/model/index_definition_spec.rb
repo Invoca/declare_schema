@@ -40,73 +40,98 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
 
       it 'has index_definitions' do
         expect(model_class.index_definitions).to be_kind_of(Array)
-        expect(model_class.index_definitions.map(&:name)).to eq(['on_name'])
+        expect(model_class.index_definitions.map(&:name)).to eq(['index_index_definition_test_models_on_name'])
         expect([:name, :fields, :unique].map { |attr| model_class.index_definitions[0].send(attr)}).to eq(
-                                                                                                           ['on_name', ['name'], false]
-                                                                                                       )
+          ['index_index_definition_test_models_on_name', ['name'], false]
+        )
       end
 
       it 'has index_definitions_with_primary_key' do
         expect(model_class.index_definitions_with_primary_key).to be_kind_of(Array)
         result = model_class.index_definitions_with_primary_key.sort_by(&:name)
-        expect(result.map(&:name)).to eq(['PRIMARY', 'on_name'])
+        expect(result.map(&:name)).to eq(['PRIMARY', 'index_index_definition_test_models_on_name'])
         expect([:name, :fields, :unique].map { |attr| result[0].send(attr)}).to eq(
-                                                                                    ['PRIMARY', ['id'], true]
-                                                                                )
+          ['PRIMARY', ['id'], true]
+        )
         expect([:name, :fields, :unique].map { |attr| result[1].send(attr)}).to eq(
-                                                                                    ['on_name', ['name'], false]
-                                                                                )
+          ['index_index_definition_test_models_on_name', ['name'], false]
+        )
       end
     end
 
-    describe 'class << self' do
-      context 'with a migrated database' do
-        before do
-          ActiveRecord::Base.connection.execute <<~EOS
-            CREATE TABLE index_definition_test_models (
-              id INTEGER NOT NULL PRIMARY KEY,
-              name #{if defined?(SQLite3) then 'TEXT' else 'VARCHAR(255)' end} NOT NULL
-            )
-          EOS
-          ActiveRecord::Base.connection.execute <<~EOS
+    context 'with a migrated database' do
+      before do
+        ActiveRecord::Base.connection.execute <<~EOS
+          CREATE TABLE index_definition_test_models (
+            id INTEGER NOT NULL PRIMARY KEY,
+            name #{if defined?(SQLite3) then 'TEXT' else 'VARCHAR(255)' end} NOT NULL
+          )
+        EOS
+        ActiveRecord::Base.connection.execute <<~EOS
           CREATE UNIQUE INDEX index_definition_test_models_on_name ON index_definition_test_models(name)
-          EOS
-          ActiveRecord::Base.connection.execute <<~EOS
-            CREATE TABLE index_definition_compound_index_models (
-              fk1_id INTEGER NOT NULL,
-              fk2_id INTEGER NOT NULL,
-              PRIMARY KEY (fk1_id, fk2_id)
+        EOS
+        ActiveRecord::Base.connection.execute <<~EOS
+          CREATE TABLE index_definition_compound_index_models (
+            fk1_id INTEGER NOT NULL,
+            fk2_id INTEGER NOT NULL,
+            PRIMARY KEY (fk1_id, fk2_id)
+          )
+        EOS
+        ActiveRecord::Base.connection.schema_cache.clear!
+      end
+
+      describe 'for_model' do
+        subject { described_class.for_model(model_class) }
+
+        context 'with single-column PK' do
+          it 'returns the indexes for the model' do
+            expect(subject.size).to eq(2), subject.inspect
+            expect([:name, :columns, :unique].map { |attr| subject[0].send(attr) }).to eq(
+              ['index_definition_test_models_on_name', ['name'], true]
             )
-          EOS
-          ActiveRecord::Base.connection.schema_cache.clear!
-        end
-
-        describe 'for_model' do
-          subject { described_class.for_model(model_class) }
-
-          context 'with single-column PK' do
-            it 'returns the indexes for the model' do
-              expect(subject.size).to eq(2), subject.inspect
-              expect([:name, :columns, :unique].map { |attr| subject[0].send(attr) }).to eq(
-                                                                                             ['index_definition_test_models_on_name', ['name'], true]
-                                                                                         )
-              expect([:name, :columns, :unique].map { |attr| subject[1].send(attr) }).to eq(
-                                                                                             ['PRIMARY', ['id'], true]
-                                                                                         )
-            end
-          end
-
-          context 'with compound-column PK' do
-            let(:model_class) { IndexDefinitionCompoundIndexModel }
-
-            it 'returns the indexes for the model' do
-              expect(subject.size).to eq(1), subject.inspect
-              expect([:name, :columns, :unique].map { |attr| subject[0].send(attr) }).to eq(
-                                                                                             ['PRIMARY', ['fk1_id', 'fk2_id'], true]
-                                                                                         )
-            end
+            expect([:name, :columns, :unique].map { |attr| subject[1].send(attr) }).to eq(
+              ['PRIMARY', ['id'], true]
+            )
           end
         end
+
+        context 'with compound-column PK' do
+          let(:model_class) { IndexDefinitionCompoundIndexModel }
+
+          it 'returns the indexes for the model' do
+            expect(subject.size).to eq(1), subject.inspect
+            expect([:name, :columns, :unique].map { |attr| subject[0].send(attr) }).to eq(
+              ['PRIMARY', ['fk1_id', 'fk2_id'], true]
+            )
+          end
+        end
+      end
+    end
+  end
+
+  context 'with no side effects' do
+    describe '.default_index_name' do
+      let(:table_name2) { 'users' }
+      let(:columns2) { ['last_name', 'first_name', 'middle_name', ] }
+      subject { described_class.default_index_name(table_name2, columns2) }
+      around do |spec|
+        orig_value = DeclareSchema.max_index_and_constraint_name_length
+        DeclareSchema.max_index_and_constraint_name_length = max_index_and_constraint_name_length
+        spec.run
+      ensure
+        DeclareSchema.max_index_and_constraint_name_length = orig_value
+      end
+
+      context 'with unlimited max_index_and_constraint_name_length' do
+        let(:max_index_and_constraint_name_length) { nil }
+
+        it { is_expected.to eq("index_users_on_last_name_and_first_name_and_middle_name") }
+      end
+
+      context 'with short max_index_and_constraint_name_length' do
+        let(:max_index_and_constraint_name_length) { 40 }
+
+        it { is_expected.to eq("users__last_name_first_name_middle_name") }
       end
     end
   end
