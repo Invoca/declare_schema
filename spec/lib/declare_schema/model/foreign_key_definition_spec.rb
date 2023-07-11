@@ -21,9 +21,9 @@ RSpec.describe DeclareSchema::Model::ForeignKeyDefinition do
     describe 'instance methods' do
       let(:connection) { instance_double(ActiveRecord::Base.connection.class) }
       let(:model) { instance_double('Model', table_name: 'models', connection: connection) }
-      let(:foreign_key) { :network_id }
-      let(:options) { {} }
-      subject { described_class.new(model, foreign_key, **options)}
+      let(:foreign_key_column) { :network_id }
+      let(:options) { { child_table: 'networks' } }
+      subject { described_class.new(foreign_key_column, **options)}
 
       before do
         allow(model.connection).to receive(:index_name).with(any_args) { 'index_on_network_id' }
@@ -31,45 +31,44 @@ RSpec.describe DeclareSchema::Model::ForeignKeyDefinition do
 
       describe '#initialize' do
         it 'normalizes symbols to strings' do
-          expect(subject.foreign_key).to eq('network_id')
+          expect(subject.foreign_key_column).to eq('network_id')
           expect(subject.parent_table_name).to eq('networks')
         end
 
         context 'when most options passed' do
-          let(:options) { { parent_table: :networks, foreign_key: :the_network_id } }
+          let(:options) { { child_table: 'networks', parent_table: :networks } }
 
           it 'normalizes symbols to strings' do
-            expect(subject.foreign_key).to eq('network_id')
-            expect(subject.foreign_key_name).to eq('the_network_id')
+            expect(subject.foreign_key_column).to eq('network_id')
             expect(subject.parent_table_name).to eq('networks')
-            expect(subject.foreign_key).to eq('network_id')
-            expect(subject.constraint_name).to eq('index_on_network_id')
-            expect(subject.on_delete_cascade).to be_falsey
+            expect(subject.foreign_key_column).to eq('network_id')
+            expect(subject.constraint_name).to eq('index_networks_on_network_id')
+            expect(subject.dependent).to be_nil
           end
         end
 
         context 'when all options passed' do
-          let(:options) { { parent_table: :networks, foreign_key: :the_network_id, constraint_name: :constraint_1, dependent: :delete } }
+          let(:options) { { child_table: 'networks', parent_table: :networks, constraint_name: :constraint_1, dependent: :delete } }
 
           it 'normalizes symbols to strings' do
-            expect(subject.foreign_key).to eq('network_id')
-            expect(subject.foreign_key_name).to eq('the_network_id')
+            expect(subject.foreign_key_column).to eq('network_id')
             expect(subject.parent_table_name).to eq('networks')
             expect(subject.constraint_name).to eq('constraint_1')
-            expect(subject.on_delete_cascade).to be_truthy
+            expect(subject.dependent).to eq(:delete)
           end
         end
 
         context 'when constraint name passed as empty string' do
-          let(:options) { { constraint_name: "" } }
+          let(:options) { { child_table: 'networks', constraint_name: "" } }
+
           it 'defaults to rails constraint name' do
-            expect(subject.constraint_name).to eq("index_on_network_id")
+            expect(subject.constraint_name).to eq("index_networks_on_network_id")
           end
         end
 
         context 'when no constraint name passed' do
           it 'defaults to rails constraint name' do
-            expect(subject.constraint_name).to eq("index_on_network_id")
+            expect(subject.constraint_name).to eq("index_networks_on_network_id")
           end
         end
       end
@@ -85,13 +84,13 @@ RSpec.describe DeclareSchema::Model::ForeignKeyDefinition do
         allow(connection).to receive(:index_name).with('models', column: 'network_id') { }
       end
 
-      describe '.for_model' do
-        subject { described_class.for_model(model, old_table_name) }
+      describe '.for_table' do
+        subject { described_class.for_table(old_table_name, model.connection) }
 
-        it 'returns new object' do
-          expect(subject.size).to eq(1), subject.inspect
-          expect(subject.first).to be_kind_of(described_class)
-          expect(subject.first.foreign_key).to eq('network_id')
+        it 'returns definitions' do
+          expect(subject.map(&:key)).to eq([
+            ["networks", "network_id", nil]
+          ])
         end
       end
     end

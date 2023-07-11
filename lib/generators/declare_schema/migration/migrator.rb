@@ -337,7 +337,7 @@ module Generators
         def create_constraints(model)
           model.constraint_specs.map do |fk|
             ::DeclareSchema::SchemaChange::ForeignKeyAdd.new(fk.child_table_name, fk.parent_table_name,
-                                                             column_name: fk.foreign_key_name, name: fk.constraint_name)
+                                                             column_name: fk.foreign_key_column, name: fk.constraint_name)
           end
         end
 
@@ -485,7 +485,11 @@ module Generators
           ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/) and raise ArgumentError, 'SQLite does not support foreign keys'
           ::DeclareSchema.default_generate_foreign_keys or return []
 
-          existing_fks = ::DeclareSchema::Model::ForeignKeyDefinition.for_model(model, old_table_name: old_table_name)
+          if model.is_a?(DeclareSchema::Model::HabtmModelShim)
+            force_dependent_delete = :delete
+          end
+
+          existing_fks = ::DeclareSchema::Model::ForeignKeyDefinition.for_table(old_table_name || model.table_name, model.connection, dependent: force_dependent_delete)
           model_fks = model.constraint_specs
 
           fks_to_drop = existing_fks - model_fks
@@ -523,7 +527,7 @@ module Generators
         end
 
         def fk_field_options(model, field_name)
-          foreign_key = model.constraint_specs.find { |fk| field_name == fk.foreign_key.to_s }
+          foreign_key = model.constraint_specs.find { |fk| field_name == fk.foreign_key_column }
           if foreign_key && (parent_table = foreign_key.parent_table_name)
             parent_columns = connection.columns(parent_table) rescue []
             pk_limit =
