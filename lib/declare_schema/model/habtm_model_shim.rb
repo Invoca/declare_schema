@@ -46,8 +46,8 @@ module DeclareSchema
 
       def index_definitions_with_primary_key
         [
-          IndexDefinition.new(table_name, foreign_keys, unique: true, name: Model::IndexDefinition::PRIMARY_KEY_NAME), # creates a primary composite key on both foreign keys
-          IndexDefinition.new(table_name, foreign_keys.last) # not unique by itself; combines with primary key to be unique
+          IndexDefinition.new(foreign_keys, name: Model::IndexDefinition::PRIMARY_KEY_NAME, unique: true), # creates a primary composite key on both foreign keys
+          IndexDefinition.new(foreign_keys.last, table_name: table_name, unique: false) # index for queries where we only have the last foreign key
         ]
       end
 

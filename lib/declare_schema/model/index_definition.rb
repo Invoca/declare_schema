@@ -7,19 +7,24 @@ module DeclareSchema
     class IndexDefinition
       include Comparable
 
-      attr_reader :table_name, :columns, :explicit_name, :name, :unique, :where
+      attr_reader :columns, :explicit_name, :name, :unique, :where
       alias fields columns # TODO: change callers to use columns. -Colin
 
       class IndexNameTooLongError < RuntimeError; end
 
       PRIMARY_KEY_NAME = "PRIMARY"
 
-      def initialize(table_name, columns, name: nil, allow_equivalent: false, unique: false, where: nil)
-        @table_name = table_name
+      # Caller needs to pass either name or table_name. The table_name is not remembered; it is just used to compute the
+      # default name if no name is given.
+      def initialize(columns, name: nil, table_name: nil, allow_equivalent: false, unique: false, where: nil)
+        @name = name || self.class.default_index_name(table_name, columns)
         @columns = Array.wrap(columns).map(&:to_s)
         @explicit_name = name unless allow_equivalent
-        @name = name || self.class.default_index_name(@table_name, @columns)
-        @unique = unique || @name == PRIMARY_KEY_NAME || false
+        unique.in?([false, true]) or raise ArgumentError, "unique must be true or false: got #{unique.inspect}"
+        if @name == PRIMARY_KEY_NAME
+          unique or raise ArgumentError, "primary key index must be unique"
+        end
+        @unique = unique
 
         if DeclareSchema.max_index_and_constraint_name_length && @name.length > DeclareSchema.max_index_and_constraint_name_length
           raise IndexNameTooLongError, "Index '#{@name}' exceeds configured limit of #{DeclareSchema.max_index_and_constraint_name_length} characters. Give it a shorter name, or adjust DeclareSchema.max_index_and_constraint_name_length if you know your database can accept longer names."
@@ -38,18 +43,19 @@ module DeclareSchema
           primary_key_columns.present? or raise "could not find primary key for table #{table_name} in #{connection.columns(table_name).inspect}"
 
           primary_key_found = false
-          index_definitions = connection.indexes(table_name).map do |i|
-            ignore_indexes.include?(i.name) and next
-            if i.name == PRIMARY_KEY_NAME
-              i.columns == primary_key_columns && i.unique or
-                raise "primary key on #{table_name} was not unique on #{primary_key_columns} (was unique=#{i.unique} on #{i.columns})"
+          index_definitions = connection.indexes(table_name).map do |index|
+            next if ignore_indexes.include?(index.name)
+
+            if index.name == PRIMARY_KEY_NAME
+              index.columns == primary_key_columns && index.unique or
+                raise "primary key on #{table_name} was not unique on #{primary_key_columns} (was unique=#{index.unique} on #{index.columns})"
               primary_key_found = true
             end
-            new(table_name, i.columns, name: i.name, unique: i.unique, where: i.where)
+            new(index.columns, name: index.name, unique: index.unique, where: index.where)
           end.compact
 
           if !primary_key_found
-            index_definitions << new(table_name, primary_key_columns, name: PRIMARY_KEY_NAME, unique: true, where: nil)
+            index_definitions << new(primary_key_columns, name: PRIMARY_KEY_NAME, unique: true)
           end
           index_definitions
         end
@@ -99,11 +105,11 @@ module DeclareSchema
       end
 
       def to_key
-        @to_key ||= [table_name, columns, name, unique, where].map(&:to_s)
+        @to_key ||= [name, *settings].freeze
       end
 
       def settings
-        @settings ||= [table_name, columns, unique].map(&:to_s)
+        @settings ||= [columns, unique, where].freeze
       end
 
       def hash
@@ -119,7 +125,7 @@ module DeclareSchema
       end
 
       def with_name(new_name)
-        self.class.new(@table_name, @columns, unique: @unique, name: new_name)
+        self.class.new(@columns, name: new_name, unique: @unique, where: @where)
       end
 
       alias eql? ==
