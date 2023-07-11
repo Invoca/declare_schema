@@ -49,19 +49,21 @@ module DeclareSchema
     end
 
     module ClassMethods
-      def index(fields, name: nil, allow_equivalent: false, unique: false, where: nil)
-        # make index idempotent
-        index_fields_s = Array.wrap(fields).map(&:to_s)
-        unless index_definitions.any? { |index_spec| index_spec.fields == index_fields_s }
-          index_definitions << ::DeclareSchema::Model::IndexDefinition.new(
-            table_name, fields,
+      def index(columns, name: nil, allow_equivalent: false, unique: false, where: nil)
+        index_definition =
+          ::DeclareSchema::Model::IndexDefinition.new(
+            table_name, columns,
             name: name, allow_equivalent: allow_equivalent, unique: unique, where: where
           )
+
+        # add idempotently
+        unless index_definitions.any? { |index_def| index_def.equivalent?(index_definition) }
+          index_definitions << index_definition
         end
       end
 
-      def primary_key_index(*fields)
-        index(fields.flatten, unique: true, name: ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME)
+      def primary_key_index(*columns)
+        index(columns.flatten, unique: true, name: ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME)
       end
 
       def constraint(fkey, **options)
