@@ -11,6 +11,7 @@ require_relative '../../../../lib/declare_schema/model/index_definition'
 
 RSpec.describe DeclareSchema::Model::IndexDefinition do
   let(:model_class) { IndexDefinitionTestModel }
+  let(:table_name) { model_class.table_name }
 
   context 'Using declare_schema' do
     before do
@@ -36,7 +37,7 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
 
     describe 'instance methods' do
       let(:model) { model_class.new }
-      subject { declared_class.new(model_class) }
+      subject { declared_class.new(table_name) }
 
       it 'has index_definitions' do
         expect(model_class.index_definitions).to be_kind_of(Array)
@@ -81,7 +82,7 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
       end
 
       describe 'for_model' do
-        subject { described_class.for_model(model_class) }
+          subject { described_class.for_model(model_class, nil) }
 
         context 'with single-column PK' do
           it 'returns the indexes for the model' do
