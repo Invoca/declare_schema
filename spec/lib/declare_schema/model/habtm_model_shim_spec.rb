@@ -132,7 +132,7 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
         expect(indexes.first.fields).to eq(foreign_keys)
         expect(indexes.first.unique).to be_truthy
         expect(indexes.last).to be_a(::DeclareSchema::Model::IndexDefinition)
-        expect(indexes.last.name).to eq('on_campaign_id')
+        expect(indexes.last.name).to eq('index_advertiser_campaigns_tracking_pixels_on_campaign_id')
         expect(indexes.last.fields).to eq([foreign_keys.last])
         expect(indexes.last.unique).to be_falsey
       end
