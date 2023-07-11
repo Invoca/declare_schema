@@ -5,28 +5,21 @@ module DeclareSchema
     class HabtmModelShim
       class << self
         def from_reflection(refl)
-          join_table = refl.join_table
-          foreign_keys_and_classes = [
-            [refl.foreign_key.to_s, refl.active_record],
-            [refl.association_foreign_key.to_s, refl.class_name.constantize]
-          ].sort { |a, b| a.first <=> b.first }
-          foreign_keys = foreign_keys_and_classes.map(&:first)
-          foreign_key_classes = foreign_keys_and_classes.map(&:last)
-          # this may fail in weird ways if HABTM is running across two DB connections (assuming that's even supported)
-          # figure that anybody who sets THAT up can deal with their own migrations...
-          connection = refl.active_record.connection
-
-          new(join_table, foreign_keys, foreign_key_classes, connection)
+          new(refl.join_table, [refl.foreign_key, refl.association_foreign_key],
+                               [refl.active_record.table_name, refl.class_name.constantize.table_name])
         end
       end
 
-      attr_reader :join_table, :foreign_keys, :foreign_key_classes, :connection
+      attr_reader :join_table, :foreign_keys, :table_names
 
-      def initialize(join_table, foreign_keys, foreign_key_classes, connection)
+      def initialize(join_table, foreign_keys, table_names)
+        foreign_keys.is_a?(Array) && foreign_keys.size == 2 or
+          raise ArgumentError, "foreign_keys must be <Array[2]>; got #{foreign_keys.inspect}"
+        table_names.is_a?(Array) && table_names.size == 2 or
+          raise ArgumentError, "table_names must be <Array[2]>; got #{table_names.inspect}"
         @join_table = join_table
-        @foreign_keys = foreign_keys
-        @foreign_key_classes = foreign_key_classes
-        @connection = connection
+        @foreign_keys = foreign_keys.sort
+        @table_names = @foreign_keys == foreign_keys ? table_names : table_names.reverse
       end
 
       def _table_options
@@ -38,8 +31,8 @@ module DeclareSchema
       end
 
       def field_specs
-        foreign_keys.each_with_index.each_with_object({}) do |(v, position), result|
-          result[v] = ::DeclareSchema::Model::FieldSpec.new(self, v, :bigint, position: position, null: false)
+        foreign_keys.each_with_index.each_with_object({}) do |(foreign_key, i), result|
+          result[foreign_key] = ::DeclareSchema::Model::FieldSpec.new(self, foreign_key, :bigint, position: i, null: false)
         end
       end
 
@@ -66,8 +59,8 @@ module DeclareSchema
 
       def constraint_specs
         [
-          ForeignKeyDefinition.new(self, foreign_keys.first, parent_table: foreign_key_classes.first.table_name, constraint_name: "#{join_table}_FK1", dependent: :delete),
-          ForeignKeyDefinition.new(self, foreign_keys.last, parent_table: foreign_key_classes.last.table_name, constraint_name: "#{join_table}_FK2", dependent: :delete)
+          ForeignKeyDefinition.new(self, foreign_keys.first, parent_table: table_names.first, constraint_name: "#{join_table}_FK1", dependent: :delete),
+          ForeignKeyDefinition.new(self, foreign_keys.last, parent_table: table_names.last, constraint_name: "#{join_table}_FK2", dependent: :delete)
         ]
       end
     end
