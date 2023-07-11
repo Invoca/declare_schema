@@ -485,7 +485,7 @@ module Generators
           ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/) and raise ArgumentError, 'SQLite does not support foreign keys'
           ::DeclareSchema.default_generate_foreign_keys or return []
 
-          existing_fks = ::DeclareSchema::Model::ForeignKeyDefinition.for_model(model, old_table_name)
+          existing_fks = ::DeclareSchema::Model::ForeignKeyDefinition.for_model(model, old_table_name: old_table_name)
           model_fks = model.constraint_specs
 
           fks_to_drop = existing_fks - model_fks
