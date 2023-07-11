@@ -49,11 +49,14 @@ module DeclareSchema
     end
 
     module ClassMethods
-      def index(fields, **options)
+      def index(fields, name: nil, allow_equivalent: false, unique: false, where: nil)
         # make index idempotent
         index_fields_s = Array.wrap(fields).map(&:to_s)
         unless index_definitions.any? { |index_spec| index_spec.fields == index_fields_s }
-          index_definitions << ::DeclareSchema::Model::IndexDefinition.new(self, fields, **options)
+          index_definitions << ::DeclareSchema::Model::IndexDefinition.new(
+            table_name, fields,
+            name: name, allow_equivalent: allow_equivalent, unique: unique, where: where
+          )
         end
       end
 
@@ -208,7 +211,7 @@ module DeclareSchema
       end
 
       def _rails_default_primary_key
-        ::DeclareSchema::Model::IndexDefinition.new(self, [_declared_primary_key.to_sym], unique: true, name: DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME)
+        ::DeclareSchema::Model::IndexDefinition.new(table_name, [_declared_primary_key], unique: true, name: DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME)
       end
 
       # Declares the "foo_type" field that accompanies the "foo_id"
