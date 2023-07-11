@@ -33,14 +33,13 @@ module DeclareSchema
       class << self
         # extract IndexSpecs from an existing table
         # includes the PRIMARY KEY index
-        def for_model(model, table_name)
-          table_name ||= model.table_name
-          primary_key_columns = Array(model.connection.primary_key(table_name))
-          primary_key_columns.present? or raise "could not find primary key for table #{table_name} in #{model.connection.columns(table_name).inspect}"
+        def for_table(table_name, ignore_indexes, connection)
+          primary_key_columns = Array(connection.primary_key(table_name))
+          primary_key_columns.present? or raise "could not find primary key for table #{table_name} in #{connection.columns(table_name).inspect}"
 
           primary_key_found = false
-          index_definitions = model.connection.indexes(table_name).map do |i|
-            model.ignore_indexes.include?(i.name) and next
+          index_definitions = connection.indexes(table_name).map do |i|
+            ignore_indexes.include?(i.name) and next
             if i.name == PRIMARY_KEY_NAME
               i.columns == primary_key_columns && i.unique or
                 raise "primary key on #{table_name} was not unique on #{primary_key_columns} (was unique=#{i.unique} on #{i.columns})"
