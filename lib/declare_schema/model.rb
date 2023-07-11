@@ -52,8 +52,8 @@ module DeclareSchema
       def index(columns, name: nil, allow_equivalent: false, unique: false, where: nil)
         index_definition =
           ::DeclareSchema::Model::IndexDefinition.new(
-            table_name, columns,
-            name: name, allow_equivalent: allow_equivalent, unique: unique, where: where
+            columns,
+            name: name, table_name: table_name, allow_equivalent: allow_equivalent, unique: unique, where: where
           )
 
         # add idempotently
@@ -213,7 +213,7 @@ module DeclareSchema
       end
 
       def _rails_default_primary_key
-        ::DeclareSchema::Model::IndexDefinition.new(table_name, [_declared_primary_key], unique: true, name: DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME)
+        ::DeclareSchema::Model::IndexDefinition.new([_declared_primary_key], name: DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME, unique: true)
       end
 
       # Declares the "foo_type" field that accompanies the "foo_id"
@@ -284,15 +284,14 @@ module DeclareSchema
         end
       end
 
-      def _add_index_for_field(name, args, options)
-        if (to_name = options.delete(:index))
-          index_opts =
-            {
-              unique: args.include?(:unique) || options.delete(:unique)
-            }
-          # support index: true declaration
-          index_opts[:name] = to_name unless to_name == true
-          index(name, **index_opts)
+      def _add_index_for_field(column_name, args, options)
+        if (index_name = options.delete(:index))
+          if index_name == true
+            index_name = nil # index: true means generate default name
+          end
+          unique = args.include?(:unique) || options.delete(:unique) || false
+
+          index([column_name], unique: unique, name: index_name)
         end
       end
 
