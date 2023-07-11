@@ -81,12 +81,20 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
         ActiveRecord::Base.connection.schema_cache.clear!
       end
 
-      describe 'for_model' do
-          subject { described_class.for_model(model_class, nil) }
+      describe 'for_table' do
+        let(:ignore_indexes) { model_class.ignore_indexes }
+        subject { described_class.for_table(model_class.table_name, ignore_indexes, model_class.connection) }
 
         context 'with single-column PK' do
           it 'returns the indexes for the model' do
-            expect(subject.size).to eq(2), subject.inspect
+            expect(subject.map(&:to_key)).to eq([
+              ["index_definition_test_models", ["name"].to_s, "index_definition_test_models_on_name", "true", ""],
+              ["index_definition_test_models", ["id"].to_s, "PRIMARY", "true", ""]
+            ])
+          end
+
+          it 'returns the indexes for the model' do
+            expect(subject.size).to eq(2)
             expect([:name, :columns, :unique].map { |attr| subject[0].send(attr) }).to eq(
               ['index_definition_test_models_on_name', ['name'], true]
             )
@@ -96,14 +104,23 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
           end
         end
 
-        context 'with compound-column PK' do
+        context 'with composite (multi-column) PK' do
           let(:model_class) { IndexDefinitionCompoundIndexModel }
 
           it 'returns the indexes for the model' do
-            expect(subject.size).to eq(1), subject.inspect
-            expect([:name, :columns, :unique].map { |attr| subject[0].send(attr) }).to eq(
-              ['PRIMARY', ['fk1_id', 'fk2_id'], true]
-            )
+            expect(subject.map(&:to_key)).to eq([
+              ["index_definition_compound_index_models", ["fk1_id", "fk2_id"].to_s, "PRIMARY", "true", ""]
+            ])
+          end
+        end
+
+        context 'with ignored_indexes' do
+          let(:ignore_indexes) { ['index_definition_test_models_on_name'] }
+
+          it 'skips the ignored index' do
+            expect(subject.map(&:to_key)).to eq([
+              ["index_definition_test_models", ["id"].to_s, "PRIMARY", "true", ""]
+            ])
           end
         end
       end

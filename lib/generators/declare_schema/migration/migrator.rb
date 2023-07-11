@@ -425,7 +425,7 @@ module Generators
           ::DeclareSchema.default_generate_indexing or return []
 
           new_table_name = model.table_name
-          existing_indexes = ::DeclareSchema::Model::IndexDefinition.for_model(model, old_table_name)
+          existing_indexes = ::DeclareSchema::Model::IndexDefinition.for_table(old_table_name || new_table_name, model.ignore_indexes, model.connection)
           model_indexes_with_equivalents = model.index_definitions_with_primary_key
           model_indexes = model_indexes_with_equivalents.map do |i|
             if i.explicit_name.nil?
