@@ -7,46 +7,53 @@ module DeclareSchema
     class ForeignKeyDefinition
       include Comparable
 
-      attr_reader :constraint_name, :model, :foreign_key, :foreign_key_name, :parent_table_name, :child_table_name, :options, :on_delete_cascade
+      attr_reader :foreign_key_column, :constraint_name, :child_table_name, :parent_table_name, :dependent
 
-
-      def initialize(model, foreign_key, **options)
-        @model = model
-        @foreign_key = foreign_key.to_s.presence or raise ArgumentError "Foreign key must not be empty: #{foreign_key.inspect}"
-        @options = options
-
-        @child_table_name = model.table_name # unless a table rename, which would happen when a class is renamed??
-        @parent_table_name = options[:parent_table]&.to_s
-        @foreign_key_name = options[:foreign_key]&.to_s || @foreign_key
-
-        @constraint_name = options[:constraint_name]&.to_s.presence ||
-                             model.connection.index_name(model.table_name, column: @foreign_key_name)
-        @on_delete_cascade = options[:dependent] == :delete
+      # Caller needs to pass either constraint_name or child_table. The child_table is remembered, but it is not part of the key;
+      # it is just used to compute the default constraint_name if no constraint_name is given.
+      def initialize(foreign_key_column, constraint_name: nil, child_table: nil, parent_table: nil, class_name: nil, dependent: nil)
+        @foreign_key_column = foreign_key_column&.to_s or raise ArgumentError "foreign key must not be empty: #{foreign_key_column.inspect}"
+        @constraint_name = constraint_name&.to_s.presence || ::DeclareSchema::Model::IndexDefinition.default_index_name(child_table, [@foreign_key_column])
+        @child_table_name = child_table&.to_s or raise ArgumentError, "child_table must not be nil"
+        @parent_table_name = parent_table&.to_s || infer_parent_table_name_from_class(class_name) || infer_parent_table_name_from_foreign_key_column(@foreign_key_column)
+        dependent.in?([nil, :delete]) or raise ArgumentError, "dependent: must be nil or :delete"
+        @dependent = dependent
       end
 
       class << self
-        def for_model(model, old_table_name)
-          show_create_table = model.connection.select_rows("show create table #{model.connection.quote_table_name(old_table_name)}").first.last
+        def for_table(table_name, connection, dependent: nil)
+          show_create_table = connection.select_rows("show create table #{connection.quote_table_name(table_name)}").first.last
           constraints = show_create_table.split("\n").map { |line| line.strip if line['CONSTRAINT'] }.compact
 
           constraints.map do |fkc|
-            name, foreign_key, parent_table = fkc.match(/CONSTRAINT `([^`]*)` FOREIGN KEY \(`([^`]*)`\) REFERENCES `([^`]*)`/).captures
-            options = {
-              constraint_name: name,
-              parent_table:    parent_table,
-              foreign_key:     foreign_key
-            }
-            options[:dependent] = :delete if fkc['ON DELETE CASCADE'] || model.is_a?(DeclareSchema::Model::HabtmModelShim)
+            constraint_name, foreign_key_column, parent_table = fkc.match(/CONSTRAINT `([^`]*)` FOREIGN KEY \(`([^`]*)`\) REFERENCES `([^`]*)`/).captures
+            dependent_value = :delete if dependent || fkc['ON DELETE CASCADE']
 
-            new(model, foreign_key, **options)
+            new(foreign_key_column, constraint_name: constraint_name, child_table: table_name, parent_table: parent_table, dependent: dependent_value)
           end
         end
       end
 
+      def key
+        @key ||= [@parent_table_name, @foreign_key_column, @dependent].freeze
+      end
+
+      def <=>(rhs)
+        key <=> rhs.key
+      end
+
+      alias eql? ==
+
+      def equivalent?(rhs)
+        self == rhs
+      end
+
+      private
+
       # returns the parent class as a Class object
-      # or nil if no :class_name option given
-      def parent_class
-        if (class_name = options[:class_name])
+      # or nil if no @class_name option given
+      def parent_class(class_name)
+        if class_name
           if class_name.is_a?(Class)
             class_name
           else
@@ -55,22 +62,12 @@ module DeclareSchema
         end
       end
 
-      def parent_table_name
-        @parent_table_name ||=
-          parent_class&.try(:table_name) ||
-            foreign_key.sub(/_id\z/, '').camelize.constantize.table_name
+      def infer_parent_table_name_from_class(class_name)
+        parent_class(class_name)&.try(:table_name)
       end
 
-      def <=>(rhs)
-        key <=> rhs.send(:key)
-      end
-
-      alias eql? ==
-
-      private
-
-      def key
-        @key ||= [@child_table_name, parent_table_name, @foreign_key_name, @on_delete_cascade].map(&:to_s)
+      def infer_parent_table_name_from_foreign_key_column(foreign_key_column)
+        foreign_key_column.sub(/_id\z/, '').camelize.constantize.table_name
       end
 
       def hash

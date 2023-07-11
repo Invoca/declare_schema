@@ -154,17 +154,10 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
     describe '#constraint_specs' do
       it 'returns 2 foreign keys' do
         constraints = subject.constraint_specs
-        expect(constraints.size).to eq(2), constraints.inspect
-
-        expect(constraints.first).to be_a(::DeclareSchema::Model::ForeignKeyDefinition)
-        expect(constraints.first.foreign_key).to eq(foreign_keys.reverse.first)
-        expect(constraints.first.parent_table_name).to be("customers")
-        expect(constraints.first.on_delete_cascade).to be_truthy
-
-        expect(constraints.last).to be_a(::DeclareSchema::Model::ForeignKeyDefinition)
-        expect(constraints.last.foreign_key).to eq(foreign_keys.reverse.last)
-        expect(constraints.last.parent_table_name).to be("users")
-        expect(constraints.last.on_delete_cascade).to be_truthy
+        expect(constraints.map(&:key)).to eq([
+          ["customers", "customer_id", :delete],
+          ["users", "user_id", :delete]
+        ])
       end
     end
   end

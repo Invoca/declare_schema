@@ -59,8 +59,8 @@ module DeclareSchema
 
       def constraint_specs
         [
-          ForeignKeyDefinition.new(self, foreign_keys.first, parent_table: table_names.first, constraint_name: "#{join_table}_FK1", dependent: :delete),
-          ForeignKeyDefinition.new(self, foreign_keys.last, parent_table: table_names.last, constraint_name: "#{join_table}_FK2", dependent: :delete)
+          ForeignKeyDefinition.new(foreign_keys.first, child_table: @join_table, parent_table: table_names.first, constraint_name: "#{join_table}_FK1", dependent: :delete),
+          ForeignKeyDefinition.new(foreign_keys.last, child_table: @join_table, parent_table: table_names.last, constraint_name: "#{join_table}_FK2", dependent: :delete)
         ]
       end
     end
