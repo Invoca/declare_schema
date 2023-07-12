@@ -3,6 +3,7 @@
 require 'active_record'
 require 'active_record/connection_adapters/abstract_adapter'
 require 'declare_schema/schema_change/all'
+require_relative '../../../declare_schema/model/habtm_model_shim'
 
 module Generators
   module DeclareSchema
@@ -485,7 +486,7 @@ module Generators
           ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/) and raise ArgumentError, 'SQLite does not support foreign keys'
           ::DeclareSchema.default_generate_foreign_keys or return []
 
-          if model.is_a?(DeclareSchema::Model::HabtmModelShim)
+          if model.is_a?(::DeclareSchema::Model::HabtmModelShim)
             force_dependent_delete = :delete
           end
 
