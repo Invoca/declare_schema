@@ -10,7 +10,7 @@ require_relative '../../../../lib/declare_schema/model/habtm_model_shim'
 RSpec.describe DeclareSchema::Model::HabtmModelShim do
   let(:join_table) { "customers_users" }
   let(:foreign_keys) { ["user_id", "customer_id"] }
-  let(:table_names) { ["users", "customers"] }
+  let(:parent_table_names) { ["users", "customers"] }
 
   before do
     load File.expand_path('../prepare_testapp.rb', __dir__)
@@ -36,7 +36,7 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
 
         expect(result).to be_a(described_class)
         expect(result.foreign_keys).to eq(foreign_keys.reverse)
-        expect(result.table_names).to eq(table_names.reverse)
+        expect(result.parent_table_names).to eq(parent_table_names.reverse)
       end
     end
   end
@@ -44,7 +44,7 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
   describe 'instance methods' do
     let(:connection) { instance_double(ActiveRecord::Base.connection.class, "connection") }
 
-    subject { described_class.new(join_table, foreign_keys, table_names) }
+    subject { described_class.new(join_table, foreign_keys, parent_table_names) }
 
     describe '#initialize' do
       it 'stores initialization attributes' do
@@ -112,7 +112,7 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
       let(:join_table) { "advertiser_campaigns_tracking_pixels" }
       let(:foreign_keys_and_table_names) { [["advertiser_id", "advertisers"], ["campaign_id", "campaigns"]] }
       let(:foreign_keys) { foreign_keys_and_table_names.map(&:first) }
-      let(:table_names) { foreign_keys_and_table_names.map(&:last) }
+      let(:parent_table_names) { foreign_keys_and_table_names.map(&:last) }
 
       before do
         class Table1 < ActiveRecord::Base

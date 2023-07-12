@@ -10,16 +10,16 @@ module DeclareSchema
         end
       end
 
-      attr_reader :join_table, :foreign_keys, :table_names
+      attr_reader :join_table, :foreign_keys, :parent_table_names
 
-      def initialize(join_table, foreign_keys, table_names)
+      def initialize(join_table, foreign_keys, parent_table_names)
         foreign_keys.is_a?(Array) && foreign_keys.size == 2 or
           raise ArgumentError, "foreign_keys must be <Array[2]>; got #{foreign_keys.inspect}"
-        table_names.is_a?(Array) && table_names.size == 2 or
-          raise ArgumentError, "table_names must be <Array[2]>; got #{table_names.inspect}"
+        parent_table_names.is_a?(Array) && parent_table_names.size == 2 or
+          raise ArgumentError, "parent_table_names must be <Array[2]>; got #{parent_table_names.inspect}"
         @join_table = join_table
-        @foreign_keys = foreign_keys.sort
-        @table_names = @foreign_keys == foreign_keys ? table_names : table_names.reverse
+        @foreign_keys = foreign_keys.sort # Rails requires these be in alphabetical order
+        @parent_table_names = @foreign_keys == foreign_keys ? parent_table_names : parent_table_names.reverse # match the above sort
       end
 
       def _table_options
@@ -59,8 +59,8 @@ module DeclareSchema
 
       def constraint_specs
         [
-          ForeignKeyDefinition.new(foreign_keys.first, child_table: @join_table, parent_table: table_names.first, constraint_name: "#{join_table}_FK1", dependent: :delete),
-          ForeignKeyDefinition.new(foreign_keys.last, child_table: @join_table, parent_table: table_names.last, constraint_name: "#{join_table}_FK2", dependent: :delete)
+          ForeignKeyDefinition.new(foreign_keys.first, child_table: @join_table, parent_table: parent_table_names.first, constraint_name: "#{join_table}_FK1", dependent: :delete),
+          ForeignKeyDefinition.new(foreign_keys.last, child_table: @join_table, parent_table: parent_table_names.last, constraint_name: "#{join_table}_FK2", dependent: :delete)
         ]
       end
     end
