@@ -500,13 +500,13 @@ module Generators
 
           drop_fks = (fks_to_drop - renamed_fks_to_drop).map do |fk|
             ::DeclareSchema::SchemaChange::ForeignKeyRemove.new(fk.child_table_name, fk.parent_table_name,
-                                                                column_name: fk.foreign_key_name, name: fk.constraint_name)
+                                                                column_name: fk.foreign_key_column, name: fk.constraint_name)
           end
 
           add_fks = (fks_to_add - renamed_fks_to_add).map do |fk|
             # next if fk.parent.constantize.abstract_class || fk.parent == fk.model.class_name
             ::DeclareSchema::SchemaChange::ForeignKeyAdd.new(fk.child_table_name, fk.parent_table_name,
-                                                             column_name: fk.foreign_key_name, name: fk.constraint_name)
+                                                             column_name: fk.foreign_key_column, name: fk.constraint_name)
           end
 
           [drop_fks + add_fks]
