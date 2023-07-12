@@ -19,7 +19,7 @@ module DeclareSchema
       def initialize(columns, name: nil, table_name: nil, allow_equivalent: false, unique: false, where: nil)
         @name = name || self.class.default_index_name(table_name, columns)
         @columns = Array.wrap(columns).map(&:to_s)
-        @explicit_name = name unless allow_equivalent
+        @explicit_name = @name unless allow_equivalent
         unique.in?([false, true]) or raise ArgumentError, "unique must be true or false: got #{unique.inspect}"
         if @name == PRIMARY_KEY_NAME
           unique or raise ArgumentError, "primary key index must be unique"
