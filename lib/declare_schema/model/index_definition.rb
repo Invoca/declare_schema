@@ -125,7 +125,7 @@ module DeclareSchema
       end
 
       def with_name(new_name)
-        self.class.new(@columns, name: new_name, unique: @unique, where: @where)
+        self.class.new(@columns, name: new_name, unique: @unique, allow_equivalent: @explicit_name.nil?, where: @where)
       end
 
       alias eql? ==
