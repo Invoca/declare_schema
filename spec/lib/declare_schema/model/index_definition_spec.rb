@@ -156,6 +156,7 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
           50 => 'user_domains4814__last_name_first_name_middle_name',
           51 => 'user_domains_4814__last_name_first_name_middle_name',
           52 => 'user_domains_extra__last_name_first_name_middle_name',
+          53 => 'user_domains_extra__last_name_first_name_middle_name',
         }.each do |len, index_name|
           context "with max_index_and_constraint_name_length of #{len}" do
             let(:max_index_and_constraint_name_length) { len }
