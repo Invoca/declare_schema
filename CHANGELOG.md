@@ -4,6 +4,11 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - Unreleased
+### Fixed
+- Fix bug in default index anme when table name + __ + column suffix exceeds `DeclareSchema.max_index_and_constraint_name_length`.
+  In this case we truncate the table name and append part of its hash.
+
 ## [1.3.0] - 2023-07-10
 ### Added
 - Added `DeclareSchema.max_index_and_constraint_name_length` with default of 64.
