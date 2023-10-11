@@ -133,6 +133,46 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
 
         it { is_expected.to eq("users__last_name_first_name_middle_name") }
       end
+
+      context 'with long table name' do
+        let(:table_name2) { 'user_domains_extra' }
+        {
+          34 => '__last_name_first_name_middle_name',
+          35 => 'u__last_name_first_name_middle_name',
+          36 => 'u4__last_name_first_name_middle_name',
+          37 => 'us4__last_name_first_name_middle_name',
+          38 => 'us48__last_name_first_name_middle_name',
+          39 => 'use48__last_name_first_name_middle_name',
+          40 => 'use481__last_name_first_name_middle_name',
+          41 => 'user481__last_name_first_name_middle_name',
+          42 => 'user4814__last_name_first_name_middle_name',
+          43 => 'user_4814__last_name_first_name_middle_name',
+          44 => 'user_d4814__last_name_first_name_middle_name',
+          45 => 'user_do4814__last_name_first_name_middle_name',
+          46 => 'user_dom4814__last_name_first_name_middle_name',
+          47 => 'user_doma4814__last_name_first_name_middle_name',
+          48 => 'user_domai4814__last_name_first_name_middle_name',
+          49 => 'user_domain4814__last_name_first_name_middle_name',
+          50 => 'user_domains4814__last_name_first_name_middle_name',
+          51 => 'user_domains_4814__last_name_first_name_middle_name',
+          52 => 'user_domains_extra__last_name_first_name_middle_name',
+        }.each do |len, index_name|
+          context "with max_index_and_constraint_name_length of #{len}" do
+            let(:max_index_and_constraint_name_length) { len }
+
+            it { is_expected.to eq(index_name) }
+          end
+        end
+
+        context "with max_index_and_constraint_name_length shorter than columns suffix" do
+          let(:max_index_and_constraint_name_length) { 33 }
+
+          it 'raises' do
+            expect { subject }.to raise_exception(DeclareSchema::Model::IndexDefinition::IndexNameTooLongError,
+                                                  /Index '__last_name_first_name_middle_name' exceeds configured limit of 33 characters/)
+          end
+        end
+      end
     end
   end
   # TODO: fill out remaining tests
