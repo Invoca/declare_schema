@@ -66,7 +66,7 @@ module DeclareSchema
               break index_name
             end
           end or raise IndexNameTooLongError,
-                       "Index '#{index_name}' exceeds configured limit of #{DeclareSchema.max_index_and_constraint_name_length} characters."
+                       "Default index name '#{index_name}' exceeds configured limit of #{DeclareSchema.max_index_and_constraint_name_length} characters. Use the `name:` option to give it a shorter name, or adjust DeclareSchema.max_index_and_constraint_name_length if you know your database can accept longer names."
         end
 
         private

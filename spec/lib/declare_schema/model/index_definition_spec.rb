@@ -170,7 +170,7 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
 
           it 'raises' do
             expect { subject }.to raise_exception(DeclareSchema::Model::IndexDefinition::IndexNameTooLongError,
-                                                  /Index '__last_name_first_name_middle_name' exceeds configured limit of 33 characters/)
+                                                  /Default index name '__last_name_first_name_middle_name' exceeds configured limit of 33 characters\. Use the `name:` option to give it a shorter name, or adjust DeclareSchema\.max_index_and_constraint_name_length/i)
           end
         end
       end
