@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'digest/sha2'
+
 module DeclareSchema
   module Model
     class IndexDefinition
@@ -64,17 +66,35 @@ module DeclareSchema
               break index_name
             end
           end or raise IndexNameTooLongError,
-                       "Index '#{index_name}' exceeds configured limit of #{DeclareSchema.max_index_and_constraint_name_length} characters."
+                       "Default index name '#{index_name}' exceeds configured limit of #{DeclareSchema.max_index_and_constraint_name_length} characters. Use the `name:` option to give it a shorter name, or adjust DeclareSchema.max_index_and_constraint_name_length if you know your database can accept longer names."
         end
 
         private
+
+        SHA_SUFFIX_LENGTH = 4
+
+        def shorten_name(name, max_len)
+          if name.size <= max_len
+            name
+          else
+            name_prefix = name.first(max_len >= SHA_SUFFIX_LENGTH*2 ? (max_len - SHA_SUFFIX_LENGTH) : ((max_len + 1)/2))
+            sha = Digest::SHA256.hexdigest(name)
+            (name_prefix + sha).first(max_len)
+          end
+        end
 
         def long_index_name(table_name, columns)
           "index_#{table_name}_on_#{Array(columns).join("_and_")}"
         end
 
         def short_index_name(table_name, columns)
-          "#{table_name}__#{Array(columns).join("_")}"
+          columns_suffix = "__" + Array(columns).join('_')
+          if DeclareSchema.max_index_and_constraint_name_length.nil?
+            table_name + columns_suffix
+          else
+            max_name_len = [DeclareSchema.max_index_and_constraint_name_length - columns_suffix.length, 0].max
+            shorten_name(table_name, max_name_len) + columns_suffix
+          end
         end
       end
 
