@@ -15,10 +15,8 @@ RSpec.describe DeclareSchema::SchemaChange::TableChange do
 
   describe '#up/down' do
     context 'when Hashes are used to construct the TableChange' do
-      it 'does not raise ArgumentError' do
-        expect {
-          described_class.new(table_name, old_options, new_options)
-        }.not_to raise_exception(ArgumentError)
+      it 'does not raise' do
+        described_class.new(table_name, old_options, new_options)
       end
 
       describe '#up' do
@@ -37,23 +35,23 @@ RSpec.describe DeclareSchema::SchemaChange::TableChange do
     end
 
     context 'when Strings are used to construct the TableChange' do
-      describe 'when old_options is a string' do
+      context 'when old_options is a string' do
         subject { described_class.new(table_name, options_string, new_options) }
 
-        it 'raises ArgumentError' do
+        it 'raises' do
           expect {
             subject
-          }.to raise_exception(ArgumentError, /old_options must be a Hash but is a String: "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin"/)
+          }.to raise_exception(ArgumentError, /old_options must be a Hash but is: "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin"/)
         end
       end
 
-      describe 'when new_options is a string' do
+      context 'when new_options is a string' do
         subject { described_class.new(table_name, old_options, options_string) }
 
-        it 'raises ArgumentError' do
+        it 'raises' do
           expect {
             subject
-          }.to raise_exception(ArgumentError, /new_options must be a Hash but is a String: "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin"/)
+          }.to raise_exception(ArgumentError, /new_options must be a Hash but is: "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin"/)
         end
       end
     end

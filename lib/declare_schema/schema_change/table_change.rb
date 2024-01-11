@@ -10,8 +10,8 @@ module DeclareSchema
       # @param [Hash]   old_options The old/existing table option definitions
       # @param [Hash]   new_options The new/existing table option definitions
       def initialize(table_name, old_options, new_options)
-        old_options.is_a?(Hash) or raise ArgumentError, "old_options must be a Hash but is a #{old_options.class}: #{old_options.inspect}"
-        new_options.is_a?(Hash) or raise ArgumentError, "new_options must be a Hash but is a #{new_options.class}: #{new_options.inspect}"
+        old_options.is_a?(Hash) or raise ArgumentError, "old_options must be a Hash but is: #{old_options.inspect}"
+        new_options.is_a?(Hash) or raise ArgumentError, "new_options must be a Hash but is: #{new_options.inspect}"
 
         @table_name  = table_name
         @old_options = old_options
