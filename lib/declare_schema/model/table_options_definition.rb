@@ -57,6 +57,9 @@ module DeclareSchema
         @key ||= [table_name, table_options].map(&:to_s)
       end
 
+      # Flatten out/join table options as a space-separated string
+      #
+      # @return [String] Table options as a string
       def settings
         @settings ||= table_options.map { |name, value| "#{TABLE_OPTIONS_TO_SQL_MAPPINGS[name]} #{value}" if value }.compact.join(" ")
       end
