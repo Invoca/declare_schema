@@ -34,28 +34,70 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
       end
     end
 
-    describe 'instance methods' do
+    describe 'attr_readers' do
       let(:model) { model_class.new }
-      subject { declared_class.new(model_class) }
+      let(:fields) { ['last_name', 'first_name'] }
+      let(:options) { {} }
+      subject(:instance) { described_class.new(model_class, fields, **options) }
 
-      it 'has index_definitions' do
-        expect(model_class.index_definitions).to be_kind_of(Array)
-        expect(model_class.index_definitions.map(&:name)).to eq(['index_index_definition_test_models_on_name'])
-        expect([:name, :fields, :unique].map { |attr| model_class.index_definitions[0].send(attr)}).to eq(
-          ['index_index_definition_test_models_on_name', ['name'], false]
-        )
+      describe '#table' do
+        subject { instance.table }
+
+        it { is_expected.to eq(model_class.table_name) }
+
+        context 'with table_name option' do
+          let(:options) { { table_name: 'auth_users' } }
+
+          it { is_expected.to eq('auth_users') }
+        end
       end
 
-      it 'has index_definitions_with_primary_key' do
-        expect(model_class.index_definitions_with_primary_key).to be_kind_of(Array)
-        result = model_class.index_definitions_with_primary_key.sort_by(&:name)
-        expect(result.map(&:name)).to eq(['PRIMARY', 'index_index_definition_test_models_on_name'])
-        expect([:name, :fields, :unique].map { |attr| result[0].send(attr)}).to eq(
-          ['PRIMARY', ['id'], true]
-        )
-        expect([:name, :fields, :unique].map { |attr| result[1].send(attr)}).to eq(
-          ['index_index_definition_test_models_on_name', ['name'], false]
-        )
+      describe '#fields' do
+        subject { instance.fields }
+
+        it { is_expected.to eq(fields) }
+      end
+
+      describe '#explicit_name' do
+        subject { instance.explicit_name }
+
+        it { is_expected.to eq(nil) }
+
+        context 'with name option' do
+          let(:options) { { name: 'index_auth_users_on_last_name_and_first_name' } }
+
+          it { is_expected.to eq('index_auth_users_on_last_name_and_first_name') }
+        end
+      end
+    end
+
+    describe 'instance methods' do
+      let(:model) { model_class.new }
+
+      describe 'index_definitions' do
+        it do
+          expect(model_class.index_definitions.size).to eq(1)
+
+          expect(model_class.index_definitions[0].name).to eq('index_index_definition_test_models_on_name')
+          expect(model_class.index_definitions[0].fields).to eq(['name'])
+          expect(model_class.index_definitions[0].unique).to eq(false)
+        end
+      end
+
+      describe 'has index_definitions_with_primary_key' do
+        it do
+          expect(model_class.index_definitions_with_primary_key).to be_kind_of(Array)
+          result = model_class.index_definitions_with_primary_key.sort_by(&:name)
+          expect(result.size).to eq(2)
+
+          expect(result[0].name).to eq('PRIMARY')
+          expect(result[0].fields).to eq(['id'])
+          expect(result[0].unique).to eq(true)
+
+          expect(result[1].name).to eq('index_index_definition_test_models_on_name')
+          expect(result[1].fields).to eq(['name'])
+          expect(result[1].unique).to eq(false)
+        end
       end
     end
 
@@ -86,12 +128,12 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
         context 'with single-column PK' do
           it 'returns the indexes for the model' do
             expect(subject.size).to eq(2), subject.inspect
-            expect([:name, :columns, :unique].map { |attr| subject[0].send(attr) }).to eq(
-              ['index_definition_test_models_on_name', ['name'], true]
-            )
-            expect([:name, :columns, :unique].map { |attr| subject[1].send(attr) }).to eq(
-              ['PRIMARY', ['id'], true]
-            )
+            expect(subject[0].name).to eq('index_definition_test_models_on_name')
+            expect(subject[0].columns).to eq(['name'])
+            expect(subject[0].unique).to eq(true)
+            expect(subject[1].name).to eq('PRIMARY')
+            expect(subject[1].columns).to eq(['id'])
+            expect(subject[1].unique).to eq(true)
           end
         end
 
@@ -100,9 +142,9 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
 
           it 'returns the indexes for the model' do
             expect(subject.size).to eq(1), subject.inspect
-            expect([:name, :columns, :unique].map { |attr| subject[0].send(attr) }).to eq(
-              ['PRIMARY', ['fk1_id', 'fk2_id'], true]
-            )
+            expect(subject[0].name).to eq('PRIMARY')
+            expect(subject[0].columns).to eq(['fk1_id', 'fk2_id'])
+            expect(subject[0].unique).to eq(true)
           end
         end
       end
