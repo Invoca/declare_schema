@@ -9,7 +9,7 @@ Make a model and declare your schema within a `declare_schema do ... end` block:
 class Company < ActiveRecord::Base
   declare_schema do
     string  :company_name,  limit: 100
-    string  :ticker_symbol, limit: 4, null: true, index: true, unique: true
+    string  :ticker_symbol, limit: 4, null: true, index: { unique: true }
     integer :employee_count
     text    :comments
 
@@ -59,6 +59,61 @@ declare_schema id: :bigint do
   ...
 end
 ```
+
+## declare_schema DSL field (column) declaration
+The `declare_schema` DSL is yielded to the block as shown with block variable `t` (for table).
+Each field (column) is declared with the syntax `t.<type> :<column_name>, <options>` as shown here for the `string` column `company_name`:
+```ruby
+create_table :companies, id: :bigint do |t|
+  t.string   :company_name, null: false, limit: 100
+    ...
+end
+```
+### Field (Column) Types
+All of the ActiveRecord field types are supported, as returned by the database driver in use at the time.
+These typically include:
+- `binary` (blob)
+- `text`
+- `integer`
+- `bigint`
+- `float`
+- `decimal`
+- `date`
+- `time`
+- `datetime`
+- `timestamp`
+- `string` (varchar)
+- `boolean` (tinyint 0 or 1)
+- `json`
+- `array`
+- `enum` (if using the `activerecord-mysql-enum` gem) (MySQL enum)
+
+### Field (Column) Options
+The following field options are:
+- `limit` (integer) - The maximum length of the field. For `text` and `binary` fields, this is the maximum number of bytes.
+ For `string` fields, this is the maximum number of characters, and defaults to `DeclareSchema.default_string_limit`; for `text`, defaults to `DeclareSchema.default_text_limit`.
+ For `enum`
+- `null` (boolean) - Whether the field is nullable. Defaults to `DeclareSchema.default_null`.
+- `default` (any) - The default value for the field.
+- `ruby_default` (Proc) - A callable Ruby Proc that returns the default value for the field. This is useful for default values that require Ruby computation.
+  (Provided by the `attr_default` gem.)
+- `index` (boolean [deprecated] or hash) - Whether to create an index for the field. If `true`, defaults to `{ unique: false }` [deprecated]. See below for supported `index` options.
+- `unique` [deprecated] (boolean) - Whether to create a unique index for the field. Defaults to `false`. Deprecated in favor of `index: { unique: <boolean> }`.
+- `charset` (string) - The character set for the field. Defaults to `default_charset` (see below).
+- `collation` (string) - The collation for the field. Defaults to `default_collation` (see below).
+- `precision` (integer) - The precision for the numeric field.
+- `scale` (integer) - The scale for the numeric field.
+
+### Index Options
+The following `index` options are supported:
+- `name` (string) - The name of the index. Defaults the longest format that will fit within `DeclareSchema.max_index_and_constraint_name_length`. They are tried in this order:
+1. `index_<table>_on_<col1>[_and_<col2>...]>`.
+2. `__<col1>[_<col2>...]>`
+3. `<table_prefix><sha256_of_columns_prefix>`
+- `unique` (boolean) - Whether the index is unique. Defaults to `false`.
+- `order` (synbol or hash) - The index order. If `:asc` or `:desc` is provided, it is used as the order for all columns. If hash is provided, it is used to specify the order of individual columns, where the column names are given as `Symbol` hash keys with values of `:asc` or `:desc` indicating the sort order of that column.
+- `length` (integer or hash) - The partial index length(s). If an integer is provided, it is used as the length for all columns. If a hash is provided, it is used to specify the length for individual columns, where the column names are given as `Symbol` hash keys.
+- `where` (string) - The subset index predicate.
 
 ## Usage without Rails
 
