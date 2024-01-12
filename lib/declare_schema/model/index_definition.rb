@@ -136,7 +136,7 @@ module DeclareSchema
       end
 
       def with_name(new_name)
-        self.class.new(@model, @fields, table_name: @table_name, index_name: @index_name, unique: @unique, name: new_name)
+        self.class.new(@model, @fields, **{ **options, name: new_name })
       end
 
       alias eql? ==

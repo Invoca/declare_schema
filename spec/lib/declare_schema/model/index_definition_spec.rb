@@ -94,6 +94,14 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
 
           it { is_expected.to eq(options) }
         end
+
+        describe '#with_name' do
+          subject { instance.with_name('new_name') }
+
+          it { is_expected.to be_kind_of(described_class) }
+          it { expect(instance.name).to eq('index_index_definition_test_models_on_last_name_and_first_name') }
+          it { expect(subject.name).to eq('new_name') }
+        end
       end
     end
 
