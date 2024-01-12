@@ -69,6 +69,23 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
           it { is_expected.to eq('index_auth_users_on_last_name_and_first_name') }
         end
       end
+
+      describe '#length' do
+        subject { instance.length }
+        let(:options) { { length: length } }
+
+        context 'with integer length' do
+          let(:length) { 2 }
+
+          it { is_expected.to eq(length) }
+        end
+
+        context 'with Hash length' do
+          let(:length) { { name: 2 } }
+
+          it { is_expected.to eq(length) }
+        end
+      end
     end
 
     describe 'instance methods' do

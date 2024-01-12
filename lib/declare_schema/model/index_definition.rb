@@ -8,7 +8,7 @@ module DeclareSchema
       include Comparable
 
       # TODO: replace `fields` with `columns` and remove alias. -Colin
-      attr_reader :table, :fields, :explicit_name, :name, :unique, :where
+      attr_reader :table, :fields, :explicit_name, :name, :unique, :where, :length
       alias columns fields
 
       class IndexNameTooLongError < RuntimeError; end
@@ -22,14 +22,17 @@ module DeclareSchema
         @explicit_name = options[:name] unless options.delete(:allow_equivalent)
         @name = options.delete(:name) || self.class.default_index_name(@table, @fields)
         @unique = options.delete(:unique) || name == PRIMARY_KEY_NAME || false
+        @length = options.delete(:length)
 
         if DeclareSchema.max_index_and_constraint_name_length && @name.length > DeclareSchema.max_index_and_constraint_name_length
           raise IndexNameTooLongError, "Index '#{@name}' exceeds configured limit of #{DeclareSchema.max_index_and_constraint_name_length} characters. Give it a shorter name, or adjust DeclareSchema.max_index_and_constraint_name_length if you know your database can accept longer names."
         end
 
-        if (where = options[:where])
+        if (where = options.delete(:where))
           @where = where.start_with?('(') ? where : "(#{where})"
         end
+
+        options.any? and warn("ignoring unrecognized option(s): #{options.inspect} for model #{model}")
       end
 
       class << self
