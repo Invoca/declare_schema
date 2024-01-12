@@ -114,14 +114,36 @@ module DeclareSchema
           ActiveSupport::Deprecation.warn("belongs_to limit: is deprecated since it is now inferred")
         end
 
-        index_options = {}
-        index_options[:name]   = options.delete(:index) if options.has_key?(:index)
-        index_options[:unique] = options.delete(:unique) if options.has_key?(:unique)
-        index_options[:allow_equivalent] = options.delete(:allow_equivalent) if options.has_key?(:allow_equivalent)
+        # index: true means create an index on the foreign key
+        # index: false means do not create an index on the foreign key
+        # index: { ... } means create an index on the foreign key with the given options
+        index_value = options.delete(:index)
+        if index_value != false || options.has_key?(:unique) || options.has_key?(:allow_equivalent)
+          index_options = {}
+          case index_value
+          when String
+            Kernel.warn("belongs_to index: 'name' is deprecated; use index: { name: 'name' } instead")
+            index_options[:name] = index_value
+          # when false -- impossible since we checked that above
+          when true
+          when nil
+          when Hash
+            index_options = index_value
+          else
+            raise ArgumentError, "belongs_to index: must be true or false or a Hash; got #{index_value.inspect}"
+          end
+
+          if options.has_key?(:unique)
+            Kernel.warn("belongs_to unique: true|false is deprecated; use index: { unique: true|false } instead")
+            index_options[:unique] = options.delete(:unique)
+          end
+
+          index_options[:allow_equivalent] = options.delete(:allow_equivalent) if options.has_key?(:allow_equivalent)
+        end
 
         fk_options = options.dup
         fk_options[:constraint_name] = options.delete(:constraint) if options.has_key?(:constraint)
-        fk_options[:index_name] = index_options[:name]
+        fk_options[:index_name] = index_options&.[](:name)
 
         fk = options[:foreign_key]&.to_s || "#{name}_id"
 
@@ -157,9 +179,9 @@ module DeclareSchema
         if refl.options[:polymorphic]
           foreign_type = options[:foreign_type] || "#{name}_type"
           _declare_polymorphic_type_field(foreign_type, column_options)
-          index([foreign_type, fkey], **index_options) if index_options[:name] != false
+          index([foreign_type, fkey], **index_options) if index_options
         else
-          index(fkey, **index_options) if index_options[:name] != false
+          index(fkey, **index_options) if index_options
           constraint(fkey, **fk_options) if fk_options[:constraint_name] != false
         end
       end
