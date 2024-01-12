@@ -330,7 +330,7 @@ module Generators
         # TODO: TECH-5338: optimize that index doesn't need to be dropped on undo since entire table will be dropped
         def create_indexes(model)
           model.index_definitions.map do |i|
-            ::DeclareSchema::SchemaChange::IndexAdd.new(model.table_name, i.columns, unique: i.unique, where: i.where, name: i.name)
+            ::DeclareSchema::SchemaChange::IndexAdd.new(model.table_name, i.columns, **i.options)
           end
         end
 

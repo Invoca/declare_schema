@@ -8,7 +8,8 @@ module DeclareSchema
       include Comparable
 
       # TODO: replace `fields` with `columns` and remove alias. -Colin
-      attr_reader :table, :fields, :explicit_name, :name, :unique, :where, :length
+      OPTIONS = [:name, :unique, :where, :length].freeze
+      attr_reader :table, :fields, :explicit_name, *OPTIONS
       alias columns fields
 
       class IndexNameTooLongError < RuntimeError; end
@@ -105,12 +106,21 @@ module DeclareSchema
         name == PRIMARY_KEY_NAME
       end
 
-      def to_key
-        @key ||= [table, fields, name, unique, where].map(&:to_s)
+      def options
+        @options ||=
+          OPTIONS.each_with_object({}) do |option, result|
+            result[option] = send(option)
+          end.freeze
       end
 
+      # Unique key for this object. Used for equality checking.
+      def to_key
+        @key ||= [table, fields, options].freeze
+      end
+
+      # The index settings for this object. Used for equivalence checking. Does not include the name.
       def settings
-        @settings ||= [table, fields, unique].map(&:to_s)
+        @settings ||= [table, fields, options.except(:name)].freeze
       end
 
       def hash

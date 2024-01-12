@@ -34,61 +34,70 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
       end
     end
 
-    describe 'attr_readers' do
+    describe 'instance methods' do
       let(:model) { model_class.new }
       let(:fields) { ['last_name', 'first_name'] }
       let(:options) { {} }
       subject(:instance) { described_class.new(model_class, fields, **options) }
 
-      describe '#table' do
-        subject { instance.table }
+      describe 'attr_readers' do
+        describe '#table' do
+          subject { instance.table }
 
-        it { is_expected.to eq(model_class.table_name) }
+          it { is_expected.to eq(model_class.table_name) }
 
-        context 'with table_name option' do
-          let(:options) { { table_name: 'auth_users' } }
+          context 'with table_name option' do
+            let(:options) { { table_name: 'auth_users' } }
 
-          it { is_expected.to eq('auth_users') }
-        end
-      end
-
-      describe '#fields' do
-        subject { instance.fields }
-
-        it { is_expected.to eq(fields) }
-      end
-
-      describe '#explicit_name' do
-        subject { instance.explicit_name }
-
-        it { is_expected.to eq(nil) }
-
-        context 'with name option' do
-          let(:options) { { name: 'index_auth_users_on_last_name_and_first_name' } }
-
-          it { is_expected.to eq('index_auth_users_on_last_name_and_first_name') }
-        end
-      end
-
-      describe '#length' do
-        subject { instance.length }
-        let(:options) { { length: length } }
-
-        context 'with integer length' do
-          let(:length) { 2 }
-
-          it { is_expected.to eq(length) }
+            it { is_expected.to eq('auth_users') }
+          end
         end
 
-        context 'with Hash length' do
-          let(:length) { { name: 2 } }
+        describe '#fields' do
+          subject { instance.fields }
 
-          it { is_expected.to eq(length) }
+          it { is_expected.to eq(fields) }
+        end
+
+        describe '#explicit_name' do
+          subject { instance.explicit_name }
+
+          it { is_expected.to eq(nil) }
+
+          context 'with name option' do
+            let(:options) { { name: 'index_auth_users_on_last_name_and_first_name' } }
+
+            it { is_expected.to eq('index_auth_users_on_last_name_and_first_name') }
+          end
+        end
+
+        describe '#length' do
+          subject { instance.length }
+          let(:options) { { length: length } }
+
+          context 'with integer length' do
+            let(:length) { 2 }
+
+            it { is_expected.to eq(length) }
+          end
+
+          context 'with Hash length' do
+            let(:length) { { name: 2 } }
+
+            it { is_expected.to eq(length) }
+          end
+        end
+
+        describe '#options' do
+          subject { instance.options }
+          let(:options) { { name: 'my_index', unique: false, where: "(name like 'a%')", length: 10 } }
+
+          it { is_expected.to eq(options) }
         end
       end
     end
 
-    describe 'instance methods' do
+    describe 'class methods' do
       let(:model) { model_class.new }
 
       describe 'index_definitions' do
