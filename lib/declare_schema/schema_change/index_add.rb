@@ -5,12 +5,13 @@ require_relative 'base'
 module DeclareSchema
   module SchemaChange
     class IndexAdd < Base
-      def initialize(table_name, column_names, name:, unique:, where: nil)
+      def initialize(table_name, column_names, name:, unique:, where: nil, limit: nil)
         @table_name = table_name
         @column_names = column_names
         @name = name
         @unique = unique
         @where = where.presence
+        @limit = limit.presence
       end
 
       def up_command
@@ -19,6 +20,7 @@ module DeclareSchema
         }
         options[:unique] = true if @unique
         options[:where] = @where if @where
+        options[:limit] = @limit if @limit
 
         "add_index #{[@table_name.to_sym.inspect,
                       @column_names.map(&:to_sym).inspect,
