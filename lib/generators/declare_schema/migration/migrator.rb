@@ -548,8 +548,8 @@ module Generators
           else
             [
               ::DeclareSchema::SchemaChange::TableChange.new(current_table_name,
-                                                             old_options_definition.table_options,
-                                                             new_options_definition.table_options)
+                                                             old_options_definition.settings,
+                                                             new_options_definition.settings)
             ]
           end
         end

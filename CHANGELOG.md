@@ -4,10 +4,6 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.2] - Unreleased
-### Fixed
-- Fix bug in migrator when table option definitions differ
-
 ## [1.3.1] - 2023-10-12
 ### Fixed
 - Fix bug in default index name when table name + __ + column suffix exceeds `DeclareSchema.max_index_and_constraint_name_length`.
