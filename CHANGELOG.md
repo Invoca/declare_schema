@@ -4,7 +4,7 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.2] - Unreleased
+## [1.3.2] - 2024-01-12
 ### Fixed
 - Fix bug in migrator when table option definitions differ
 
