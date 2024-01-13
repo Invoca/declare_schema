@@ -16,7 +16,6 @@ module DeclareSchema
           # attr_types holds the type class for any attribute reader (i.e. getter
           # method) that returns rich-types
           inheriting_cattr_reader attr_types: HashWithIndifferentAccess.new
-          inheriting_cattr_reader attr_order: []
 
           # field_specs holds FieldSpec objects for every declared
           # field. Note that attribute readers are created (by ActiveRecord)
@@ -85,7 +84,6 @@ module DeclareSchema
         _add_validations_for_field(name, type, args, options)
         _add_index_for_field(name, args, options)
         field_specs[name] = ::DeclareSchema::Model::FieldSpec.new(self, name, type, position: field_specs.size, **options)
-        attr_order << name unless attr_order.include?(name)
       end
 
       def index_definitions_with_primary_key
