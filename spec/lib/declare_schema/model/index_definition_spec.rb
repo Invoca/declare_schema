@@ -112,15 +112,16 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
         it do
           expect(model_class.index_definitions.size).to eq(1)
 
-          expect(model_class.index_definitions[0].name).to eq('index_index_definition_test_models_on_name')
-          expect(model_class.index_definitions[0].fields).to eq(['name'])
-          expect(model_class.index_definitions[0].unique).to eq(false)
+          sample = model_class.index_definitions.to_a.first
+          expect(sample.name).to eq('index_index_definition_test_models_on_name')
+          expect(sample.fields).to eq(['name'])
+          expect(sample.unique).to eq(false)
         end
       end
 
       describe 'has index_definitions_with_primary_key' do
         it do
-          expect(model_class.index_definitions_with_primary_key).to be_kind_of(Array)
+          expect(model_class.index_definitions_with_primary_key).to be_kind_of(Set)
           result = model_class.index_definitions_with_primary_key.sort_by(&:name)
           expect(result.size).to eq(2)
 

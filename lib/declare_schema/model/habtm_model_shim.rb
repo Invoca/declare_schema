@@ -52,23 +52,23 @@ module DeclareSchema
       end
 
       def index_definitions_with_primary_key
-        [
+        @index_definitions_with_primary_key ||= Set.new([
           IndexDefinition.new(self, foreign_keys, unique: true, name: Model::IndexDefinition::PRIMARY_KEY_NAME), # creates a primary composite key on both foreign keys
           IndexDefinition.new(self, foreign_keys.last) # not unique by itself; combines with primary key to be unique
-        ]
+        ])
       end
 
       alias_method :index_definitions, :index_definitions_with_primary_key
 
       def ignore_indexes
-        []
+        @ignore_indexes ||= Set.new
       end
 
       def constraint_specs
-        [
+        @constraint_specs ||= Set.new([
           ForeignKeyDefinition.new(self, foreign_keys.first, parent_table: foreign_key_classes.first.table_name, constraint_name: "#{join_table}_FK1", dependent: :delete),
           ForeignKeyDefinition.new(self, foreign_keys.last, parent_table: foreign_key_classes.last.table_name, constraint_name: "#{join_table}_FK2", dependent: :delete)
-        ]
+        ])
       end
     end
   end

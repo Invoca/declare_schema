@@ -141,8 +141,8 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
     end
 
     describe 'ignore_indexes' do
-      it 'returns empty array' do
-        expect(subject.ignore_indexes).to eq([])
+      it 'returns empty Set' do
+        expect(subject.ignore_indexes).to eq(Set.new)
       end
     end
 
@@ -156,10 +156,11 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
         expect(result.first.parent_table_name).to be(Parent1.table_name)
         expect(result.first.on_delete_cascade).to be_truthy
 
-        expect(result.last).to be_a(::DeclareSchema::Model::ForeignKeyDefinition)
-        expect(result.last.foreign_key).to eq(foreign_keys.last)
-        expect(result.last.parent_table_name).to be(Parent2.table_name)
-        expect(result.last.on_delete_cascade).to be_truthy
+        sample = result.to_a.last
+        expect(sample).to be_a(::DeclareSchema::Model::ForeignKeyDefinition)
+        expect(sample.foreign_key).to eq(foreign_keys.last)
+        expect(sample.parent_table_name).to be(Parent2.table_name)
+        expect(sample.on_delete_cascade).to be_truthy
       end
     end
   end
