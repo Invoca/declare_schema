@@ -122,7 +122,7 @@ module DeclareSchema
           index_options = {}
           case index_value
           when String
-            Kernel.warn("belongs_to index: 'name' is deprecated; use index: { name: 'name' } instead")
+            Kernel.warn("belongs_to index: 'name' is deprecated; use index: { name: 'name' } instead (in #{self.class.name})")
             index_options[:name] = index_value
           # when false -- impossible since we checked that above
           when true
@@ -134,7 +134,7 @@ module DeclareSchema
           end
 
           if options.has_key?(:unique)
-            Kernel.warn("belongs_to unique: true|false is deprecated; use index: { unique: true|false } instead")
+            Kernel.warn("belongs_to unique: true|false is deprecated; use index: { unique: true|false } instead (in #{self.class.name})")
             index_options[:unique] = options.delete(:unique)
           end
 
@@ -305,7 +305,7 @@ module DeclareSchema
         if (to_name = options.delete(:index))
           index_opts =
             {
-              unique: args.include?(:unique) || options.delete(:unique)
+              unique: args.include?(:unique) || !!options.delete(:unique)
             }
           # support index: true declaration
           index_opts[:name] = to_name unless to_name == true
