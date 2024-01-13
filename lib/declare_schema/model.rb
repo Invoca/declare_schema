@@ -118,13 +118,14 @@ module DeclareSchema
           when String
             Kernel.warn("belongs_to index: 'name' is deprecated; use index: { name: 'name' } instead (in #{name})")
             index_options[:name] = index_value
-          # when false -- impossible since we checked that above
           when true
+          when false
+            raise ArgumentError, "belongs_to index: false contradicts others options #{options.inspect} (in #{name})"
           when nil
           when Hash
             index_options = index_value
           else
-            raise ArgumentError, "belongs_to index: must be true or false or a Hash; got #{index_value.inspect}"
+            raise ArgumentError, "belongs_to index: must be true or false or a Hash; got #{index_value.inspect} (in #{name})"
           end
 
           if options.has_key?(:unique)
