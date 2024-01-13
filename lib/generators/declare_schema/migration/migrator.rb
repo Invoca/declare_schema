@@ -457,11 +457,11 @@ module Generators
           renamed_indexes_to_drop, renamed_indexes_to_add = index_changes_due_to_column_renames(indexes_to_drop, indexes_to_add, to_rename)
 
           drop_indexes = (indexes_to_drop - renamed_indexes_to_drop).map do |i|
-            ::DeclareSchema::SchemaChange::IndexRemove.new(new_table_name, i.columns, unique: i.unique, where: i.where, name: i.name)
+            ::DeclareSchema::SchemaChange::IndexRemove.new(new_table_name, i.columns, **i.options)
           end
 
           add_indexes = (indexes_to_add - renamed_indexes_to_add).map do |i|
-            ::DeclareSchema::SchemaChange::IndexAdd.new(new_table_name, i.columns, unique: i.unique, where: i.where, name: i.name)
+            ::DeclareSchema::SchemaChange::IndexAdd.new(new_table_name, i.columns, **i.options)
           end
 
           # the order is important here - adding a :unique, for instance needs to remove then add
