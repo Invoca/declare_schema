@@ -51,9 +51,9 @@ module DeclareSchema
     module ClassMethods
       def index(fields, **options)
         # make index idempotent
-        index_fields_s = Array.wrap(fields).map(&:to_s)
-        unless index_definitions.any? { |index_spec| index_spec.fields == index_fields_s }
-          index_definitions << ::DeclareSchema::Model::IndexDefinition.new(self, fields, **options)
+        index = ::DeclareSchema::Model::IndexDefinition.new(self, fields, **options)
+        unless index_definitions.any? { |index_spec| index_spec.equivalent?(index) }
+          index_definitions << index
         end
       end
 
