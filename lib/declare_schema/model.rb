@@ -25,9 +25,9 @@ module DeclareSchema
           inheriting_cattr_reader field_specs: HashWithIndifferentAccess.new
 
           # index_definitions holds IndexDefinition objects for all the declared indexes.
-          inheriting_cattr_reader index_definitions: []
-          inheriting_cattr_reader ignore_indexes: []
-          inheriting_cattr_reader constraint_specs: []
+          inheriting_cattr_reader index_definitions: Set.new
+          inheriting_cattr_reader ignore_indexes: Set.new
+          inheriting_cattr_reader constraint_specs: Set.new
 
           # table_options holds optional configuration for the create_table statement
           # supported options include :charset and :collation
@@ -49,11 +49,7 @@ module DeclareSchema
 
     module ClassMethods
       def index(fields, **options)
-        # make index idempotent
-        index = ::DeclareSchema::Model::IndexDefinition.new(self, fields, **options)
-        unless index_definitions.any? { |index_spec| index_spec.equivalent?(index) }
-          index_definitions << index
-        end
+        index_definitions << ::DeclareSchema::Model::IndexDefinition.new(self, fields, **options)
       end
 
       def primary_key_index(*fields)
