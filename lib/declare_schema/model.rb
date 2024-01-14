@@ -65,7 +65,7 @@ module DeclareSchema
       end
 
       # tell the migration generator to ignore the named index. Useful for existing indexes, or for indexes
-      # that can't be automatically generated (for example: a prefix index in MySQL)
+      # that can't be automatically generated.
       def ignore_index(index_name)
         ignore_indexes << index_name.to_s
       end
