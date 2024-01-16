@@ -8,10 +8,34 @@ RSpec.describe DeclareSchema do
       it { is_expected.to eq("utf8mb4") }
     end
 
-    context 'when explicitly set' do
-      before { described_class.default_charset = "utf8" }
-      after  { described_class.default_charset = "utf8mb4" }
-      it     { is_expected.to eq("utf8") }
+    context 'when running on MySQL 5.7' do
+      around do |spec|
+        described_class.mysql_version = '5.7.48'
+        spec.run
+      ensure
+        described_class.remove_instance_variable('@mysql_version') rescue nil
+      end
+
+      context 'when explicitly set' do
+        before { described_class.default_charset = "utf8" }
+        after  { described_class.default_charset = "utf8mb4" }
+        it     { is_expected.to eq("utf8") }
+      end
+    end
+
+    context 'when running on MySQL 8.0' do
+      around do |spec|
+        described_class.mysql_version = '8.0.21'
+        spec.run
+      ensure
+        described_class.remove_instance_variable('@mysql_version') rescue nil
+      end
+
+      context 'when explicitly set' do
+        before { described_class.default_charset = "utf8" }
+        after  { described_class.default_charset = "utf8mb4" }
+        it     { is_expected.to eq("utf8mb3") }
+      end
     end
   end
 
@@ -22,10 +46,34 @@ RSpec.describe DeclareSchema do
       it { is_expected.to eq("utf8mb4_bin") }
     end
 
-    context 'when explicitly set' do
-      before { described_class.default_collation = "utf8mb4_general_ci" }
-      after  { described_class.default_collation = "utf8mb4_bin" }
-      it     { is_expected.to eq("utf8mb4_general_ci") }
+    context 'when running on MySQL 5.7' do
+      around do |spec|
+        described_class.mysql_version = '5.7.48'
+        spec.run
+      ensure
+        described_class.remove_instance_variable('@mysql_version')
+      end
+
+      context 'when explicitly set' do
+        before { described_class.default_collation = "utf8_general_ci" }
+        after  { described_class.default_collation = "utf8mb4_bin" }
+        it     { is_expected.to eq("utf8_general_ci") }
+      end
+    end
+
+    context 'when running on MySQL 8.0' do
+      around do |spec|
+        described_class.mysql_version = '8.0.21'
+        spec.run
+      ensure
+        described_class.remove_instance_variable('@mysql_version')
+      end
+
+      context 'when explicitly set' do
+        before { described_class.default_collation = "utf8_general_ci" }
+        after  { described_class.default_collation = "utf8mb4_bin" }
+        it     { is_expected.to eq("utf8mb3_unicode_ci") }
+      end
     end
   end
 
