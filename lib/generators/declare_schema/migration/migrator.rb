@@ -426,7 +426,7 @@ module Generators
 
           new_table_name = model.table_name
           existing_indexes = ::DeclareSchema::Model::IndexDefinition.for_model(model, old_table_name)
-          model_indexes_with_equivalents = model.index_definitions_with_primary_key
+          model_indexes_with_equivalents = model.index_definitions_with_primary_key.to_a
           model_indexes = model_indexes_with_equivalents.map do |i|
             if i.explicit_name.nil?
               if (existing = existing_indexes.find { |e| i != e && e.equivalent?(i) })
@@ -486,7 +486,7 @@ module Generators
           ::DeclareSchema.default_generate_foreign_keys or return []
 
           existing_fks = ::DeclareSchema::Model::ForeignKeyDefinition.for_model(model, old_table_name)
-          model_fks = model.constraint_specs
+          model_fks = model.constraint_specs.to_a
 
           fks_to_drop = existing_fks - model_fks
           fks_to_add = model_fks - existing_fks
