@@ -57,9 +57,8 @@ module DeclareSchema
         index(fields.flatten, unique: true, name: ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME)
       end
 
-      def constraint(fkey, **options)
-        fkey_s = fkey.to_s
-        constraint_specs << DeclareSchema::Model::ForeignKeyDefinition.new(self, fkey, **options)
+      def constraint(foreign_key, **options)
+        constraint_specs << DeclareSchema::Model::ForeignKeyDefinition.new(self, foreign_key.to_s, **options)
       end
 
       # tell the migration generator to ignore the named index. Useful for existing indexes, or for indexes
@@ -150,9 +149,9 @@ module DeclareSchema
 
         super
 
-        refl = reflections[name.to_s] or raise "Couldn't find reflection #{name} in #{reflections.keys}"
-        fkey = refl.foreign_key or raise "Couldn't find foreign_key for #{name} in #{refl.inspect}"
-        fkey_id_column_options = column_options.dup
+        reflection = reflections[name.to_s] or raise "Couldn't find reflection #{name} in #{reflections.keys}"
+        foreign_key = reflection.foreign_key or raise "Couldn't find foreign_key for #{name} in #{reflection.inspect}"
+        foreign_key_id_column_options = column_options.dup
 
         # Note: the foreign key limit: should match the primary key limit:. (If there is a foreign key constraint,
         # those limits _must_ match.) We'd like to call _infer_fk_limit and get the limit right from the PK.
@@ -163,31 +162,31 @@ module DeclareSchema
         # The one downside of this approach is that application code that asks the field_spec for the declared
         # foreign key limit: will always get 8 back even if this is a grandfathered foreign key that points to
         # a limit: 4 primary key. It seems unlikely that any application code would do this.
-        fkey_id_column_options[:pre_migration] = ->(field_spec) do
-          if (inferred_limit = _infer_fk_limit(fkey, refl))
+        foreign_key_id_column_options[:pre_migration] = ->(field_spec) do
+          if (inferred_limit = _infer_fk_limit(foreign_key, reflection))
             field_spec.sql_options[:limit] = inferred_limit
           end
         end
 
-        declare_field(fkey.to_sym, :bigint, **fkey_id_column_options)
+        declare_field(foreign_key.to_sym, :bigint, **foreign_key_id_column_options)
 
-        if refl.options[:polymorphic]
+        if reflection.options[:polymorphic]
           foreign_type = options[:foreign_type] || "#{name}_type"
           _declare_polymorphic_type_field(foreign_type, column_options)
-          index([foreign_type, fkey], **index_options) if index_options
+          index([foreign_type, foreign_key], **index_options) if index_options
         else
-          index(fkey, **index_options) if index_options
-          constraint(fkey, **fk_options) if fk_options[:constraint_name] != false
+          index(foreign_key, **index_options) if index_options
+          constraint(foreign_key, **fk_options) if fk_options[:constraint_name] != false
         end
       end
 
-      def _infer_fk_limit(fkey, refl)
-        if refl.options[:polymorphic]
-          if (fkey_column = columns_hash[fkey.to_s]) && fkey_column.type == :integer
-            fkey_column.limit
+      def _infer_fk_limit(foreign_key, reflection)
+        if reflection.options[:polymorphic]
+          if (foreign_key_column = columns_hash[foreign_key.to_s]) && foreign_key_column.type == :integer
+            foreign_key_column.limit
           end
         else
-          klass = refl.klass or raise "Couldn't find belongs_to klass for #{name} in #{refl.inspect}"
+          klass = reflection.klass or raise "Couldn't find belongs_to klass for #{name} in #{reflection.inspect}"
           if (pk_id_type = klass._table_options&.[](:id))
             if pk_id_type == :integer
               4
@@ -318,11 +317,11 @@ module DeclareSchema
         end
 
         attr_types[name] ||
-          if (refl = reflections[name.to_s])
-            if refl.macro.in?([:has_one, :belongs_to]) && !refl.options[:polymorphic]
-              refl.klass
+          if (reflection = reflections[name.to_s])
+            if reflection.macro.in?([:has_one, :belongs_to]) && !reflection.options[:polymorphic]
+              reflection.klass
             else
-              refl
+              reflection
             end
           end ||
           if (col = _column(name.to_s))
