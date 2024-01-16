@@ -176,7 +176,7 @@ DeclareSchema.clear_default_schema
 ```
 
 ### Global Configuration
-Configurations can be set at globally to customize default declaration for the following values:
+Configurations can be set globally to customize default declaration for the following values:
 
 #### Text Limit
 The default text limit can be set using the `DeclareSchema.default_text_limit=` method.
