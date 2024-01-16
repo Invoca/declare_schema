@@ -67,14 +67,14 @@ module DeclareSchema
 
       alias eql? ==
 
+      def hash
+        key.hash
+      end
+
       private
 
       def key
         @key ||= [@child_table_name, parent_table_name, @foreign_key_name, @on_delete_cascade].map(&:to_s)
-      end
-
-      def hash
-        key.hash
       end
     end
   end
