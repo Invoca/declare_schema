@@ -114,9 +114,9 @@ module DeclareSchema
         if index_value != false || options.has_key?(:unique) || options.has_key?(:allow_equivalent)
           index_options = {}
           case index_value
-          when String
+          when String, Symbol
             Kernel.warn("belongs_to index: 'name' is deprecated; use index: { name: 'name' } instead (in #{name})")
-            index_options[:name] = index_value
+            index_options[:name] = index_value.to_s
           when true
           when false
             raise ArgumentError, "belongs_to index: false contradicts others options #{options.inspect} (in #{name})"
