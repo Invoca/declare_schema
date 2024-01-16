@@ -60,6 +60,24 @@ RSpec.describe DeclareSchema::Model::ForeignKeyDefinition do
           end
         end
 
+        describe `#<=>` do
+          context 'when class name not passed' do
+            let(:options) { { foreign_key: :the_network_id, constraint_name: :constraint_1, dependent: :delete } }
+
+            it 'compares equal without requring the parent class' do
+              expect(subject <=> subject).to eq(0)
+            end
+          end
+
+          context 'when class name passed' do
+            let(:options) { { foreign_key: :the_network_id, class_name: 'TheNetwork', constraint_name: :constraint_1 } }
+
+            it 'compares equal without requring the parent class' do
+              expect(subject <=> subject).to eq(0)
+            end
+          end
+        end
+
         context 'when constraint name passed as empty string' do
           let(:options) { { constraint_name: "" } }
           it 'defaults to rails constraint name' do
