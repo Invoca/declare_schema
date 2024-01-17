@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
-require "bundler/setup"
-require "declare_schema"
-require "climate_control"
+require 'bundler/setup'
+require 'declare_schema'
+require 'climate_control'
+require 'pry'
 
 require_relative "./support/acceptance_spec_helpers"
 
