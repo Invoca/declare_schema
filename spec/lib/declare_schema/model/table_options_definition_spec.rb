@@ -9,6 +9,8 @@ require_relative '../../../../lib/declare_schema/model/table_options_definition'
 
 RSpec.describe DeclareSchema::Model::TableOptionsDefinition do
   let(:model_class) { TableOptionsDefinitionTestModel }
+  let(:charset) { DeclareSchema.normalize_charset('utf8') }
+  let(:collation) { DeclareSchema.normalize_collation('utf8_general') } # adapt so that tests will pass on MySQL 5.7 or 8+
 
   context 'Using declare_schema' do
     before do
@@ -27,12 +29,12 @@ RSpec.describe DeclareSchema::Model::TableOptionsDefinition do
 
       describe '#to_key' do
         subject { model.to_key }
-        it { should eq(['table_options_definition_test_models', '{:charset=>"utf8", :collation=>"utf8_general"}']) }
+        it { is_expected.to eq(['table_options_definition_test_models', "{:charset=>#{charset.inspect}, :collation=>#{collation.inspect}}"]) }
       end
 
       describe '#settings' do
         subject { model.settings }
-        it { should eq("CHARACTER SET utf8 COLLATE utf8_general") }
+        it { is_expected.to eq("CHARACTER SET #{charset} COLLATE #{collation}") }
 
         if defined?(Mysql2)
           context 'when running in MySQL 8' do
@@ -43,11 +45,11 @@ RSpec.describe DeclareSchema::Model::TableOptionsDefinition do
               DeclareSchema.remove_instance_variable('@mysql_version') rescue nil
             end
 
-            it { should eq("CHARACTER SET utf8mb3 COLLATE utf8mb3_general") }
+            it { is_expected.to eq("CHARACTER SET utf8mb3 COLLATE utf8mb3_general") }
 
             context 'when _ci collation' do
               let(:table_options) { { charset: "utf8", collation: "utf8_general_ci"} }
-              it { should eq("CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci") }
+              it { is_expected.to eq("CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci") }
             end
           end
         end
@@ -55,17 +57,17 @@ RSpec.describe DeclareSchema::Model::TableOptionsDefinition do
 
       describe '#hash' do
         subject { model.hash }
-        it { should eq(['table_options_definition_test_models', '{:charset=>"utf8", :collation=>"utf8_general"}'].hash) }
+        it { is_expected.to eq(['table_options_definition_test_models', "{:charset=>#{charset.inspect}, :collation=>#{collation.inspect}}"].hash) }
       end
 
       describe '#to_s' do
         subject { model.to_s }
-        it { should eq("CHARACTER SET utf8 COLLATE utf8_general") }
+        it { is_expected.to eq("CHARACTER SET #{charset} COLLATE #{collation}") }
       end
 
       describe '#alter_table_statement' do
         subject { model.alter_table_statement }
-        it { should match(/execute "ALTER TABLE .*table_options_definition_test_models.* CHARACTER SET utf8 COLLATE utf8_general"/) }
+        it { is_expected.to match(/execute "ALTER TABLE .*table_options_definition_test_models.* CHARACTER SET #{charset} COLLATE #{collation}"/) }
       end
     end
 
@@ -85,7 +87,7 @@ RSpec.describe DeclareSchema::Model::TableOptionsDefinition do
             generate_migrations '-n', '-m'
           end
 
-          it { should eq(described_class.new(model_class.table_name, **options)) }
+          it { is_expected.to eq(described_class.new(model_class.table_name, **options)) }
         end
       end
     end
