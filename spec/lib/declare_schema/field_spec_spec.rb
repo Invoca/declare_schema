@@ -66,7 +66,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
       if defined?(Mysql2)
         context 'when running on MySQL 8.0' do
           around do |spec|
-            DeclareSchema.mysql_version = '8.0.21'
+            DeclareSchema.mysql_version = Gem::Version.new('8.0.21')
             spec.run
           ensure
             DeclareSchema.remove_instance_variable('@mysql_version') rescue nil
