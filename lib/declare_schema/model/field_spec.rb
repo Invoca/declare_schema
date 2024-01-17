@@ -107,7 +107,9 @@ module DeclareSchema
         if @type.in?([:text, :string])
           if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
             @options[:charset]   ||= model._table_options&.[](:charset)   || ::DeclareSchema.default_charset
+            @options[:charset] = DeclareSchema.normalize_charset(@options[:charset])
             @options[:collation] ||= model._table_options&.[](:collation) || ::DeclareSchema.default_collation
+            @options[:collation] = DeclareSchema.normalize_collation(@options[:collation])
           else
             @options.delete(:charset)
             @options.delete(:collation)
