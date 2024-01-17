@@ -34,19 +34,21 @@ RSpec.describe DeclareSchema::Model::TableOptionsDefinition do
         subject { model.settings }
         it { should eq("CHARACTER SET utf8 COLLATE utf8_general") }
 
-        context 'when running in MySQL 8' do
-          around do |spec|
-            DeclareSchema.mysql_version = '8.0.21'
-            spec.run
-          ensure
-            DeclareSchema.remove_instance_variable('@mysql_version') rescue nil
-          end
+        if defined?(Mysql2)
+          context 'when running in MySQL 8' do
+            around do |spec|
+              DeclareSchema.mysql_version = Gem::Version.new('8.0.21')
+              spec.run
+            ensure
+              DeclareSchema.remove_instance_variable('@mysql_version') rescue nil
+            end
 
-          it { should eq("CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode") }
+            it { should eq("CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode") }
 
-          context 'when _ci collation' do
-            let(:table_options) { { charset: "utf8", collation: "utf8_general_ci"} }
-            it { should eq("CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci") }
+            context 'when _ci collation' do
+              let(:table_options) { { charset: "utf8", collation: "utf8_general_ci"} }
+              it { should eq("CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci") }
+            end
           end
         end
       end

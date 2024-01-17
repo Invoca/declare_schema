@@ -10,7 +10,7 @@ RSpec.describe DeclareSchema do
 
     context 'when running on MySQL 5.7' do
       around do |spec|
-        described_class.mysql_version = '5.7.48'
+        described_class.mysql_version = Gem::Version.new('5.7.48')
         spec.run
       ensure
         described_class.remove_instance_variable('@mysql_version') rescue nil
@@ -25,7 +25,7 @@ RSpec.describe DeclareSchema do
 
     context 'when running on MySQL 8.0' do
       around do |spec|
-        described_class.mysql_version = '8.0.21'
+        described_class.mysql_version = Gem::Version.new('8.0.21')
         spec.run
       ensure
         described_class.remove_instance_variable('@mysql_version') rescue nil
@@ -48,7 +48,7 @@ RSpec.describe DeclareSchema do
 
     context 'when running on MySQL 5.7' do
       around do |spec|
-        described_class.mysql_version = '5.7.48'
+        described_class.mysql_version = Gem::Version.new('5.7.48')
         spec.run
       ensure
         described_class.remove_instance_variable('@mysql_version')
@@ -63,7 +63,7 @@ RSpec.describe DeclareSchema do
 
     context 'when running on MySQL 8.0' do
       around do |spec|
-        described_class.mysql_version = '8.0.21'
+        described_class.mysql_version = Gem::Version.new('8.0.21')
         spec.run
       ensure
         described_class.remove_instance_variable('@mysql_version')
