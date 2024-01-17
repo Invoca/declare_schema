@@ -69,7 +69,13 @@ RSpec.describe DeclareSchema do
         described_class.remove_instance_variable('@mysql_version')
       end
 
-      context 'when explicitly set' do
+      context 'when explicitly set without _ci' do
+        before { described_class.default_collation = "utf8_general" }
+        after  { described_class.default_collation = "utf8mb4_bin" }
+        it     { is_expected.to eq("utf8mb3_unicode") }
+      end
+
+      context 'when explicitly set with _ci' do
         before { described_class.default_collation = "utf8_general_ci" }
         after  { described_class.default_collation = "utf8mb4_bin" }
         it     { is_expected.to eq("utf8mb3_unicode_ci") }

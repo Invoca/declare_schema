@@ -73,7 +73,10 @@ module DeclareSchema
 
     def normalize_collation(collation)
       if mysql_version && mysql_version >= SEMVER_8
-        if collation == 'utf8_general_ci'
+        case collation
+        when 'utf8_general'
+          'utf8mb3_unicode'
+        when 'utf8_general_ci'
           'utf8mb3_unicode_ci'
         end
       end || collation
