@@ -50,7 +50,17 @@ module DeclareSchema
 
       def initialize(table_name, **table_options)
         @table_name    = table_name
-        @table_options = table_options
+        @table_options = table_options.each_with_object({}) do |(k, v),result|
+          result[k] =
+            case k
+            when :charset
+              DeclareSchema.normalize_charset(v)
+            when :collation
+              DeclareSchema.normalize_collation(v)
+            else
+              v
+            end
+        end
       end
 
       def to_key
