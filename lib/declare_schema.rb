@@ -64,22 +64,19 @@ module DeclareSchema
     end
 
     def normalize_charset(charset)
-      if mysql_version && mysql_version >= SEMVER_8
-        if charset == 'utf8'
-          'utf8mb3'
-        end
-      end || charset
+      if mysql_version && mysql_version >= SEMVER_8 && charset == 'utf8'
+        'utf8mb3'
+      else
+        charset
+      end
     end
 
     def normalize_collation(collation)
       if mysql_version && mysql_version >= SEMVER_8
-        case collation
-        when 'utf8_general'
-          'utf8mb3_unicode'
-        when 'utf8_general_ci'
-          'utf8mb3_unicode_ci'
-        end
-      end || collation
+        collation.sub(/\Autf8_/, 'utf8mb3_')
+      else
+        collation
+      end
     end
 
     def default_charset=(charset)

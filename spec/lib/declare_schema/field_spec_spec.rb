@@ -75,7 +75,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
           it 'normalizes charset and collation' do
             subject = described_class.new(model, :title, :string, limit: 100, null: true, charset: 'utf8', collation: 'utf8_general', position: 0)
 
-            expect(subject.schema_attributes(col_spec)).to eq(type: :string, limit: 100, null: true, charset: 'utf8mb3', collation: 'utf8mb3_unicode')
+            expect(subject.schema_attributes(col_spec)).to eq(type: :string, limit: 100, null: true, charset: 'utf8mb3', collation: 'utf8mb3_general')
           end
         end
 

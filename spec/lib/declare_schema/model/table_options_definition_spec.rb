@@ -43,11 +43,11 @@ RSpec.describe DeclareSchema::Model::TableOptionsDefinition do
               DeclareSchema.remove_instance_variable('@mysql_version') rescue nil
             end
 
-            it { should eq("CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode") }
+            it { should eq("CHARACTER SET utf8mb3 COLLATE utf8mb3_general") }
 
             context 'when _ci collation' do
               let(:table_options) { { charset: "utf8", collation: "utf8_general_ci"} }
-              it { should eq("CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci") }
+              it { should eq("CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci") }
             end
           end
         end

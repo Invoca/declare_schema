@@ -72,13 +72,13 @@ RSpec.describe DeclareSchema do
       context 'when explicitly set without _ci' do
         before { described_class.default_collation = "utf8_general" }
         after  { described_class.default_collation = "utf8mb4_bin" }
-        it     { is_expected.to eq("utf8mb3_unicode") }
+        it     { is_expected.to eq("utf8mb3_general") }
       end
 
       context 'when explicitly set with _ci' do
         before { described_class.default_collation = "utf8_general_ci" }
         after  { described_class.default_collation = "utf8mb4_bin" }
-        it     { is_expected.to eq("utf8mb3_unicode_ci") }
+        it     { is_expected.to eq("utf8mb3_general_ci") }
       end
     end
   end
