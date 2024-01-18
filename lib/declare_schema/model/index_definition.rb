@@ -19,7 +19,6 @@ module DeclareSchema
       def initialize(columns, table_name:, name: nil, allow_equivalent: false, unique: false, where: nil, length: nil)
         @table_name = table_name
         @name = name || self.class.default_index_name(table_name, columns)
-        @name.to_s == 'index_adverts_on_Advert' and binding.pry
         @columns = Array.wrap(columns).map(&:to_s)
         @explicit_name = @name if !allow_equivalent
         unique.in?([false, true]) or raise ArgumentError, "unique must be true or false: got #{unique.inspect}"
