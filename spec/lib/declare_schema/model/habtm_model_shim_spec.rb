@@ -11,6 +11,7 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
   let(:join_table) { "customers_users" }
   let(:foreign_keys) { ["user_id", "customer_id"] }
   let(:parent_table_names) { ["users", "customers"] }
+  let(:connection) { instance_double(ActiveRecord::Base.connection.class, "connection") }
 
   before do
     load File.expand_path('../prepare_testapp.rb', __dir__)
@@ -32,24 +33,29 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
                                               active_record: User,
                                               class_name: 'Customer') }
       it 'returns a new object' do
-        result = described_class.from_reflection(reflection)
+        result = described_class.from_reflection(reflection, connection: connection)
 
         expect(result).to be_a(described_class)
         expect(result.foreign_keys).to eq(foreign_keys.reverse)
         expect(result.parent_table_names).to eq(parent_table_names.reverse)
+        expect(result.connection).to be(connection)
       end
     end
   end
 
   describe 'instance methods' do
-    let(:connection) { instance_double(ActiveRecord::Base.connection.class, "connection") }
-
-    subject { described_class.new(join_table, foreign_keys, parent_table_names) }
+    subject { described_class.new(join_table, foreign_keys, parent_table_names, connection: connection) }
 
     describe '#initialize' do
       it 'stores initialization attributes' do
         expect(subject.join_table).to eq(join_table)
         expect(subject.foreign_keys).to eq(foreign_keys.reverse)
+      end
+    end
+
+    describe '#connection' do
+      it 'returns the connection' do
+        expect(subject.connection).to be(connection)
       end
     end
 

@@ -204,8 +204,8 @@ module Generators
             end
           end
           # generate shims for HABTM models
-          habtm_tables.each do |name, refls|
-            models_by_table_name[name] = ::DeclareSchema::Model::HabtmModelShim.from_reflection(refls.first)
+          habtm_tables.each do |name, reflections|
+            models_by_table_name[name] = ::DeclareSchema::Model::HabtmModelShim.from_reflection(reflections.first, connection: model.connection)
           end
           model_table_names = models_by_table_name.keys
 
