@@ -164,7 +164,7 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
           it 'returns the indexes for the model' do
             expect(subject.map(&:to_key)).to eq([
               ["index_definition_test_models_on_name", ["name"], { unique: true, where: nil, length: nil }],
-              (["index_definition_test_models_on_name_partial", ["name"], { unique: false, where: nil, length: 10 }] if defined?(Mysql2)),
+              (["index_definition_test_models_on_name_partial", ["name"], { unique: false, where: nil, length: { name: 10 } }] if defined?(Mysql2)),
               ["PRIMARY", ["id"], { unique: true, where: nil, length: nil }]
             ].compact)
           end
@@ -185,7 +185,7 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
 
           it 'skips the ignored index' do
             expect(subject.map(&:to_key)).to eq([
-              (["index_definition_test_models_on_name_partial", ["name"], { unique: false, where: nil, length: 10 }] if defined?(Mysql2)),
+              (["index_definition_test_models_on_name_partial", ["name"], { unique: false, where: nil, length: { name: 10 } }] if defined?(Mysql2)),
               ["PRIMARY", ["id"], { length: nil, unique: true, where: nil }]
             ].compact)
           end
