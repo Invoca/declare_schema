@@ -528,9 +528,8 @@ module Generators
         end
 
         def fk_field_options(model, field_name)
-          foreign_key = model.constraint_definitions.find { |fk| field_name == fk.foreign_key_column }
-          if foreign_key && (parent_table = foreign_key.parent_table_name)
-            parent_columns = connection.columns(parent_table) rescue []
+          if (foreign_key = model.constraint_definitions.find { |fk| field_name == fk.foreign_key_column })
+            parent_columns = connection.columns(foreign_key.parent_table_name) rescue []
             pk_limit =
               if (pk_column = parent_columns.find { |column| column.name.to_s == "id" }) # right now foreign keys assume id is the target
                 pk_column.limit
