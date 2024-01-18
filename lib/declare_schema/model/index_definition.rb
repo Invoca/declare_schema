@@ -57,7 +57,16 @@ module DeclareSchema
                 raise "primary key on #{table_name} was not unique on #{primary_key_columns} (was unique=#{index.unique} on #{index.columns})"
               primary_key_found = true
             end
-            new(index.columns, name: index.name, table_name: table_name, unique: index.unique, where: index.where)
+            length =
+              case lengths = index.lengths
+              when {}
+                nil
+              when Hash
+                lengths.size == 1 ? lengths.values.first : lengths
+              else
+                lengths
+              end
+            new(index.columns, name: index.name, table_name: table_name, unique: index.unique, where: index.where, length: length)
           end.compact
 
           if !primary_key_found
