@@ -9,7 +9,7 @@ Make a model and declare your schema within a `declare_schema do ... end` block:
 class Company < ActiveRecord::Base
   declare_schema do
     string  :company_name,  limit: 100
-    string  :ticker_symbol, limit: 4, null: true, index: true, unique: true
+    string  :ticker_symbol, limit: 4, null: true, index: { unique: true }
     integer :employee_count
     text    :comments
 
@@ -59,6 +59,61 @@ declare_schema id: :bigint do
   ...
 end
 ```
+
+## declare_schema DSL field (column) declaration
+The `declare_schema` DSL is yielded to the block as shown with block variable `t` (for table).
+Each field (column) is declared with the syntax `t.<type> :<column_name>, <options>` as shown here for the `string` column `company_name`:
+```ruby
+create_table :companies, id: :bigint do |t|
+  t.string   :company_name, null: false, limit: 100
+    ...
+end
+```
+### Field (Column) Types
+All of the ActiveRecord field types are supported, as returned by the database driver in use at the time.
+These typically include:
+- `binary` (blob)
+- `text`
+- `integer`
+- `bigint`
+- `float`
+- `decimal`
+- `date`
+- `time`
+- `datetime`
+- `timestamp`
+- `string` (varchar)
+- `boolean` (tinyint 0 or 1)
+- `json`
+- `array`
+- `enum` (if using the `activerecord-mysql-enum` gem) (MySQL enum)
+
+### Field (Column) Options
+The following field options are:
+- `limit` (integer) - The maximum length of the field. For `text` and `binary` fields, this is the maximum number of bytes.
+ For `string` fields, this is the maximum number of characters, and defaults to `DeclareSchema.default_string_limit`; for `text`, defaults to `DeclareSchema.default_text_limit`.
+ For `enum`
+- `null` (boolean) - Whether the field is nullable. Defaults to `DeclareSchema.default_null`.
+- `default` (any) - The default value for the field.
+- `ruby_default` (Proc) - A callable Ruby Proc that returns the default value for the field. This is useful for default values that require Ruby computation.
+  (Provided by the `attr_default` gem.)
+- `index` (boolean [deprecated] or hash) - Whether to create an index for the field. If `true`, defaults to `{ unique: false }` [deprecated]. See below for supported `index` options.
+- `unique` [deprecated] (boolean) - Whether to create a unique index for the field. Defaults to `false`. Deprecated in favor of `index: { unique: <boolean> }`.
+- `charset` (string) - The character set for the field. Defaults to `default_charset` (see below).
+- `collation` (string) - The collation for the field. Defaults to `default_collation` (see below).
+- `precision` (integer) - The precision for the numeric field.
+- `scale` (integer) - The scale for the numeric field.
+
+### Index Options
+The following `index` options are supported:
+- `name` (string) - The name of the index. Defaults the longest format that will fit within `DeclareSchema.max_index_and_constraint_name_length`. They are tried in this order:
+1. `index_<table>_on_<col1>[_and_<col2>...]>`.
+2. `__<col1>[_<col2>...]>`
+3. `<table_prefix><sha256_of_columns_prefix>`
+- `unique` (boolean) - Whether the index is unique. Defaults to `false`.
+- `order` (synbol or hash) - The index order. If `:asc` or `:desc` is provided, it is used as the order for all columns. If hash is provided, it is used to specify the order of individual columns, where the column names are given as `Symbol` hash keys with values of `:asc` or `:desc` indicating the sort order of that column.
+- `length` (integer or hash) - The partial index length(s). If an integer is provided, it is used as the length for all columns. If a hash is provided, it is used to specify the length for individual columns, where the column names are given as `Symbol` hash keys.
+- `where` (string) - The subset index predicate.
 
 ## Usage without Rails
 
@@ -115,13 +170,13 @@ end
 ```
 
 ### clear_default_schema
-This method clears out any previously declared `default_schema`.
+This method clears out any previously declared `default_schema`. This can be useful for tests.
 ```ruby
 DeclareSchema.clear_default_schema
 ```
 
 ### Global Configuration
-Configurations can be set at the global level to customize default declaration for the following values:
+Configurations can be set globally to customize default declaration for the following values:
 
 #### Text Limit
 The default text limit can be set using the `DeclareSchema.default_text_limit=` method.
@@ -134,8 +189,6 @@ set the default `text limit` value to `0xffff`:
 
 **declare_schema.rb**
 ```ruby
-# frozen_string_literal: true
-
 DeclareSchema.default_text_limit = 0xffff
 ```
 
@@ -150,8 +203,6 @@ set the default `string limit` value to `255`:
 
 **declare_schema.rb**
 ```ruby
-# frozen_string_literal: true
-
 DeclareSchema.default_string_limit = 255
 ```
 
@@ -166,40 +217,34 @@ set the default `null` value to `true`:
 
 **declare_schema.rb**
 ```ruby
-# frozen_string_literal: true
-
 DeclareSchema.default_null = true
 ```
 
 #### Generate Foreign Keys
-The default value for generate foreign keys can be set using the `DeclareSchema.default_generate_foreign_keys=` method.
-This value defaults to `true` and can only be set at the global level.
+You can choose whether to generate foreign keys by using the `DeclareSchema.default_generate_foreign_keys=` method.
+This defaults to `true` and can only be set globally.
 
-For example, adding the following to your `config/initializers` directory will set
-the default `generate foreign keys` value to `false`:
+For example, adding the following to your `config/initializers` directory will cause
+foreign keys not to be generated:
 
 **declare_schema.rb**
 ```ruby
-# frozen_string_literal: true
-
 DeclareSchema.default_generate_foreign_keys = false
 ```
 
 #### Generate Indexing
-The default value for generate indexing can be set using the `DeclareSchema.default_generate_indexing=` method.
-This value defaults to `true` and can only be set at the global level.
+You can choose whether to generate indexes automatically by using the `DeclareSchema.default_generate_indexing=` method.
+This defaults to `true` and can only be set globally.
 
-For example, adding the following to your `config/initializers` directory will
-set the default `generate indexing` value to `false`:
+For example, adding the following to your `config/initializers` directory will cause
+indexes not to be generated by `declare_schema`:
 
 **declare_schema.rb**
 ```ruby
-# frozen_string_literal: true
-
 DeclareSchema.default_generate_indexing = false
 ```
 #### Character Set and Collation
-The character set and collation for all tables and fields can be set at the global level
+The character set and collation for all tables and fields can be set at globally
 using the `Generators::DeclareSchema::Migrator.default_charset=` and
 `Generators::DeclareSchema::Migrator.default_collation=` configuration methods.
 
@@ -208,8 +253,6 @@ turn all tables into `utf8mb4` supporting tables:
 
 **declare_schema.rb**
 ```ruby
-# frozen_string_literal: true
-
 DeclareSchema.default_charset   = "utf8mb4"
 DeclareSchema.default_collation = "utf8mb4_bin"
 ```
@@ -224,7 +267,7 @@ bundle exec rails db:migrate
 ```
 If your repo has a different command to run for migrations, you can configure it like this:
 ```ruby
-`DeclareSchema.db_migrate_command = "bundle exec rails db:migrate_immediate"`
+DeclareSchema.db_migrate_command = "bundle exec rails db:migrate_immediate"
 ```
 
 ## The `belongs_to` Association
@@ -233,24 +276,16 @@ association is outside of the `declare_schema do` block, so `declare_schema` int
 infer the foreign key column.
 
 By default, `declare_schema` creates an index for `belongs_to` relations. If this default index is not desired,
-you can use `index: false` in the `belongs_to` expression. This may be the case if for example a different index
-already accounts for it.
+you can use `index: false` in the `belongs_to` expression. This may be the case if, for example, a different index
+already covers those columns at the front.
 
 ## The `has_and_belongs_to_many` Association
 Like the `belongs_to` association, `has_and_belongs_to_many` is outside of the `declare_schema ` block. `declare_schema` similarly
 infers foreign keys (and the intersection table).
 
 ## Ignored Tables
-If a table's schema or metadata are managed elsewhere, `declare_schema` probably should not alter it. Accordingly,
-`declare_schema` can be configured to ignore tables.
-
-`declare_schema` by default ignores these tables:
-- The ActiveRecord `schema_info` table
-- The ActiveRecord schema migrations table (generally named `schema_migrations`)
-- The ActiveRecord internal metadata table (generally named `ar_internal_metadata`)
-- If defined/configured, the CGI ActiveRecordStore session table
-
-Additional tables can be ignored by configuring `Generators::DeclareSchema::Migration::Migrator.ignore_tables`.
+If a table's schema or metadata are managed elsewhere, `declare_schema` can be instructed to ignore it
+by adding those table names to the array assigned to `Generators::DeclareSchema::Migration::Migrator.ignore_tables`.
 For example:
 
 ```ruby
@@ -260,6 +295,12 @@ For example:
   ...
 ]
 ```
+
+Note: `declare_schema` always ignores these tables:
+- The ActiveRecord `schema_info` table
+- The ActiveRecord schema migrations table (generally named `schema_migrations`)
+- The ActiveRecord internal metadata table (generally named `ar_internal_metadata`)
+- If defined/configured, the CGI ActiveRecordStore session table
 
 ## Maximum Length of Index and Constraint Names
 
@@ -282,7 +323,10 @@ But later, Unicode was extended beyond U+FFFF to make room for emojis, and with 
 UTF-8 require 1-4 bytes (`mb4` or "multi-byte 4"). With this addition, there has
 come a need to dynamically define the character set and collation for individual
 tables and columns in the database. With `declare_schema` this can be configured
-at three separate levels
+at three separate levels.
+
+### Global Configuration
+The global configuration option is explained above in the [Character Set and Collation](#Character-Set-and-Collation) section.
 
 ### Table Configuration
 In order to configure a table's default character set and collation, the `charset` and
