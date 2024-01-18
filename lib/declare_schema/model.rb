@@ -186,7 +186,7 @@ module DeclareSchema
           end
 
           if ::DeclareSchema.default_generate_foreign_keys && constraint_name != false
-            constraint(foreign_key_column, constraint_name: constraint_name || index_options&.[](:name), parent_class_name: reflection.klass, dependent: dependent_delete)
+            constraint(foreign_key_column, constraint_name: constraint_name || index_options&.[](:name), parent_class_name: reflection.class_name, dependent: dependent_delete)
           end
         end
       end
