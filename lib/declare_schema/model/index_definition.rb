@@ -16,8 +16,6 @@ module DeclareSchema
 
       PRIMARY_KEY_NAME = "PRIMARY"
 
-      # Caller needs to pass either name or table_name. The table_name is not remembered; it is just used to compute the
-      # default name if no name is given.
       def initialize(columns, table_name:, name: nil, allow_equivalent: false, unique: false, where: nil, length: nil)
         @table_name = table_name
         @name = name || self.class.default_index_name(table_name, columns)
