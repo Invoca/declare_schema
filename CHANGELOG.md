@@ -10,6 +10,11 @@ Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0
 ### Changed
 - Deprecate index: 'name' and unique: true|false in favor of index: { name: 'name', unique: true|false }.
 
+## [1.3.3] - 2023-01-17
+### Fixed
+- Fix a MySQL 8 bug where MySQL 8+ renames charset 'utf8' to 'utf8mb3' and collation 'utf8_general_ci' to
+  'utf8mb3_unicode_ci'.
+
 ## [1.3.2] - 2024-01-12
 ### Fixed
 - Fix bug in migrator when table option definitions differ

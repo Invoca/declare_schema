@@ -7,65 +7,69 @@ module DeclareSchema
     class IndexDefinition
       include Comparable
 
-      # TODO: replace `fields` with `columns` and remove alias. -Colin
       OPTIONS = [:name, :unique, :where, :length].freeze
-      attr_reader :table, :fields, :explicit_name, *OPTIONS
-      alias columns fields
+      attr_reader :columns, :explicit_name, :table_name, *OPTIONS
+
+      alias fields columns # TODO: change callers to use columns. -Colin
 
       class IndexNameTooLongError < RuntimeError; end
 
       PRIMARY_KEY_NAME = "PRIMARY"
 
-      def initialize(model, fields, **options)
-        @model = model
-        @table = options.delete(:table_name) || model.table_name
-        @fields = Array.wrap(fields).map(&:to_s)
-        @explicit_name = options[:name] unless options.delete(:allow_equivalent)
-        @name = options.delete(:name) || self.class.default_index_name(@table, @fields)
-        @unique = options.delete(:unique) || name == PRIMARY_KEY_NAME || false
-        @length = options.delete(:length)
+      # Caller needs to pass either name or table_name. The table_name is not remembered; it is just used to compute the
+      # default name if no name is given.
+      def initialize(columns, table_name:, name: nil, allow_equivalent: false, unique: false, where: nil, length: nil)
+        @table_name = table_name
+        @name = name || self.class.default_index_name(table_name, columns)
+        @name.to_s == 'index_adverts_on_Advert' and binding.pry
+        @columns = Array.wrap(columns).map(&:to_s)
+        @explicit_name = @name if !allow_equivalent
+        unique.in?([false, true]) or raise ArgumentError, "unique must be true or false: got #{unique.inspect}"
+        if @name == PRIMARY_KEY_NAME
+          unique or raise ArgumentError, "primary key index must be unique"
+        end
+        @unique = unique
 
         if DeclareSchema.max_index_and_constraint_name_length && @name.length > DeclareSchema.max_index_and_constraint_name_length
           raise IndexNameTooLongError, "Index '#{@name}' exceeds configured limit of #{DeclareSchema.max_index_and_constraint_name_length} characters. Give it a shorter name, or adjust DeclareSchema.max_index_and_constraint_name_length if you know your database can accept longer names."
         end
 
-        if (where = options.delete(:where))
+        if where
           @where = where.start_with?('(') ? where : "(#{where})"
         end
 
-        options.any? and warn("ignoring unrecognized option(s): #{options.inspect} for model #{model}")
+        @length = length
       end
 
       class << self
         # extract IndexSpecs from an existing table
         # includes the PRIMARY KEY index
-        def for_model(model, old_table_name = nil)
-          t = old_table_name || model.table_name
-
-          primary_key_columns = Array(model.connection.primary_key(t)).presence
-          primary_key_columns or raise "could not find primary key for table #{t} in #{model.connection.columns(t).inspect}"
+        def for_table(table_name, ignore_indexes, connection)
+          primary_key_columns = Array(connection.primary_key(table_name))
+          primary_key_columns.present? or raise "could not find primary key for table #{table_name} in #{connection.columns(table_name).inspect}"
 
           primary_key_found = false
-          index_definitions = model.connection.indexes(t).map do |i|
-            model.ignore_indexes.include?(i.name) and next
-            if i.name == PRIMARY_KEY_NAME
-              i.columns == primary_key_columns && i.unique or
-                raise "primary key on #{t} was not unique on #{primary_key_columns} (was unique=#{i.unique} on #{i.columns})"
+          index_definitions = connection.indexes(table_name).map do |index|
+            next if ignore_indexes.include?(index.name)
+
+            if index.name == PRIMARY_KEY_NAME
+              index.columns == primary_key_columns && index.unique or
+                raise "primary key on #{table_name} was not unique on #{primary_key_columns} (was unique=#{index.unique} on #{index.columns})"
               primary_key_found = true
             end
-            new(model, i.columns, name: i.name, unique: i.unique, where: i.where, table_name: old_table_name)
+            new(index.columns, name: index.name, table_name: table_name, unique: index.unique, where: index.where)
           end.compact
 
           if !primary_key_found
-            index_definitions << new(model, primary_key_columns, name: PRIMARY_KEY_NAME, unique: true, where: nil, table_name: old_table_name)
+            index_definitions << new(primary_key_columns, name: PRIMARY_KEY_NAME, table_name: table_name, unique: true)
           end
           index_definitions
         end
 
-        def default_index_name(table, fields)
+        def default_index_name(table_name, columns)
           index_name = nil
           [:long_index_name, :short_index_name].find do |method_name|
-            index_name = send(method_name, table, fields)
+            index_name = send(method_name, table_name, columns)
             if DeclareSchema.max_index_and_constraint_name_length.nil? || index_name.length <= DeclareSchema.max_index_and_constraint_name_length
               break index_name
             end
@@ -115,12 +119,12 @@ module DeclareSchema
 
       # Unique key for this object. Used for equality checking.
       def to_key
-        @key ||= [table, fields, options].freeze
+        @to_key ||= [name, *settings].freeze
       end
 
       # The index settings for this object. Used for equivalence checking. Does not include the name.
       def settings
-        @settings ||= [table, fields, options.except(:name)].freeze
+        @settings ||= [columns, options.except(:name)].freeze
       end
 
       def hash
@@ -136,7 +140,7 @@ module DeclareSchema
       end
 
       def with_name(new_name)
-        self.class.new(@model, @fields, **{ **options, name: new_name })
+        self.class.new(@columns, name: new_name, table_name: @table_name, unique: @unique, allow_equivalent: @explicit_name.nil?, where: @where, length: @length)
       end
 
       alias eql? ==

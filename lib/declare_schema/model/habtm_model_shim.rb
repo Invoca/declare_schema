@@ -5,28 +5,21 @@ module DeclareSchema
     class HabtmModelShim
       class << self
         def from_reflection(refl)
-          join_table = refl.join_table
-          foreign_keys_and_classes = [
-            [refl.foreign_key.to_s, refl.active_record],
-            [refl.association_foreign_key.to_s, refl.class_name.constantize]
-          ].sort { |a, b| a.first <=> b.first }
-          foreign_keys = foreign_keys_and_classes.map(&:first)
-          foreign_key_classes = foreign_keys_and_classes.map(&:last)
-          # this may fail in weird ways if HABTM is running across two DB connections (assuming that's even supported)
-          # figure that anybody who sets THAT up can deal with their own migrations...
-          connection = refl.active_record.connection
-
-          new(join_table, foreign_keys, foreign_key_classes, connection)
+          new(refl.join_table, [refl.foreign_key, refl.association_foreign_key],
+                               [refl.active_record.table_name, refl.class_name.constantize.table_name])
         end
       end
 
-      attr_reader :join_table, :foreign_keys, :foreign_key_classes, :connection
+      attr_reader :join_table, :foreign_keys, :parent_table_names
 
-      def initialize(join_table, foreign_keys, foreign_key_classes, connection)
+      def initialize(join_table, foreign_keys, parent_table_names)
+        foreign_keys.is_a?(Array) && foreign_keys.size == 2 or
+          raise ArgumentError, "foreign_keys must be <Array[2]>; got #{foreign_keys.inspect}"
+        parent_table_names.is_a?(Array) && parent_table_names.size == 2 or
+          raise ArgumentError, "parent_table_names must be <Array[2]>; got #{parent_table_names.inspect}"
         @join_table = join_table
-        @foreign_keys = foreign_keys
-        @foreign_key_classes = foreign_key_classes
-        @connection = connection
+        @foreign_keys = foreign_keys.sort # Rails requires these be in alphabetical order
+        @parent_table_names = @foreign_keys == foreign_keys ? parent_table_names : parent_table_names.reverse # match the above sort
       end
 
       def _table_options
@@ -38,8 +31,8 @@ module DeclareSchema
       end
 
       def field_specs
-        foreign_keys.each_with_index.each_with_object({}) do |(v, position), result|
-          result[v] = ::DeclareSchema::Model::FieldSpec.new(self, v, :bigint, position: position, null: false)
+        foreign_keys.each_with_index.each_with_object({}) do |(foreign_key, i), result|
+          result[foreign_key] = ::DeclareSchema::Model::FieldSpec.new(self, foreign_key, :bigint, position: i, null: false)
         end
       end
 
@@ -53,8 +46,8 @@ module DeclareSchema
 
       def index_definitions_with_primary_key
         @index_definitions_with_primary_key ||= Set.new([
-          IndexDefinition.new(self, foreign_keys, unique: true, name: Model::IndexDefinition::PRIMARY_KEY_NAME), # creates a primary composite key on both foreign keys
-          IndexDefinition.new(self, foreign_keys.last) # not unique by itself; combines with primary key to be unique
+          IndexDefinition.new(foreign_keys, name: Model::IndexDefinition::PRIMARY_KEY_NAME, table_name: table_name, unique: true), # creates a primary composite key on both foreign keys
+          IndexDefinition.new(foreign_keys.last,                                            table_name: table_name, unique: false) # index for queries where we only have the last foreign key
         ])
       end
 
@@ -64,10 +57,10 @@ module DeclareSchema
         @ignore_indexes ||= Set.new
       end
 
-      def constraint_specs
-        @constraint_specs ||= Set.new([
-          ForeignKeyDefinition.new(self, foreign_keys.first, parent_table: foreign_key_classes.first.table_name, constraint_name: "#{join_table}_FK1", dependent: :delete),
-          ForeignKeyDefinition.new(self, foreign_keys.last, parent_table: foreign_key_classes.last.table_name, constraint_name: "#{join_table}_FK2", dependent: :delete)
+      def constraint_definitions
+        @constraint_definitions ||= Set.new([
+          ForeignKeyDefinition.new(foreign_keys.first, constraint_name: "#{join_table}_FK1", child_table_name: @join_table, parent_table_name: parent_table_names.first, dependent: :delete),
+          ForeignKeyDefinition.new(foreign_keys.last, constraint_name: "#{join_table}_FK2", child_table_name: @join_table, parent_table_name: parent_table_names.last, dependent: :delete)
         ])
       end
     end

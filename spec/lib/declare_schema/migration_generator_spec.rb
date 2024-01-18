@@ -391,6 +391,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       Advert.field_specs.delete(:c_id)
       Advert.index_definitions.delete_if { |spec| spec.fields == ["c_id"] }
+      Advert.constraint_definitions.delete_if { |spec| spec.foreign_key_column == "c_id" }
 
       # You can avoid generating the index by specifying `index: false`
 

@@ -12,6 +12,8 @@ module Generators
     module Migration
       RSpec.describe Migrator do
         subject { described_class.new }
+        let(:charset) { ::DeclareSchema.normalize_charset('utf8') }
+        let(:collation) { ::DeclareSchema.normalize_collation('utf8_general') } # adapt so that tests will pass on MySQL 5.7 or 8+
 
         describe '#before_generating_migration' do
           it 'requires a block be passed' do
@@ -29,7 +31,7 @@ module Generators
           context 'when explicitly set' do
             before { described_class.default_charset = "utf8" }
             after  { described_class.default_charset = "utf8mb4" }
-            it     { should eq("utf8") }
+            it     { should eq(charset) }
           end
 
           it 'should output deprecation warning' do

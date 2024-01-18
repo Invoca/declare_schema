@@ -3,6 +3,7 @@
 require 'active_support'
 require 'active_support/all'
 require_relative 'declare_schema/version'
+require 'rubygems/version'
 
 ActiveSupport::Dependencies.autoload_paths |= [__dir__]
 
@@ -21,6 +22,8 @@ module DeclareSchema
     text:     String
   }.freeze
 
+  SEMVER_8 = Gem::Version.new('8.0.0').freeze
+
   @default_charset               = "utf8mb4"
   @default_collation             = "utf8mb4_bin"
   @default_text_limit            = 0xffff_ffff
@@ -32,6 +35,7 @@ module DeclareSchema
   @max_index_and_constraint_name_length = 64  # limit for MySQL
 
   class << self
+    attr_writer :mysql_version
     attr_reader :default_charset, :default_collation, :default_text_limit, :default_string_limit, :default_null,
                 :default_generate_foreign_keys, :default_generate_indexing, :db_migrate_command,
                 :max_index_and_constraint_name_length
@@ -47,14 +51,42 @@ module DeclareSchema
       end
     end
 
+    def mysql_version
+      if defined?(@mysql_version)
+        @mysql_version
+      else
+        @mysql_version =
+          if ActiveRecord::Base.connection.class.name.match?(/mysql/i)
+            version_string = ActiveRecord::Base.connection.select_value('SELECT VERSION()')
+            Gem::Version.new(version_string)
+          end
+      end
+    end
+
+    def normalize_charset(charset)
+      if mysql_version && mysql_version >= SEMVER_8 && charset == 'utf8'
+        'utf8mb3'
+      else
+        charset
+      end
+    end
+
+    def normalize_collation(collation)
+      if mysql_version && mysql_version >= SEMVER_8
+        collation.sub(/\Autf8_/, 'utf8mb3_')
+      else
+        collation
+      end
+    end
+
     def default_charset=(charset)
       charset.is_a?(String) or raise ArgumentError, "charset must be a string (got #{charset.inspect})"
-      @default_charset = charset
+      @default_charset = normalize_charset(charset)
     end
 
     def default_collation=(collation)
       collation.is_a?(String) or raise ArgumentError, "collation must be a string (got #{collation.inspect})"
-      @default_collation = collation
+      @default_collation = normalize_collation(collation)
     end
 
     def default_text_limit=(text_limit)

@@ -11,6 +11,7 @@ require_relative '../../../../lib/declare_schema/model/index_definition'
 
 RSpec.describe DeclareSchema::Model::IndexDefinition do
   let(:model_class) { IndexDefinitionTestModel }
+  let(:table_name) { model_class.table_name }
 
   context 'Using declare_schema' do
     before do
@@ -34,23 +35,19 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
       end
     end
 
+    # TODO: create model_spec.rb and move the Model specs below into it. -Colin
     describe 'instance methods' do
       let(:model) { model_class.new }
+      let(:table_name) { "index_definition_test_models" }
       let(:fields) { ['last_name', 'first_name'] }
-      let(:options) { {} }
-      subject(:instance) { described_class.new(model_class, fields, **options) }
+      let(:options) { { table_name: table_name } }
+      subject(:instance) { described_class.new(fields, **options) }
 
       describe 'attr_readers' do
-        describe '#table' do
-          subject { instance.table }
+        describe '#table_name' do
+          subject { instance.table_name }
 
-          it { is_expected.to eq(model_class.table_name) }
-
-          context 'with table_name option' do
-            let(:options) { { table_name: 'auth_users' } }
-
-            it { is_expected.to eq('auth_users') }
-          end
+          it { is_expected.to eq(table_name) }
         end
 
         describe '#fields' do
@@ -62,18 +59,22 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
         describe '#explicit_name' do
           subject { instance.explicit_name }
 
-          it { is_expected.to eq(nil) }
+          context 'with allow_equivalent' do
+            let(:options) { { table_name: table_name, allow_equivalent: true } }
+
+            it { is_expected.to eq(nil) }
+          end
 
           context 'with name option' do
-            let(:options) { { name: 'index_auth_users_on_last_name_and_first_name' } }
+            let(:options) { { table_name: table_name, name: 'index_auth_users_on_names' } }
 
-            it { is_expected.to eq('index_auth_users_on_last_name_and_first_name') }
+            it { is_expected.to eq('index_auth_users_on_names') }
           end
         end
 
         describe '#length' do
           subject { instance.length }
-          let(:options) { { length: length } }
+          let(:options) { { table_name: table_name, length: length } }
 
           context 'with integer length' do
             let(:length) { 2 }
@@ -90,9 +91,9 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
 
         describe '#options' do
           subject { instance.options }
-          let(:options) { { name: 'my_index', unique: false, where: "(name like 'a%')", length: 10 } }
+          let(:options) { { name: 'my_index', table_name: table_name, unique: false, where: "(name like 'a%')", length: 10 } }
 
-          it { is_expected.to eq(options) }
+          it { is_expected.to eq(options.except(:table_name)) }
         end
 
         describe '#with_name' do
@@ -105,33 +106,25 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
       end
     end
 
-    describe 'class methods' do
-      let(:model) { model_class.new }
+    describe 'Model class methods' do
+      describe '.has index_definitions' do
+        subject { model_class.index_definitions }
 
-      describe 'index_definitions' do
-        it do
-          expect(model_class.index_definitions.size).to eq(1)
-
-          sample = model_class.index_definitions.to_a.first
-          expect(sample.name).to eq('index_index_definition_test_models_on_name')
-          expect(sample.fields).to eq(['name'])
-          expect(sample.unique).to eq(false)
+        it 'returns indexes without primary key' do
+          expect(subject.map(&:to_key)).to eq([
+            ['index_index_definition_test_models_on_name', ['name'], { length: nil, unique: false, where: nil }],
+          ])
         end
       end
 
-      describe 'has index_definitions_with_primary_key' do
-        it do
-          expect(model_class.index_definitions_with_primary_key).to be_kind_of(Set)
-          result = model_class.index_definitions_with_primary_key.sort_by(&:name)
-          expect(result.size).to eq(2)
+      describe '.has index_definitions_with_primary_key' do
+        subject { model_class.index_definitions_with_primary_key }
 
-          expect(result[0].name).to eq('PRIMARY')
-          expect(result[0].fields).to eq(['id'])
-          expect(result[0].unique).to eq(true)
-
-          expect(result[1].name).to eq('index_index_definition_test_models_on_name')
-          expect(result[1].fields).to eq(['name'])
-          expect(result[1].unique).to eq(false)
+        it 'returns indexes with primary key' do
+          expect(subject.map(&:to_key)).to eq([
+            ['index_index_definition_test_models_on_name', ['name'], { length: nil, unique: false, where: nil }],
+            ['PRIMARY', ['id'], { length: nil, unique: true, where: nil }],
+          ])
         end
       end
     end
@@ -157,29 +150,36 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
         ActiveRecord::Base.connection.schema_cache.clear!
       end
 
-      describe 'for_model' do
-        subject { described_class.for_model(model_class) }
+      describe 'for_table' do
+        let(:ignore_indexes) { model_class.ignore_indexes }
+        subject { described_class.for_table(model_class.table_name, ignore_indexes, model_class.connection) }
 
         context 'with single-column PK' do
           it 'returns the indexes for the model' do
-            expect(subject.size).to eq(2), subject.inspect
-            expect(subject[0].name).to eq('index_definition_test_models_on_name')
-            expect(subject[0].columns).to eq(['name'])
-            expect(subject[0].unique).to eq(true)
-            expect(subject[1].name).to eq('PRIMARY')
-            expect(subject[1].columns).to eq(['id'])
-            expect(subject[1].unique).to eq(true)
+            expect(subject.map(&:to_key)).to eq([
+              ["index_definition_test_models_on_name", ["name"], { length: nil, unique: true, where: nil }],
+              ["PRIMARY", ["id"], { length: nil, unique: true, where: nil }]
+            ])
           end
         end
 
-        context 'with compound-column PK' do
+        context 'with composite (multi-column) PK' do
           let(:model_class) { IndexDefinitionCompoundIndexModel }
 
           it 'returns the indexes for the model' do
-            expect(subject.size).to eq(1), subject.inspect
-            expect(subject[0].name).to eq('PRIMARY')
-            expect(subject[0].columns).to eq(['fk1_id', 'fk2_id'])
-            expect(subject[0].unique).to eq(true)
+            expect(subject.map(&:to_key)).to eq([
+              ["PRIMARY", ["fk1_id", "fk2_id"], { length: nil, unique: true, where: nil }]
+            ])
+          end
+        end
+
+        context 'with ignored_indexes' do
+          let(:ignore_indexes) { ['index_definition_test_models_on_name'] }
+
+          it 'skips the ignored index' do
+            expect(subject.map(&:to_key)).to eq([
+              ["PRIMARY", ["id"], { length: nil, unique: true, where: nil }]
+            ])
           end
         end
       end

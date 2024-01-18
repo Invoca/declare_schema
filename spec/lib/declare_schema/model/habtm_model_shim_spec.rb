@@ -8,19 +8,19 @@ end
 require_relative '../../../../lib/declare_schema/model/habtm_model_shim'
 
 RSpec.describe DeclareSchema::Model::HabtmModelShim do
-  let(:join_table) { "parent_1_parent_2" }
-  let(:foreign_keys) { ["parent_1_id", "parent_2_id"] }
-  let(:foreign_key_classes) { [Parent1, Parent2] }
+  let(:join_table) { "customers_users" }
+  let(:foreign_keys) { ["user_id", "customer_id"] }
+  let(:parent_table_names) { ["users", "customers"] }
 
   before do
     load File.expand_path('../prepare_testapp.rb', __dir__)
 
-    class Parent1 < ActiveRecord::Base
-      self.table_name = "parent_1s"
+    class User < ActiveRecord::Base
+      self.table_name = "users"
     end
 
-    class Parent2 < ActiveRecord::Base
-      self.table_name = "parent_2s"
+    class Customer < ActiveRecord::Base
+      self.table_name = "customers"
     end
   end
 
@@ -29,12 +29,14 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
       let(:reflection) { double("reflection", join_table: join_table,
                                               foreign_key: foreign_keys.first,
                                               association_foreign_key: foreign_keys.last,
-                                              active_record: foreign_key_classes.first,
-                                              class_name: 'Parent1') }
+                                              active_record: User,
+                                              class_name: 'Customer') }
       it 'returns a new object' do
         result = described_class.from_reflection(reflection)
 
         expect(result).to be_a(described_class)
+        expect(result.foreign_keys).to eq(foreign_keys.reverse)
+        expect(result.parent_table_names).to eq(parent_table_names.reverse)
       end
     end
   end
@@ -42,14 +44,12 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
   describe 'instance methods' do
     let(:connection) { instance_double(ActiveRecord::Base.connection.class, "connection") }
 
-    subject { described_class.new(join_table, foreign_keys, foreign_key_classes, connection) }
+    subject { described_class.new(join_table, foreign_keys, parent_table_names) }
 
     describe '#initialize' do
       it 'stores initialization attributes' do
         expect(subject.join_table).to eq(join_table)
-        expect(subject.foreign_keys).to eq(foreign_keys)
-        expect(subject.foreign_key_classes).to be(foreign_key_classes)
-        expect(subject.connection).to be(connection)
+        expect(subject.foreign_keys).to eq(foreign_keys.reverse)
       end
     end
 
@@ -67,20 +67,20 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
 
     describe '#field_specs' do
       it 'returns 2 field specs' do
-        result = subject.field_specs
-        expect(result.size).to eq(2), result.inspect
+        field_specs = subject.field_specs
+        expect(field_specs.size).to eq(2), field_specs.inspect
 
-        expect(result[foreign_keys.first]).to be_a(::DeclareSchema::Model::FieldSpec)
-        expect(result[foreign_keys.first].model).to eq(subject)
-        expect(result[foreign_keys.first].name.to_s).to eq(foreign_keys.first)
-        expect(result[foreign_keys.first].type).to eq(:integer)
-        expect(result[foreign_keys.first].position).to eq(0)
+        expect(field_specs[foreign_keys.first]).to be_a(::DeclareSchema::Model::FieldSpec)
+        expect(field_specs[foreign_keys.first].model).to eq(subject)
+        expect(field_specs[foreign_keys.first].name.to_s).to eq(foreign_keys.first)
+        expect(field_specs[foreign_keys.first].type).to eq(:integer)
+        expect(field_specs[foreign_keys.first].position).to eq(1)
 
-        expect(result[foreign_keys.last]).to be_a(::DeclareSchema::Model::FieldSpec)
-        expect(result[foreign_keys.last].model).to eq(subject)
-        expect(result[foreign_keys.last].name.to_s).to eq(foreign_keys.last)
-        expect(result[foreign_keys.last].type).to eq(:integer)
-        expect(result[foreign_keys.last].position).to eq(1)
+        expect(field_specs[foreign_keys.last]).to be_a(::DeclareSchema::Model::FieldSpec)
+        expect(field_specs[foreign_keys.last].model).to eq(subject)
+        expect(field_specs[foreign_keys.last].name.to_s).to eq(foreign_keys.last)
+        expect(field_specs[foreign_keys.last].type).to eq(:integer)
+        expect(field_specs[foreign_keys.last].position).to eq(0)
       end
     end
 
@@ -98,20 +98,21 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
 
     describe '#index_definitions_with_primary_key' do
       it 'returns 2 index definitions' do
-        result = subject.index_definitions_with_primary_key
-        expect(result.size).to eq(2), result.inspect
+        index_definitions = subject.index_definitions_with_primary_key
+        expect(index_definitions.size).to eq(2), index_definitions.inspect
 
-        expect(result.first).to be_a(::DeclareSchema::Model::IndexDefinition)
-        expect(result.first.name).to eq('PRIMARY')
-        expect(result.first.fields).to eq(['parent_1_id', 'parent_2_id'])
-        expect(result.first.unique).to be_truthy
+        expect(index_definitions.first).to be_a(::DeclareSchema::Model::IndexDefinition)
+        expect(index_definitions.first.name).to eq('PRIMARY')
+        expect(index_definitions.first.fields).to eq(foreign_keys.reverse)
+        expect(index_definitions.first.unique).to be_truthy
       end
     end
 
     context 'when table and foreign key names are long' do
       let(:join_table) { "advertiser_campaigns_tracking_pixels" }
-      let(:foreign_keys) { ['advertiser_campaign', 'tracking_pixel'] }
-      let(:foreign_key_classes) { [Table1, Table2] }
+      let(:foreign_keys_and_table_names) { [["advertiser_id", "advertisers"], ["campaign_id", "campaigns"]] }
+      let(:foreign_keys) { foreign_keys_and_table_names.map(&:first) }
+      let(:parent_table_names) { foreign_keys_and_table_names.map(&:last) }
 
       before do
         class Table1 < ActiveRecord::Base
@@ -124,19 +125,23 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
       end
 
       it 'returns two index definitions and does not raise a IndexNameTooLongError' do
-        result = subject.index_definitions_with_primary_key
-        expect(result.size).to eq(2), result.inspect
-        expect(result.first).to be_a(::DeclareSchema::Model::IndexDefinition)
-        expect(result.first.name).to eq('PRIMARY')
-        expect(result.first.fields).to eq(['advertiser_campaign', 'tracking_pixel'])
-        expect(result.first.unique).to be_truthy
+        indexes = subject.index_definitions_with_primary_key.to_a
+        expect(indexes.size).to eq(2), indexes.inspect
+        expect(indexes.first).to be_a(::DeclareSchema::Model::IndexDefinition)
+        expect(indexes.first.name).to eq('PRIMARY')
+        expect(indexes.first.fields).to eq(foreign_keys)
+        expect(indexes.first.unique).to be_truthy
+        expect(indexes.last).to be_a(::DeclareSchema::Model::IndexDefinition)
+        expect(indexes.last.name).to eq('index_advertiser_campaigns_tracking_pixels_on_campaign_id')
+        expect(indexes.last.fields).to eq([foreign_keys.last])
+        expect(indexes.last.unique).to be_falsey
       end
     end
 
     describe '#index_definitions' do
       it 'returns index_definitions_with_primary_key' do
-        result = subject.index_definitions
-        expect(result.size).to eq(2), result.inspect
+        indexes = subject.index_definitions
+        expect(indexes.size).to eq(2), indexes.inspect
       end
     end
 
@@ -146,21 +151,13 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
       end
     end
 
-    describe '#constraint_specs' do
+    describe '#constraint_definitions' do
       it 'returns 2 foreign keys' do
-        result = subject.constraint_specs
-        expect(result.size).to eq(2), result.inspect
-
-        expect(result.first).to be_a(::DeclareSchema::Model::ForeignKeyDefinition)
-        expect(result.first.foreign_key).to eq(foreign_keys.first)
-        expect(result.first.parent_table_name).to be(Parent1.table_name)
-        expect(result.first.on_delete_cascade).to be_truthy
-
-        sample = result.to_a.last
-        expect(sample).to be_a(::DeclareSchema::Model::ForeignKeyDefinition)
-        expect(sample.foreign_key).to eq(foreign_keys.last)
-        expect(sample.parent_table_name).to be(Parent2.table_name)
-        expect(sample.on_delete_cascade).to be_truthy
+        constraints = subject.constraint_definitions
+        expect(constraints.map(&:key)).to eq([
+          ["customers_users", "customer_id", :delete],
+          ["customers_users", "user_id", :delete]
+        ])
       end
     end
   end

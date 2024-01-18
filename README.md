@@ -256,6 +256,9 @@ turn all tables into `utf8mb4` supporting tables:
 DeclareSchema.default_charset   = "utf8mb4"
 DeclareSchema.default_collation = "utf8mb4_bin"
 ```
+Note: MySQL 8+ aliases charset 'utf8' to 'utf8mb3', and 'utf8_general_ci' to 'utf8mb3_unicode_ci',
+so when running on MySQL 8+, those aliases will be applied by `DeclareSchema`.
+
 #### db:migrate Command
 `declare_schema` can run the migration once it is generated, if the `--migrate` option is passed.
 If not, it will display the command to run later. By default this command is

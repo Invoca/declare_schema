@@ -5,6 +5,11 @@ begin
 rescue LoadError
 end
 
+begin
+  require 'sqlite3'
+rescue LoadError
+end
+
 RSpec.describe DeclareSchema::Model::FieldSpec do
   let(:model) { double('model', _table_options: {}, _declared_primary_key: 'id') }
   let(:col_spec) { double('col_spec', type: :string) }
@@ -58,8 +63,23 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
         end
       end
 
-      it 'raises error when default_string_limit option is nil when not explicitly set in field spec' do
-        if defined?(Mysql2)
+      if defined?(Mysql2)
+        context 'when running on MySQL 8.0' do
+          around do |spec|
+            DeclareSchema.mysql_version = Gem::Version.new('8.0.21')
+            spec.run
+          ensure
+            DeclareSchema.remove_instance_variable('@mysql_version') rescue nil
+          end
+
+          it 'normalizes charset and collation' do
+            subject = described_class.new(model, :title, :string, limit: 100, null: true, charset: 'utf8', collation: 'utf8_general', position: 0)
+
+            expect(subject.schema_attributes(col_spec)).to eq(type: :string, limit: 100, null: true, charset: 'utf8mb3', collation: 'utf8mb3_general')
+          end
+        end
+
+        it 'raises error when default_string_limit option is nil when not explicitly set in field spec' do
           expect(::DeclareSchema).to receive(:default_string_limit) { nil }
           expect do
             described_class.new(model, :title, :string, null: true, charset: 'utf8mb4', position: 0)

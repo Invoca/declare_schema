@@ -28,7 +28,7 @@ module DeclareSchema
           # index_definitions holds IndexDefinition objects for all the declared indexes.
           inheriting_cattr_reader index_definitions: Set.new
           inheriting_cattr_reader ignore_indexes: Set.new
-          inheriting_cattr_reader constraint_specs: Set.new
+          inheriting_cattr_reader constraint_definitions: Set.new
 
           # table_options holds optional configuration for the create_table statement
           # supported options include :charset and :collation
@@ -49,16 +49,23 @@ module DeclareSchema
     end
 
     module ClassMethods
-      def index(fields, **options)
-        index_definitions << ::DeclareSchema::Model::IndexDefinition.new(self, fields, **options)
+      def index(columns, name: nil, allow_equivalent: false, unique: false, where: nil, length: nil)
+        index_definitions << ::DeclareSchema::Model::IndexDefinition.new(
+          columns,
+          name: name, table_name: table_name, allow_equivalent: allow_equivalent, unique: unique, where: where, length: length
+        )
       end
 
-      def primary_key_index(*fields)
-        index(fields.flatten, unique: true, name: ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME)
+      def primary_key_index(*columns)
+        index(columns.flatten, unique: true, name: ::DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME)
       end
 
-      def constraint(foreign_key, **options)
-        constraint_specs << DeclareSchema::Model::ForeignKeyDefinition.new(self, foreign_key.to_s, **options)
+      def constraint(foreign_key_column, parent_table_name: nil, constraint_name: nil, parent_class_name: nil, dependent: nil)
+        constraint_definitions << ::DeclareSchema::Model::ForeignKeyDefinition.new(
+          foreign_key_column.to_s,
+          constraint_name: constraint_name,
+          child_table_name: table_name, parent_table_name: parent_table_name, parent_class_name: parent_class_name, dependent: dependent
+        )
       end
 
       # tell the migration generator to ignore the named index. Useful for existing indexes, or for indexes
@@ -76,7 +83,7 @@ module DeclareSchema
         _add_serialize_for_field(name, type, options)
         _add_formatting_for_field(name, type)
         _add_validations_for_field(name, type, args, options)
-        _add_index_for_field(name, args, options)
+        _add_index_for_field(name, args, **options)
         field_specs[name] = ::DeclareSchema::Model::FieldSpec.new(self, name, type, position: field_specs.size, **options)
         attr_order << name unless attr_order.include?(name)
       end
@@ -91,8 +98,8 @@ module DeclareSchema
 
       # Extend belongs_to so that it
       # 1. creates a FieldSpec for the foreign key
-      # 2. declares an index on the foreign key
-      # 3. declares a foreign_key constraint
+      # 2. declares an index on the foreign key (optional)
+      # 3. declares a foreign_key constraint (optional)
       def belongs_to(name, scope = nil, **options)
         column_options = {}
 
@@ -112,14 +119,14 @@ module DeclareSchema
         # index: { ... } means create an index on the foreign key with the given options
         index_value = options.delete(:index)
         if index_value != false || options.has_key?(:unique) || options.has_key?(:allow_equivalent)
-          index_options = {}
+          index_options = {} # truthy iff we want an index
           case index_value
           when String, Symbol
             Kernel.warn("belongs_to index: 'name' is deprecated; use index: { name: 'name' } instead (in #{name})")
             index_options[:name] = index_value.to_s
-          when true
           when false
             raise ArgumentError, "belongs_to index: false contradicts others options #{options.inspect} (in #{name})"
+          when true
           when nil
           when Hash
             index_options = index_value
@@ -135,23 +142,20 @@ module DeclareSchema
           index_options[:allow_equivalent] = options.delete(:allow_equivalent) if options.has_key?(:allow_equivalent)
         end
 
-        fk_options = options.dup
-        fk_options[:constraint_name] = options.delete(:constraint) if options.has_key?(:constraint)
-        fk_options[:index_name] = index_options&.[](:name)
+        constraint_name = options.delete(:constraint)
 
-        fk = options[:foreign_key]&.to_s || "#{name}_id"
+        dependent_delete = :delete if options.delete(:far_end_dependent) == :delete
 
+        # infer :optional from :null
         if !options.has_key?(:optional)
-          options[:optional] = column_options[:null] # infer :optional from :null
+          options[:optional] = column_options[:null]
         end
-
-        fk_options[:dependent] = options.delete(:far_end_dependent) if options.has_key?(:far_end_dependent)
 
         super
 
         reflection = reflections[name.to_s] or raise "Couldn't find reflection #{name} in #{reflections.keys}"
-        foreign_key = reflection.foreign_key or raise "Couldn't find foreign_key for #{name} in #{reflection.inspect}"
-        foreign_key_id_column_options = column_options.dup
+        foreign_key_column = reflection.foreign_key or raise "Couldn't find foreign_key for #{name} in #{refl.inspect}"
+        foreign_key_column_options = column_options.dup
 
         # Note: the foreign key limit: should match the primary key limit:. (If there is a foreign key constraint,
         # those limits _must_ match.) We'd like to call _infer_fk_limit and get the limit right from the PK.
@@ -162,27 +166,34 @@ module DeclareSchema
         # The one downside of this approach is that application code that asks the field_spec for the declared
         # foreign key limit: will always get 8 back even if this is a grandfathered foreign key that points to
         # a limit: 4 primary key. It seems unlikely that any application code would do this.
-        foreign_key_id_column_options[:pre_migration] = ->(field_spec) do
-          if (inferred_limit = _infer_fk_limit(foreign_key, reflection))
+        foreign_key_column_options[:pre_migration] = ->(field_spec) do
+          if (inferred_limit = _infer_fk_limit(foreign_key_column, reflection))
             field_spec.sql_options[:limit] = inferred_limit
           end
         end
 
-        declare_field(foreign_key.to_sym, :bigint, **foreign_key_id_column_options)
+        declare_field(foreign_key_column.to_sym, :bigint, **foreign_key_column_options)
 
         if reflection.options[:polymorphic]
           foreign_type = options[:foreign_type] || "#{name}_type"
           _declare_polymorphic_type_field(foreign_type, column_options)
-          index([foreign_type, foreign_key], **index_options) if index_options
+          if ::DeclareSchema.default_generate_indexing && index_options
+            index([foreign_type, foreign_key_column], **index_options)
+          end
         else
-          index(foreign_key, **index_options) if index_options
-          constraint(foreign_key, **fk_options) if fk_options[:constraint_name] != false
+          if ::DeclareSchema.default_generate_indexing && index_options
+            index([foreign_key_column], **index_options)
+          end
+
+          if ::DeclareSchema.default_generate_foreign_keys && constraint_name != false
+            constraint(foreign_key_column, constraint_name: constraint_name || index_options&.[](:name), parent_class_name: reflection.klass, dependent: dependent_delete)
+          end
         end
       end
 
-      def _infer_fk_limit(foreign_key, reflection)
+      def _infer_fk_limit(foreign_key_column, reflection)
         if reflection.options[:polymorphic]
-          if (foreign_key_column = columns_hash[foreign_key.to_s]) && foreign_key_column.type == :integer
+          if (foreign_key_column = columns_hash[foreign_key_column.to_s]) && foreign_key_column.type == :integer
             foreign_key_column.limit
           end
         else
@@ -224,7 +235,7 @@ module DeclareSchema
       end
 
       def _rails_default_primary_key
-        ::DeclareSchema::Model::IndexDefinition.new(self, [_declared_primary_key.to_sym], unique: true, name: DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME)
+        ::DeclareSchema::Model::IndexDefinition.new([_declared_primary_key], name: DeclareSchema::Model::IndexDefinition::PRIMARY_KEY_NAME, table_name: table_name, unique: true)
       end
 
       # Declares the "foo_type" field that accompanies the "foo_id"
@@ -295,15 +306,16 @@ module DeclareSchema
         end
       end
 
-      def _add_index_for_field(name, args, options)
-        if (to_name = options.delete(:index))
+      def _add_index_for_field(column_name, args, **options)
+        if (index_name = options.delete(:index))
           index_opts =
             {
               unique: args.include?(:unique) || !!options.delete(:unique)
             }
+
           # support index: true declaration
-          index_opts[:name] = to_name unless to_name == true
-          index(name, **index_opts)
+          index_opts[:name] = index_name unless index_name == true
+          index([column_name], **index_opts)
         end
       end
 
