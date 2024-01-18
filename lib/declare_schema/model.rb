@@ -154,7 +154,7 @@ module DeclareSchema
         super
 
         reflection = reflections[name.to_s] or raise "Couldn't find reflection #{name} in #{reflections.keys}"
-        foreign_key_column = reflection.foreign_key or raise "Couldn't find foreign_key for #{name} in #{refl.inspect}"
+        foreign_key_column = reflection.foreign_key or raise "Couldn't find foreign_key for #{name} in #{reflection.inspect}"
         foreign_key_column_options = column_options.dup
 
         # Note: the foreign key limit: should match the primary key limit:. (If there is a foreign key constraint,
