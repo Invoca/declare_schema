@@ -572,7 +572,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       expect(Generators::DeclareSchema::Migration::Migrator.run).to(
         migrate_up(<<~EOS.strip)
           add_column :adverts, :title, :string, limit: 250, null: true#{charset_and_collation}
-          add_index :adverts, [:title], name: :my_index, length: 10
+          add_index :adverts, [:title], name: :my_index, length: { title: 10 }
         EOS
       )
 

@@ -77,13 +77,14 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
           let(:options) { { table_name: table_name, length: length } }
 
           context 'with integer length' do
+            let(:fields) { ['last_name'] }
             let(:length) { 2 }
 
-            it { is_expected.to eq(length) }
+            it { is_expected.to eq(last_name: 2) }
           end
 
           context 'with Hash length' do
-            let(:length) { { name: 2 } }
+            let(:length) { { first_name: 2 } }
 
             it { is_expected.to eq(length) }
           end
@@ -91,7 +92,7 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
 
         describe '#options' do
           subject { instance.options }
-          let(:options) { { name: 'my_index', table_name: table_name, unique: false, where: "(name like 'a%')", length: 10 } }
+          let(:options) { { name: 'my_index', table_name: table_name, unique: false, where: "(last_name like 'a%')", length: { last_name: 10, first_name: 5 } } }
 
           it { is_expected.to eq(options.except(:table_name)) }
         end
@@ -257,6 +258,69 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
                                                   /Default index name '__last_name_first_name_middle_name' exceeds configured limit of 33 characters\. Use the `name:` option to give it a shorter name, or adjust DeclareSchema\.max_index_and_constraint_name_length/i)
           end
         end
+      end
+    end
+
+    describe '.normalize_index_length' do
+      let(:columns) { [:last_name] }
+      subject { described_class.normalize_index_length(length, columns: columns) }
+
+      context 'with nil length' do
+        let(:length) { nil }
+
+        it { is_expected.to eq(nil) }
+      end
+
+      context 'when Integer' do
+        let(:length) { 10 }
+
+        it { is_expected.to eq(last_name: length) }
+
+        context 'with multiple columns' do
+          let(:columns) { ["last_name", "first_name"] }
+
+          it { expect { subject }.to raise_exception(ArgumentError, /Index length of Integer only allowed when exactly one column; got 10 for \["last_name", "first_name"]/i) }
+        end
+      end
+
+      context 'when empty Hash' do
+        let(:length) { {} }
+
+        it { is_expected.to eq(nil) }
+      end
+
+      context 'when Hash' do
+        let(:length) { { last_name: 10 } }
+
+        it { is_expected.to eq(length) }
+      end
+
+      context 'when Hash with String key' do
+        let(:length) { { "last_name" => 10 } }
+
+        it { is_expected.to eq(last_name: 10) }
+      end
+
+      context 'with multiple columns' do
+        let(:columns) { [:last_name, :first_name] }
+
+        context 'when Hash with String keys' do
+          let(:length) { { "last_name" => 10, "first_name" => 5 } }
+
+          it { is_expected.to eq(last_name: 10, first_name: 5) }
+        end
+      end
+
+      context 'with nil length' do
+        let(:length) { nil }
+
+        it { is_expected.to eq(nil) }
+      end
+
+      context 'with an invalid length' do
+        let(:length) { 10.5 }
+
+        it { expect { subject }.to raise_exception(ArgumentError, /length must be nil or Integer or a Hash of column names to lengths; got 10\.5 for \[:last_name]/i) }
       end
     end
   end
