@@ -49,10 +49,10 @@ module DeclareSchema
     end
 
     module ClassMethods
-      def index(columns, name: nil, allow_equivalent: false, unique: false, where: nil, length: nil)
+      def index(columns, name: nil, allow_equivalent: false, unique: false, where: nil)
         index_definitions << ::DeclareSchema::Model::IndexDefinition.new(
           columns,
-          name: name, table_name: table_name, allow_equivalent: allow_equivalent, unique: unique, where: where, length: length
+          name: name, table_name: table_name, allow_equivalent: allow_equivalent, unique: unique, where: where
         )
       end
 

@@ -563,16 +563,16 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       Advert.index_definitions.delete_if { |spec| spec.fields == ["title"] }
 
-      # The available options for the index function are :unique, :name, :where, and :length.
+      # The available options for the index function are :unique, :name, and :where.
 
       class Advert < ActiveRecord::Base
-        index :title, unique: false, name: 'my_index', length: 10
+        index :title, unique: false, name: 'my_index'
       end
 
       expect(Generators::DeclareSchema::Migration::Migrator.run).to(
         migrate_up(<<~EOS.strip)
           add_column :adverts, :title, :string, limit: 250, null: true#{charset_and_collation}
-          add_index :adverts, [:title], name: :my_index, length: { title: 10 }
+          add_index :adverts, [:title], name: :my_index
         EOS
       )
 
