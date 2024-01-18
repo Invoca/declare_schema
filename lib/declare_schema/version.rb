@@ -1,5 +1,5 @@
 # frozen_string_literal: true
 
 module DeclareSchema
-  VERSION = "1.4.0.colin.8"
+  VERSION = "1.3.3"
 end
