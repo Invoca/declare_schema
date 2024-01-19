@@ -118,14 +118,15 @@ module DeclareSchema
         # index: false means do not create an index on the foreign key
         # index: { ... } means create an index on the foreign key with the given options
         index_value = options.delete(:index)
-        if index_value != false || options.has_key?(:unique) || options.has_key?(:allow_equivalent)
-          index_options = {} # truthy iff we want an index
+        if index_value == false # don't create an index
+          options.delete(:unique)
+          options.delete(:allow_equivalent)
+        else
+          index_options = {} # create an index
           case index_value
           when String, Symbol
             Kernel.warn("belongs_to index: 'name' is deprecated; use index: { name: 'name' } instead (in #{name})")
             index_options[:name] = index_value.to_s
-          when false
-            raise ArgumentError, "belongs_to index: false contradicts others options #{options.inspect} (in #{name})"
           when true
           when nil
           when Hash
