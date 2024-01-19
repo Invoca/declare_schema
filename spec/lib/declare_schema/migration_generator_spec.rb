@@ -853,14 +853,13 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           create_table :advertisers, id: :bigint#{create_table_charset_and_collation} do |t|
             t.string :name, limit: 250, null: false#{charset_and_collation}
           end
-          create_table :advertisers_creatives, id: false#{create_table_charset_and_collation} do |t|
+          create_table :advertisers_creatives, primary_key: [:advertiser_id, :creative_id]#{create_table_charset_and_collation} do |t|
             t.integer :advertiser_id, limit: 8, null: false
             t.integer :creative_id, limit: 8, null: false
           end
           create_table :creatives, id: :bigint#{create_table_charset_and_collation} do |t|
             t.string :url, limit: 500, null: false#{charset_and_collation}
           end
-          add_index :advertisers_creatives, [:advertiser_id, :creative_id], name: :PRIMARY, unique: true
           add_index :advertisers_creatives, [:creative_id], name: :index_advertisers_creatives_on_creative_id
           add_foreign_key :advertisers_creatives, :advertisers, column: :advertiser_id, name: :advertisers_creatives_FK1
           add_foreign_key :advertisers_creatives, :creatives, column: :creative_id, name: :advertisers_creatives_FK2
