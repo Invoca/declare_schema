@@ -31,14 +31,16 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
                                               foreign_key: foreign_keys.first,
                                               association_foreign_key: foreign_keys.last,
                                               active_record: User,
-                                              class_name: 'Customer') }
+                                              class_name: 'Customer',
+                                              klass: Customer) }
       it 'returns a new object' do
-        result = described_class.from_reflection(reflection, connection: connection)
+        expect(User).to receive(:connection).and_return(connection)
+
+        result = described_class.from_reflection(reflection)
 
         expect(result).to be_a(described_class)
         expect(result.foreign_keys).to eq(foreign_keys.reverse)
         expect(result.parent_table_names).to eq(parent_table_names.reverse)
-        expect(result.connection).to be(connection)
       end
     end
   end

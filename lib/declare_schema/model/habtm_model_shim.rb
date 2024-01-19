@@ -4,11 +4,11 @@ module DeclareSchema
   module Model
     class HabtmModelShim
       class << self
-        def from_reflection(reflection, connection:)
+        def from_reflection(reflection)
           new(reflection.join_table,
               [reflection.foreign_key, reflection.association_foreign_key],
-              [reflection.active_record.table_name, reflection.class_name.constantize.table_name],
-              connection: connection)
+              [reflection.active_record.table_name, reflection.klass.table_name],
+              connection: reflection.active_record.connection)
         end
       end
 
