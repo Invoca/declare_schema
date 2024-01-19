@@ -85,14 +85,14 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
     end
 
     describe '#primary_key' do
-      it 'returns false' do
-        expect(subject._declared_primary_key).to eq(false)
+      it 'returns false because there is no single-column PK for ActiveRecord to use' do
+        expect(subject.primary_key).to eq(false)
       end
     end
 
     describe '#_declared_primary_key' do
-      it 'returns false' do
-        expect(subject._declared_primary_key).to eq(false)
+      it 'returns the foreign key pair that are used as the primary key in the database' do
+        expect(subject._declared_primary_key).to eq(["customer_id", "user_id"])
       end
     end
 
@@ -101,10 +101,10 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
         index_definitions = subject.index_definitions_with_primary_key
         expect(index_definitions.size).to eq(2), index_definitions.inspect
 
-        expect(index_definitions.first).to be_a(::DeclareSchema::Model::IndexDefinition)
-        expect(index_definitions.first.name).to eq('PRIMARY')
-        expect(index_definitions.first.fields).to eq(foreign_keys.reverse)
-        expect(index_definitions.first.unique).to be_truthy
+        expect(index_definitions.last).to be_a(::DeclareSchema::Model::IndexDefinition)
+        expect(index_definitions.last.name).to eq('PRIMARY')
+        expect(index_definitions.last.fields).to eq(foreign_keys.reverse)
+        expect(index_definitions.last.unique).to be_truthy
       end
     end
 
@@ -127,21 +127,38 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
       it 'returns two index definitions and does not raise a IndexNameTooLongError' do
         indexes = subject.index_definitions_with_primary_key
         expect(indexes.size).to eq(2), indexes.inspect
-        expect(indexes.first).to be_a(::DeclareSchema::Model::IndexDefinition)
-        expect(indexes.first.name).to eq('PRIMARY')
-        expect(indexes.first.fields).to eq(foreign_keys)
-        expect(indexes.first.unique).to be_truthy
         expect(indexes.last).to be_a(::DeclareSchema::Model::IndexDefinition)
-        expect(indexes.last.name).to eq('index_advertiser_campaigns_tracking_pixels_on_campaign_id')
-        expect(indexes.last.fields).to eq([foreign_keys.last])
-        expect(indexes.last.unique).to be_falsey
+        expect(indexes.last.name).to eq('PRIMARY')
+        expect(indexes.last.fields).to eq(foreign_keys)
+        expect(indexes.last.unique).to be_truthy
+        expect(indexes.first).to be_a(::DeclareSchema::Model::IndexDefinition)
+        expect(indexes.first.name).to eq('index_advertiser_campaigns_tracking_pixels_on_campaign_id')
+        expect(indexes.first.fields).to eq([foreign_keys.last])
+        expect(indexes.first.unique).to be_falsey
       end
     end
 
     describe '#index_definitions' do
-      it 'returns index_definitions_with_primary_key' do
+      it 'returns index_definitions' do
         indexes = subject.index_definitions
+        expect(indexes.size).to eq(1), indexes.inspect
+        expect(indexes.first.columns).to eq(["user_id"])
+        options = [:name, :unique, :where].map { |k| [k, indexes.first.send(k)] }.to_h
+        expect(options).to eq(name: "index_customers_users_on_user_id",
+                              unique: false,
+                              where: nil)
+      end
+    end
+
+    describe '#index_definitions_with_primary_key' do
+      it 'returns index_definitions_with_primary_key' do
+        indexes = subject.index_definitions_with_primary_key
         expect(indexes.size).to eq(2), indexes.inspect
+        expect(indexes.last.columns).to eq(["customer_id", "user_id"])
+        options = [:name, :unique, :where].map { |k| [k, indexes.last.send(k)] }.to_h
+        expect(options).to eq(name: "PRIMARY",
+                              unique: true,
+                              where: nil)
       end
     end
 
