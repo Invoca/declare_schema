@@ -115,30 +115,24 @@ module DeclareSchema
         end
 
         # index: true means create an index on the foreign key
+        # index: :name|'name' is the same as above, but explicitly name the index 'name'
         # index: false means do not create an index on the foreign key
-        # index: { ... } means create an index on the foreign key with the given options
         index_value = options.delete(:index)
-        if index_value != false || options.has_key?(:unique) || options.has_key?(:allow_equivalent)
-          index_options = {} # truthy iff we want an index
+        if index_value == false # don't create an index
+          options.delete(:unique)
+          options.delete(:allow_equivalent)
+        else
+          index_options = {} # create an index
           case index_value
           when String, Symbol
-            Kernel.warn("belongs_to index: 'name' is deprecated; use index: { name: 'name' } instead (in #{name})")
             index_options[:name] = index_value.to_s
-          when false
-            raise ArgumentError, "belongs_to index: false contradicts others options #{options.inspect} (in #{name})"
           when true
           when nil
-          when Hash
-            index_options = index_value
           else
-            raise ArgumentError, "belongs_to index: must be true or false or a Hash; got #{index_value.inspect} (in #{name})"
+            raise ArgumentError, "belongs_to #{name.inspect}, index: must be true|false|String|Symbol; got #{index_value.inspect} (in #{name})"
           end
 
-          if options.has_key?(:unique)
-            Kernel.warn("belongs_to unique: true|false is deprecated; use index: { unique: true|false } instead (in #{name})")
-            index_options[:unique] = options.delete(:unique)
-          end
-
+          index_options[:unique] = options.delete(:unique) if options.has_key?(:unique)
           index_options[:allow_equivalent] = options.delete(:allow_equivalent) if options.has_key?(:allow_equivalent)
         end
 

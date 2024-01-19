@@ -412,34 +412,12 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       Advert.index_definitions.delete_if { |spec| spec.fields == ["category_id"] }
       Advert.constraint_definitions.delete_if { |spec| spec.foreign_key_column == "category_id" }
 
-      # You can specify the index name with index: 'name' [deprecated]
-
-      expect(Kernel).to receive(:warn).with(/belongs_to index: 'name' is deprecated; use index: \{ name: 'name' \} instead/i)
+      # You can specify the index name with index: 'name'
 
       class Category < ActiveRecord::Base; end
       class Advert < ActiveRecord::Base
         declare_schema { }
         belongs_to :category, index: 'my_index'
-      end
-
-      expect(Generators::DeclareSchema::Migration::Migrator.run).to(
-        migrate_up(<<~EOS.strip)
-          add_column :adverts, :category_id, :integer, limit: 8, null: false
-          add_index :adverts, [:category_id], name: :my_index
-          #{"add_foreign_key :adverts, :categories, column: :category_id, name: :my_index" if defined?(Mysql2)}
-        EOS
-      )
-
-      Advert.field_specs.delete(:category_id)
-      Advert.index_definitions.delete_if { |spec| spec.fields == ["category_id"] }
-      Advert.constraint_definitions.delete_if { |spec| spec.foreign_key_column == "category_id" }
-
-      # You can specify the index name with index: { name: }'name', unique: true|false }
-
-      class Category < ActiveRecord::Base; end
-      class Advert < ActiveRecord::Base
-        declare_schema { }
-        belongs_to :category, index: { name: 'my_index', unique: false }
       end
 
       expect(Generators::DeclareSchema::Migration::Migrator.run).to(
@@ -486,9 +464,6 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       ### Indices
 
       # You can add an index to a field definition
-
-      expect(Kernel).to receive(:warn).with(/belongs_to index: 'name' is deprecated; use index: \{ name: 'name' \} instead/i)
-      expect(Kernel).to receive(:warn).with(/belongs_to unique: true\|false is deprecated; use index: \{ unique: true\|false \} instead/i)
 
       class Advert < ActiveRecord::Base
         declare_schema do
