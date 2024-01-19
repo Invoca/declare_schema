@@ -809,6 +809,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       expect(User.field_specs.keys).to eq(['company'])
       expect(User.field_specs['company'].options[:ruby_default]&.call).to eq("BigCorp")
 
+      nuke_model_class(User)
+
       ## validates
 
       # DeclareSchema can accept a validates hash in the field options.
@@ -829,6 +831,45 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       up, _down = Generators::DeclareSchema::Migration::Migrator.run
       ActiveRecord::Migration.class_eval(up)
       expect(Ad.field_specs['company'].options[:validates].inspect).to eq("{:presence=>true, :uniqueness=>{:case_sensitive=>false}}")
+
+      # DeclareSchema supports has_and_belongs_to_many relationships and generates the intersection ("join") table
+      # with appropriate primary key, indexes, and foreign keys.
+
+      class Advertiser < ActiveRecord::Base
+        declare_schema do
+          string :name, limit: 250
+        end
+        has_and_belongs_to_many :creatives
+      end
+      class Creative < ActiveRecord::Base
+        declare_schema do
+          string :url, limit: 500
+        end
+        has_and_belongs_to_many :advertisers
+      end
+
+      expect(Generators::DeclareSchema::Migration::Migrator.run).to(
+        migrate_up(<<~EOS.strip)
+          create_table :advertisers, id: :bigint#{create_table_charset_and_collation} do |t|
+            t.string :name, limit: 250, null: false#{charset_and_collation}
+          end
+          create_table :advertisers_creatives, id: false#{create_table_charset_and_collation} do |t|
+            t.integer :advertiser_id, limit: 8, null: false
+            t.integer :creative_id, limit: 8, null: false
+          end
+          create_table :creatives, id: :bigint#{create_table_charset_and_collation} do |t|
+            t.string :url, limit: 500, null: false#{charset_and_collation}
+          end
+          add_index :advertisers_creatives, [:advertiser_id, :creative_id], name: :PRIMARY, unique: true
+          add_index :advertisers_creatives, [:creative_id], name: :index_advertisers_creatives_on_creative_id
+          add_foreign_key :advertisers_creatives, :advertisers, column: :advertiser_id, name: :advertisers_creatives_FK1
+          add_foreign_key :advertisers_creatives, :creatives, column: :creative_id, name: :advertisers_creatives_FK2
+      EOS
+      )
+
+      nuke_model_class(Ad)
+      nuke_model_class(Advertiser)
+      nuke_model_class(Creative)
     end
 
     context 'models with the same parent foreign key relation' do
@@ -852,7 +893,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         end
       end
 
-      it 'will genereate unique constraint names' do
+      it 'will generate unique constraint names' do
         expect(Generators::DeclareSchema::Migration::Migrator.run).to(
           migrate_up(<<~EOS.strip)
           create_table :categories, id: :bigint, options: "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin" do |t|
