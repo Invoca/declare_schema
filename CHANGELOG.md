@@ -4,7 +4,12 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.3] - 2023-01-17
+## [1.3.4] - 2024-01-18
+### Fixed
+- Add test for migrating `has_and_belongs_to_many` associations and fix them to properly declare their
+  2 foreign keys as the primary key of the join table, rather than just a unique index.
+
+## [1.3.3] - 2024-01-17
 ### Fixed
 - Fix a MySQL 8 bug where MySQL 8+ renames charset 'utf8' to 'utf8mb3' and collation 'utf8_general_ci' to
   'utf8mb3_unicode_ci'.

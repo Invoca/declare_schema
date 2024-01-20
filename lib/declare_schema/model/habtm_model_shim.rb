@@ -44,17 +44,21 @@ module DeclareSchema
       end
 
       def _declared_primary_key
-        false # no single-column primary key declared
+        foreign_keys
+      end
+
+      def index_definitions
+        [
+          IndexDefinition.new(foreign_keys.last, table_name: table_name, unique: false) # index for queries where we only have the last foreign key
+        ]
       end
 
       def index_definitions_with_primary_key
-        @index_definitions_with_primary_key ||= Set.new([
-          IndexDefinition.new(foreign_keys, name: Model::IndexDefinition::PRIMARY_KEY_NAME, table_name: table_name, unique: true), # creates a primary composite key on both foreign keys
-          IndexDefinition.new(foreign_keys.last,                                            table_name: table_name, unique: false) # index for queries where we only have the last foreign key
-        ])
+        [
+          *index_definitions,
+          IndexDefinition.new(foreign_keys, table_name: table_name, name: Model::IndexDefinition::PRIMARY_KEY_NAME, unique: true) # creates a primary composite key on both foreign keys
+        ]
       end
-
-      alias_method :index_definitions, :index_definitions_with_primary_key
 
       def ignore_indexes
         @ignore_indexes ||= Set.new

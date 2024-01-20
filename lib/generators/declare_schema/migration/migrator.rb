@@ -222,8 +222,8 @@ module Generators
             ::DeclareSchema::SchemaChange::TableRemove.new(t, add_table_back(t))
           end
 
-          creates = to_create.map do |t|
-            model = models_by_table_name[t]
+          creates = to_create.map do |table_name|
+            model = models_by_table_name[table_name]
             disable_auto_increment = model.try(:disable_auto_increment)
 
             primary_key_definition =
@@ -240,10 +240,13 @@ module Generators
             table_options_definition = ::DeclareSchema::Model::TableOptionsDefinition.new(model.table_name, **table_options_for_model(model))
             table_options = create_table_options(model, disable_auto_increment)
 
-            table_add = ::DeclareSchema::SchemaChange::TableAdd.new(t,
-                                                                    primary_key_definition + field_definitions,
-                                                                    table_options,
-                                                                    sql_options: table_options_definition.settings)
+            table_add = ::DeclareSchema::SchemaChange::TableAdd.new(
+              table_name,
+              primary_key_definition + field_definitions,
+              table_options,
+              sql_options: table_options_definition.settings
+            )
+
             [
               table_add,
               *Array((create_indexes(model)     if ::DeclareSchema.default_generate_indexing)),
@@ -256,9 +259,9 @@ module Generators
           fk_changes                 = []
           table_options_changes      = []
 
-          to_change.each do |t|
-            model = models_by_table_name[t]
-            table = to_rename.key(t) || model.table_name
+          to_change.each do |table_name|
+            model = models_by_table_name[table_name]
+            table = to_rename.key(table_name) || model.table_name
             if table.in?(db_tables)
               change, index_change, fk_change, table_options_change = change_table(model, table)
               changes << change
@@ -312,6 +315,8 @@ module Generators
             { id: false }
           elsif primary_key == "id"
             { id: :bigint }
+          elsif primary_key.is_a?(Array)
+            { primary_key: primary_key.map(&:to_sym) }
           else
             { primary_key: primary_key.to_sym }
           end.merge(model._table_options)
