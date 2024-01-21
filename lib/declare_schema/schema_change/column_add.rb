@@ -6,8 +6,10 @@ module DeclareSchema
   module SchemaChange
     class ColumnAdd < Base
       def initialize(table_name, column_name, column_type, **column_options)
-        @table_name = table_name && (table_name.is_a?(String) || table_name.is_a?(Symbol)) or raise ArgumentError, "must provide String|Symbol table_name; got #{table_name.inspect}"
-        @column_name = column_name && (column_name.is_a?(String) || column_name.is_a?(Symbol)) or raise ArgumentError, "must provide String|Symbol column_name; got #{column_name.inspect}"
+        table_name.is_a?(String) || table_name.is_a?(Symbol) or raise ArgumentError, "must provide String|Symbol table_name; got #{table_name.inspect}"
+        column_name.is_a?(String) || column_name.is_a?(Symbol) or raise ArgumentError, "must provide String|Symbol column_name; got #{column_name.inspect}"
+        @table_name = table_name
+        @column_name = column_name
         @column_type = column_type or raise ArgumentError, "must provide column_type"
         @column_options = column_options
       end
