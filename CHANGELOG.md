@@ -4,6 +4,10 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.6] - 2024-01-22
+### Fixed
+- Add missing commits around connection: and Array check for composite declared primary key.
+
 ## [1.3.5] - 2024-01-22
 ### Fixed
 - Make `default_charset=` and `default_collation=` lazy so they don't use the database connection to check the
