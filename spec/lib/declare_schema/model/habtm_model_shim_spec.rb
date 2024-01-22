@@ -11,6 +11,7 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
   let(:join_table) { "customers_users" }
   let(:foreign_keys) { ["user_id", "customer_id"] }
   let(:parent_table_names) { ["users", "customers"] }
+  let(:connection) { instance_double(ActiveRecord::Base.connection.class, "connection") }
 
   before do
     load File.expand_path('../prepare_testapp.rb', __dir__)
@@ -30,7 +31,8 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
                                               foreign_key: foreign_keys.first,
                                               association_foreign_key: foreign_keys.last,
                                               active_record: User,
-                                              class_name: 'Customer') }
+                                              class_name: 'Customer',
+                                              klass: Customer) }
       it 'returns a new object' do
         result = described_class.from_reflection(reflection)
 
@@ -42,9 +44,7 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
   end
 
   describe 'instance methods' do
-    let(:connection) { instance_double(ActiveRecord::Base.connection.class, "connection") }
-
-    subject { described_class.new(join_table, foreign_keys, parent_table_names) }
+    subject { described_class.new(join_table, foreign_keys, parent_table_names, connection: connection) }
 
     describe '#initialize' do
       it 'stores initialization attributes' do
