@@ -36,7 +36,7 @@ module DeclareSchema
 
   class << self
     attr_writer :mysql_version
-    attr_reader :default_charset, :default_collation, :default_text_limit, :default_string_limit, :default_null,
+    attr_reader :default_text_limit, :default_string_limit, :default_null,
                 :default_generate_foreign_keys, :default_generate_indexing, :db_migrate_command,
                 :max_index_and_constraint_name_length
 
@@ -81,12 +81,22 @@ module DeclareSchema
 
     def default_charset=(charset)
       charset.is_a?(String) or raise ArgumentError, "charset must be a string (got #{charset.inspect})"
-      @default_charset = normalize_charset(charset)
+      @default_charset_before_normalization = charset
+      @default_charset = nil
+    end
+
+    def default_charset
+      @default_charset || normalize_charset(@default_charset_before_normalization)
     end
 
     def default_collation=(collation)
       collation.is_a?(String) or raise ArgumentError, "collation must be a string (got #{collation.inspect})"
-      @default_collation = normalize_collation(collation)
+      @default_collation_before_normalization = collation
+      @default_collation = nil
+    end
+
+    def default_collation
+      @default_collation || normalize_collation(@default_collation_before_normalization)
     end
 
     def default_text_limit=(text_limit)
