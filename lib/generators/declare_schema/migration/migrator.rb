@@ -352,7 +352,7 @@ module Generators
 
           db_columns = model.connection.columns(current_table_name).index_by(&:name)
           if (pk = model._declared_primary_key.presence)
-            pk_was_in_db_columns = db_columns.delete(pk)
+            pk_was_in_db_columns = pk.is_a?(Array) || db_columns.delete(pk)
           end
 
           model_column_names = model.field_specs.keys.map(&:to_s)
