@@ -4,15 +4,17 @@ module DeclareSchema
   module Model
     class HabtmModelShim
       class << self
-        def from_reflection(refl)
-          new(refl.join_table, [refl.foreign_key, refl.association_foreign_key],
-                               [refl.active_record.table_name, refl.class_name.constantize.table_name])
+        def from_reflection(reflection)
+          new(reflection.join_table,
+              [reflection.foreign_key, reflection.association_foreign_key],
+              [reflection.active_record.table_name, reflection.klass.table_name],
+              connection: reflection.active_record.connection)
         end
       end
 
-      attr_reader :join_table, :foreign_keys, :parent_table_names
+      attr_reader :join_table, :foreign_keys, :parent_table_names, :connection
 
-      def initialize(join_table, foreign_keys, parent_table_names)
+      def initialize(join_table, foreign_keys, parent_table_names, connection:)
         foreign_keys.is_a?(Array) && foreign_keys.size == 2 or
           raise ArgumentError, "foreign_keys must be <Array[2]>; got #{foreign_keys.inspect}"
         parent_table_names.is_a?(Array) && parent_table_names.size == 2 or
@@ -20,6 +22,7 @@ module DeclareSchema
         @join_table = join_table
         @foreign_keys = foreign_keys.sort # Rails requires these be in alphabetical order
         @parent_table_names = @foreign_keys == foreign_keys ? parent_table_names : parent_table_names.reverse # match the above sort
+        @connection = connection
       end
 
       def _table_options
