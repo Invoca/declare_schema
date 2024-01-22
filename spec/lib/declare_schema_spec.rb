@@ -46,15 +46,14 @@ RSpec.describe DeclareSchema do
         let(:connection) { double("connection", select_value: "8.0.21") }
 
         it "is lazy, so it doesn't use the database connection until read" do
-          @connection_called = false
           expect(ActiveRecord::Base).to receive(:connection) do
             @connection_called = true
             connection
           end
           described_class.default_charset = "utf8"
-          expect(@connection_called).to eq(false)
+          expect(@connection_called).to be_falsey
           described_class.default_charset
-          expect(@connection_called).to eq(true)
+          expect(@connection_called).to be_truthy
         end
       end
     end
@@ -111,15 +110,14 @@ RSpec.describe DeclareSchema do
         let(:connection) { double("connection", select_value: "8.0.21") }
 
         it "is lazy, so it doesn't use the database connection until read" do
-          @connection_called = false
           expect(ActiveRecord::Base).to receive(:connection) do
             @connection_called = true
             connection
           end
           described_class.default_collation = "utf8_general_ci"
-          expect(@connection_called).to eq(false)
+          expect(@connection_called).to be_falsey
           described_class.default_collation
-          expect(@connection_called).to eq(true)
+          expect(@connection_called).to be_truthy
         end
       end
     end
