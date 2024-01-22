@@ -86,7 +86,7 @@ module DeclareSchema
     end
 
     def default_charset
-      @default_charset || normalize_charset(@default_charset_before_normalization)
+      @default_charset ||= normalize_charset(@default_charset_before_normalization)
     end
 
     def default_collation=(collation)
@@ -96,7 +96,7 @@ module DeclareSchema
     end
 
     def default_collation
-      @default_collation || normalize_collation(@default_collation_before_normalization)
+      @default_collation ||= normalize_collation(@default_collation_before_normalization)
     end
 
     def default_text_limit=(text_limit)
