@@ -4,6 +4,11 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.5] - 2024-01-22
+### Fixed
+- Make `default_charset=` and `default_collation=` lazy so they don't use the database connection to check the
+  MySQL version. Instead, that is checked the first time `default_charset` or `default_collation` is called.
+
 ## [1.3.4] - 2024-01-18
 ### Fixed
 - Add test for migrating `has_and_belongs_to_many` associations and fix them to properly declare their
