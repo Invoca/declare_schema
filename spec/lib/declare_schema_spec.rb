@@ -37,6 +37,26 @@ RSpec.describe DeclareSchema do
         it     { is_expected.to eq("utf8mb3") }
       end
     end
+
+    context 'when MySQL version not known yet' do
+      before { described_class.remove_instance_variable('@mysql_version') rescue nil }
+      after { described_class.remove_instance_variable('@mysql_version') rescue nil }
+
+      context 'when set' do
+        let(:connection) { double("connection", select_value: "8.0.21") }
+
+        it "is lazy, so it doesn't use the database connection until read" do
+          expect(ActiveRecord::Base).to receive(:connection) do
+            @connection_called = true
+            connection
+          end
+          described_class.default_charset = "utf8"
+          expect(@connection_called).to be_falsey
+          described_class.default_charset
+          expect(@connection_called).to be_truthy
+        end
+      end
+    end
   end
 
   describe '#default_collation' do
@@ -79,6 +99,26 @@ RSpec.describe DeclareSchema do
         before { described_class.default_collation = "utf8_general_ci" }
         after  { described_class.default_collation = "utf8mb4_bin" }
         it     { is_expected.to eq("utf8mb3_general_ci") }
+      end
+    end
+
+    context 'when MySQL version not known yet' do
+      before { described_class.remove_instance_variable('@mysql_version') rescue nil }
+      after { described_class.remove_instance_variable('@mysql_version') rescue nil }
+
+      context 'when set' do
+        let(:connection) { double("connection", select_value: "8.0.21") }
+
+        it "is lazy, so it doesn't use the database connection until read" do
+          expect(ActiveRecord::Base).to receive(:connection) do
+            @connection_called = true
+            connection
+          end
+          described_class.default_collation = "utf8_general_ci"
+          expect(@connection_called).to be_falsey
+          described_class.default_collation
+          expect(@connection_called).to be_truthy
+        end
       end
     end
   end
