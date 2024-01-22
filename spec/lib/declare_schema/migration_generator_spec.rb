@@ -1437,5 +1437,53 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         end
       end
     end
+
+    context 'index' do
+      before do
+        class Advert < active_record_base_class.constantize
+          declare_schema { }
+          belongs_to :ad_category
+        end
+      end
+
+      it "is idempotent and doesn't raise" do
+        expect do
+          Advert.index [:ad_category_id], name: :index_adverts_on_ad_category_id
+        end.to_not change { Advert.index_definitions.size }
+      end
+
+      it "when equivalent but not marked to allow, it raises" do
+        expect do
+          Advert.index [:ad_category_id], name: :on_ad_category_id
+        end.to raise_exception(ArgumentError, /equivalent index definition found/i)
+      end
+
+      it "when equivalent and marked to allow, it is idempotent and doesn't raise" do
+        expect do
+          Advert.index [:ad_category_id], name: :on_ad_category_id, allow_equivalent: true
+        end.to_not change { Advert.index_definitions.size }
+      end
+
+      context 'constraint' do
+        before do
+          class Advert < active_record_base_class.constantize
+            declare_schema { }
+            belongs_to :ad_category
+          end
+        end
+
+        it "when exactly equal, it is idempotent and doesn't raise" do
+          expect do
+            Advert.constraint :ad_category_id, parent_table_name: 'ad_categories', constraint_name: :index_adverts_on_ad_category_id, parent_class_name: 'AdCategory'
+          end.to_not change { Advert.index_definitions.size }
+        end
+
+        it "when equivalent, it is idempotent and doesn't raise" do
+          expect do
+            Advert.constraint :ad_category_id, parent_table_name: 'ad_categories', constraint_name: :constraint_1, parent_class_name: 'AdCategory'
+          end.to_not change { Advert.index_definitions.size }
+        end
+      end
+    end
   end
 end

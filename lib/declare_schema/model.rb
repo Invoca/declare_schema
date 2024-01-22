@@ -50,10 +50,23 @@ module DeclareSchema
 
     module ClassMethods
       def index(columns, name: nil, allow_equivalent: false, unique: false, where: nil, length: nil)
-        index_definitions << ::DeclareSchema::Model::IndexDefinition.new(
+        index_definition = ::DeclareSchema::Model::IndexDefinition.new(
           columns,
           name: name, table_name: table_name, allow_equivalent: allow_equivalent, unique: unique, where: where, length: length
         )
+
+        if (equivalent = index_definitions.find { index_definition.equivalent?(_1) }) # differs only by name
+          if equivalent == index_definition
+            # identical is always idempotent
+          else
+            # equivalent is idempotent iff allow_equivalent: true passed
+            allow_equivalent or
+              raise ArgumentError, "equivalent index definition found (pass allow_equivalent: true to ignore):\n" \
+                                   "#{index_definition.inspect}\n#{equivalent.inspect}"
+          end
+        else
+          index_definitions << index_definition
+        end
       end
 
       def primary_key_index(*columns)
@@ -61,11 +74,13 @@ module DeclareSchema
       end
 
       def constraint(foreign_key_column, parent_table_name: nil, constraint_name: nil, parent_class_name: nil, dependent: nil)
-        constraint_definitions << ::DeclareSchema::Model::ForeignKeyDefinition.new(
+        constraint_definition = ::DeclareSchema::Model::ForeignKeyDefinition.new(
           foreign_key_column.to_s,
           constraint_name: constraint_name,
           child_table_name: table_name, parent_table_name: parent_table_name, parent_class_name: parent_class_name, dependent: dependent
         )
+
+        constraint_definitions << constraint_definition # Set<> implements idempotent insert.
       end
 
       # tell the migration generator to ignore the named index. Useful for existing indexes, or for indexes
