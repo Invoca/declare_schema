@@ -115,6 +115,25 @@ module DeclareSchema
       # 1. creates a FieldSpec for the foreign key
       # 2. declares an index on the foreign key (optional)
       # 3. declares a foreign_key constraint (optional)
+      # @param name [Symbol] the name of the association to pass to super
+      # @param scope [Proc] the scope of the association to pass to super
+      # @option options [Boolean] :optional (default: false) whether the foreign key column should be nullable and whether
+      #   ActiveRecord should validate presence of the foreign key (passed through to super)
+      # @option options [Boolean] :null (default: inferred from options[:optional]) whether the foreign key column should be nullable
+      #   (`null:` should only be passed if it is the inverse of `optional:`; otherwise it is redundant)
+      # @option options [Integer] :limit (default: inferred from the primary key limit:) the limit of the foreign key column size (4 or 8)
+      # @option options [Boolean|Hash<Symbol>] :index (default: true) whether to create an index on the foreign key; can be true or false
+      #   or a hash of options to pass to the index declaration, with keys like { name: ..., unique: ... }
+      # @option options [Boolean] :allow_equivalent (default: false) whether to allow an existing index with a different name
+      # @option options [Boolean|String] :constraint (default: true) whether to create a foreign key constraint on the foreign key;
+      #   may be true or false or a string to use as the constraint name
+      # @option options [Boolean] :polymorphic (default: false) whether this is a polymorphic belongs_to with a _type column next to
+      #   the foreign key _id column (also passed through to super)
+      # @option options [Boolean] :far_end_dependent (default: nil) whether to add a dependent: :delete to the far end of the foreign key
+      #   constraint
+      # @option options [String] :foreign_type (default: "#{name}_type") the name prefix for the _type column for a polymorphic belongs_to
+      #   (passed through to super)
+      # Other options are passed through to super
       def belongs_to(name, scope = nil, **options)
         if options[:null].in?([true, false]) && options[:optional] == options[:null]
           STDERR.puts("[declare_schema warning] belongs_to #{name.inspect}, null: with the same value as optional: is redundant; omit null: #{options[:null]} (called from #{caller[0]})")
