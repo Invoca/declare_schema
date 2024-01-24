@@ -116,6 +116,17 @@ module DeclareSchema
       # 2. declares an index on the foreign key (optional)
       # 3. declares a foreign_key constraint (optional)
       def belongs_to(name, scope = nil, **options)
+        if options[:null].in?([true, false]) && options[:optional] == options[:null]
+          STDERR.puts("[declare_schema warning] belongs_to #{name.inspect}, null: with the same value as optional: is redundant; omit null: #{options[:null]} (called from #{caller[0]})")
+        elsif !options.has_key?(:optional)
+          case options[:null]
+          when true
+            STDERR.puts("[declare_schema] belongs_to #{name.inspect}, null: true is deprecated in favor of optional: true (called from #{caller[0]})")
+          when false
+            STDERR.puts("[declare_schema] belongs_to #{name.inspect}, null: false is implied and can be omitted (called from #{caller[0]})")
+          end
+        end
+
         column_options = {}
 
         column_options[:null] = if options.has_key?(:null)
@@ -140,18 +151,18 @@ module DeclareSchema
           index_options = {} # create an index
           case index_value
           when String, Symbol
-            ActiveSupport::Deprecation.warn("belongs_to #{name.inspect}, index: 'name' is deprecated; use index: { name: 'name' } instead (in #{self.name})")
+            ActiveSupport::Deprecation.warn("[declare_schema] belongs_to #{name.inspect}, index: 'name' is deprecated; use index: { name: 'name' } instead (in #{self.name})")
             index_options[:name] = index_value.to_s
           when true
           when nil
           when Hash
             index_options = index_value
           else
-            raise ArgumentError, "belongs_to #{name.inspect}, index: must be true or false or a Hash; got #{index_value.inspect} (in #{self.name})"
+            raise ArgumentError, "[declare_schema] belongs_to #{name.inspect}, index: must be true or false or a Hash; got #{index_value.inspect} (in #{self.name})"
           end
 
           if options.has_key?(:unique)
-            ActiveSupport::Deprecation.warn("belongs_to #{name.inspect}, unique: true|false is deprecated; use index: { unique: true|false } instead (in #{self.name})")
+            ActiveSupport::Deprecation.warn("[declare_schema] belongs_to #{name.inspect}, unique: true|false is deprecated; use index: { unique: true|false } instead (in #{self.name})")
             index_options[:unique] = options.delete(:unique)
           end
 
