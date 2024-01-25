@@ -56,19 +56,19 @@ module DeclareSchema
       def index_definitions_with_primary_key
         [
           *index_definitions,
-          IndexDefinition.new(foreign_keys, name: Model::IndexDefinition::PRIMARY_KEY_NAME, unique: true) # creates a primary composite key on both foreign keys
+          IndexDefinition.new(foreign_keys, table_name: table_name, name: Model::IndexDefinition::PRIMARY_KEY_NAME, unique: true) # creates a primary composite key on both foreign keys
         ]
       end
 
       def ignore_indexes
-        []
+        @ignore_indexes ||= Set.new
       end
 
-      def constraint_specs
-        [
-          ForeignKeyDefinition.new(foreign_keys.first, child_table: @join_table, parent_table: parent_table_names.first, constraint_name: "#{join_table}_FK1", dependent: :delete),
-          ForeignKeyDefinition.new(foreign_keys.last, child_table: @join_table, parent_table: parent_table_names.last, constraint_name: "#{join_table}_FK2", dependent: :delete)
-        ]
+      def constraint_definitions
+        @constraint_definitions ||= Set.new([
+          ForeignKeyDefinition.new(foreign_keys.first, constraint_name: "#{join_table}_FK1", child_table_name: @join_table, parent_table_name: parent_table_names.first, dependent: :delete),
+          ForeignKeyDefinition.new(foreign_keys.last, constraint_name: "#{join_table}_FK2", child_table_name: @join_table, parent_table_name: parent_table_names.last, dependent: :delete)
+        ])
       end
     end
   end

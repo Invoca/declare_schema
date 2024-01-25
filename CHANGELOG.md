@@ -4,6 +4,12 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2024-01-24
+### Added
+- Added support for partial indexes with `length:` option.
+### Changed
+- Deprecate index: 'name' and unique: true|false in favor of index: { name: 'name', unique: true|false }.
+
 ## [1.3.6] - 2024-01-22
 ### Fixed
 - Add missing commits around connection: and Array check for composite declared primary key.

@@ -7,19 +7,20 @@ module DeclareSchema
     class IndexDefinition
       include Comparable
 
-      attr_reader :columns, :explicit_name, :name, :unique, :where
+      OPTIONS = [:name, :unique, :where, :length].freeze
+      attr_reader :columns, :explicit_name, :table_name, *OPTIONS
+
       alias fields columns # TODO: change callers to use columns. -Colin
 
       class IndexNameTooLongError < RuntimeError; end
 
       PRIMARY_KEY_NAME = "PRIMARY"
 
-      # Caller needs to pass either name or table_name. The table_name is not remembered; it is just used to compute the
-      # default name if no name is given.
-      def initialize(columns, name: nil, table_name: nil, allow_equivalent: false, unique: false, where: nil)
-        @name = name || self.class.default_index_name(table_name, columns)
+      def initialize(columns, table_name:, name: nil, allow_equivalent: false, unique: false, where: nil, length: nil)
+        @table_name = table_name
+        @name = (name || self.class.default_index_name(table_name, columns)).to_s
         @columns = Array.wrap(columns).map(&:to_s)
-        @explicit_name = @name unless allow_equivalent
+        @explicit_name = @name if !allow_equivalent
         unique.in?([false, true]) or raise ArgumentError, "unique must be true or false: got #{unique.inspect}"
         if @name == PRIMARY_KEY_NAME
           unique or raise ArgumentError, "primary key index must be unique"
@@ -33,6 +34,8 @@ module DeclareSchema
         if where
           @where = where.start_with?('(') ? where : "(#{where})"
         end
+
+        @length = self.class.normalize_index_length(length, columns: @columns)
       end
 
       class << self
@@ -51,11 +54,11 @@ module DeclareSchema
                 raise "primary key on #{table_name} was not unique on #{primary_key_columns} (was unique=#{index.unique} on #{index.columns})"
               primary_key_found = true
             end
-            new(index.columns, name: index.name, unique: index.unique, where: index.where)
+            new(index.columns, name: index.name, table_name: table_name, unique: index.unique, where: index.where, length: index.lengths)
           end.compact
 
           if !primary_key_found
-            index_definitions << new(primary_key_columns, name: PRIMARY_KEY_NAME, unique: true)
+            index_definitions << new(primary_key_columns, name: PRIMARY_KEY_NAME, table_name: table_name, unique: true)
           end
           index_definitions
         end
@@ -69,6 +72,26 @@ module DeclareSchema
             end
           end or raise IndexNameTooLongError,
                        "Default index name '#{index_name}' exceeds configured limit of #{DeclareSchema.max_index_and_constraint_name_length} characters. Use the `name:` option to give it a shorter name, or adjust DeclareSchema.max_index_and_constraint_name_length if you know your database can accept longer names."
+        end
+
+        # This method normalizes the length option to be either nil or a Hash of Symbol column names to lengths,
+        # so that we can safely compare what the user specified with what we get when querying the database schema.
+        # @return [Hash<Symbol, nil>]
+        def normalize_index_length(length, columns:)
+          case length
+          when nil, {}
+            nil
+          when Integer
+            if columns.size == 1
+              { columns.first.to_sym => length }
+            else
+              raise ArgumentError, "Index length of Integer only allowed when exactly one column; got #{length.inspect} for #{columns.inspect}"
+            end
+          when Hash
+            length.transform_keys(&:to_sym)
+          else
+            raise ArgumentError, "Index length must be nil or Integer or a Hash of column names to lengths; got #{length.inspect} for #{columns.inspect}"
+          end
         end
 
         private
@@ -104,12 +127,21 @@ module DeclareSchema
         name == PRIMARY_KEY_NAME
       end
 
+      def options
+        @options ||=
+          OPTIONS.each_with_object({}) do |option, result|
+            result[option] = send(option)
+          end.freeze
+      end
+
+      # Unique key for this object. Used for equality checking.
       def to_key
         @to_key ||= [name, *settings].freeze
       end
 
+      # The index settings for this object. Used for equivalence checking. Does not include the name.
       def settings
-        @settings ||= [columns, unique, where].freeze
+        @settings ||= [columns, options.except(:name)].freeze
       end
 
       def hash
@@ -125,7 +157,7 @@ module DeclareSchema
       end
 
       def with_name(new_name)
-        self.class.new(@columns, name: new_name, unique: @unique, allow_equivalent: @explicit_name.nil?, where: @where)
+        self.class.new(@columns, name: new_name, table_name: @table_name, unique: @unique, allow_equivalent: @explicit_name.nil?, where: @where, length: @length)
       end
 
       alias eql? ==

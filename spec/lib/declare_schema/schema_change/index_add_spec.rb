@@ -30,7 +30,7 @@ RSpec.describe DeclareSchema::SchemaChange::IndexAdd do
       end
 
       context 'with where:' do
-        let(:where) { "'last_name like 'A%'"}
+        let(:where) { "'last_name like 'A%'" }
         subject { described_class.new(table_name, column_names, name: name, unique: unique, where: where) }
 
         it 'responds with command' do
@@ -43,6 +43,33 @@ RSpec.describe DeclareSchema::SchemaChange::IndexAdd do
 
         it 'responds with command' do
           expect(subject.up).to eq("add_index :#{table_name}, #{column_names.map(&:to_sym).inspect}, name: #{name.to_sym.inspect}, unique: true\n")
+        end
+      end
+
+      context 'with length: nil' do
+        let(:length) { nil }
+        subject { described_class.new(table_name, column_names, name: name, unique: unique, length: length) }
+
+        it 'responds with command' do
+          expect(subject.up).to eq("add_index :#{table_name}, #{column_names.map(&:to_sym).inspect}, name: #{name.to_sym.inspect}\n")
+        end
+      end
+
+      context 'with length: 2' do
+        let(:length) { 2 }
+        subject { described_class.new(table_name, column_names, name: name, unique: unique, length: length) }
+
+        it 'responds with command' do
+          expect(subject.up).to eq("add_index :#{table_name}, #{column_names.map(&:to_sym).inspect}, name: #{name.to_sym.inspect}, length: #{length}\n")
+        end
+      end
+
+      context 'with length: hash' do
+        let(:length) { { last_name: 10, first_name: 1 } }
+        subject { described_class.new(table_name, column_names, name: name, unique: unique, length: length) }
+
+        it 'responds with command' do
+          expect(subject.up).to eq("add_index :#{table_name}, #{column_names.map(&:to_sym).inspect}, name: #{name.to_sym.inspect}, length: { last_name: 10, first_name: 1 }\n")
         end
       end
     end

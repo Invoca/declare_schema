@@ -34,6 +34,8 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
                                               class_name: 'Customer',
                                               klass: Customer) }
       it 'returns a new object' do
+        expect(User).to receive(:connection).and_return(connection)
+
         result = described_class.from_reflection(reflection)
 
         expect(result).to be_a(described_class)
@@ -50,6 +52,12 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
       it 'stores initialization attributes' do
         expect(subject.join_table).to eq(join_table)
         expect(subject.foreign_keys).to eq(foreign_keys.reverse)
+      end
+    end
+
+    describe '#connection' do
+      it 'returns the connection' do
+        expect(subject.connection).to be(connection)
       end
     end
 
@@ -125,7 +133,7 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
       end
 
       it 'returns two index definitions and does not raise a IndexNameTooLongError' do
-        indexes = subject.index_definitions_with_primary_key
+        indexes = subject.index_definitions_with_primary_key.to_a
         expect(indexes.size).to eq(2), indexes.inspect
         expect(indexes.last).to be_a(::DeclareSchema::Model::IndexDefinition)
         expect(indexes.last.name).to eq('PRIMARY')
@@ -163,17 +171,17 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
     end
 
     describe 'ignore_indexes' do
-      it 'returns empty array' do
-        expect(subject.ignore_indexes).to eq([])
+      it 'returns empty Set' do
+        expect(subject.ignore_indexes).to eq(Set.new)
       end
     end
 
-    describe '#constraint_specs' do
+    describe '#constraint_definitions' do
       it 'returns 2 foreign keys' do
-        constraints = subject.constraint_specs
+        constraints = subject.constraint_definitions
         expect(constraints.map(&:key)).to eq([
-          ["customers", "customer_id", :delete],
-          ["users", "user_id", :delete]
+          ["customers_users", "customer_id", :delete],
+          ["customers_users", "user_id", :delete]
         ])
       end
     end

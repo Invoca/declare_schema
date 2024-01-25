@@ -22,7 +22,7 @@ RSpec.describe DeclareSchema::Model::ForeignKeyDefinition do
       let(:connection) { instance_double(ActiveRecord::Base.connection.class) }
       let(:model) { instance_double('Model', table_name: 'models', connection: connection) }
       let(:foreign_key_column) { :network_id }
-      let(:options) { { child_table: 'networks' } }
+      let(:options) { { child_table_name: 'advertisers' } }
       subject { described_class.new(foreign_key_column, **options)}
 
       before do
@@ -36,19 +36,19 @@ RSpec.describe DeclareSchema::Model::ForeignKeyDefinition do
         end
 
         context 'when most options passed' do
-          let(:options) { { child_table: 'networks', parent_table: :networks } }
+          let(:options) { { child_table_name: 'advertisers', parent_class_name: 'Network' } }
 
           it 'normalizes symbols to strings' do
             expect(subject.foreign_key_column).to eq('network_id')
             expect(subject.parent_table_name).to eq('networks')
             expect(subject.foreign_key_column).to eq('network_id')
-            expect(subject.constraint_name).to eq('index_networks_on_network_id')
+            expect(subject.constraint_name).to eq('index_advertisers_on_network_id')
             expect(subject.dependent).to be_nil
           end
         end
 
         context 'when all options passed' do
-          let(:options) { { child_table: 'networks', parent_table: :networks, constraint_name: :constraint_1, dependent: :delete } }
+          let(:options) { { child_table_name: 'advertisers', parent_class_name: 'Network', constraint_name: :constraint_1, dependent: :delete } }
 
           it 'normalizes symbols to strings' do
             expect(subject.foreign_key_column).to eq('network_id')
@@ -58,17 +58,37 @@ RSpec.describe DeclareSchema::Model::ForeignKeyDefinition do
           end
         end
 
+        describe `#<=>` do
+          let(:foreign_key_column) { :the_network_id }
+
+          context 'when class name not passed' do
+            let(:options) { { child_table_name: 'advertisers', constraint_name: :constraint_1, dependent: :delete } }
+
+            it 'compares equal without requiring the parent class' do
+              expect(subject <=> subject).to eq(0)
+            end
+          end
+
+          context 'when class name passed' do
+            let(:options) { { child_table_name: 'advertisers', parent_class_name: 'TheNetwork', constraint_name: :constraint_1 } }
+
+            it 'compares equal without requiring the parent class' do
+              expect(subject <=> subject).to eq(0)
+            end
+          end
+        end
+
         context 'when constraint name passed as empty string' do
-          let(:options) { { child_table: 'networks', constraint_name: "" } }
+          let(:options) { { child_table_name: 'advertisers', constraint_name: "" } }
 
           it 'defaults to rails constraint name' do
-            expect(subject.constraint_name).to eq("index_networks_on_network_id")
+            expect(subject.constraint_name).to eq("index_advertisers_on_network_id")
           end
         end
 
         context 'when no constraint name passed' do
           it 'defaults to rails constraint name' do
-            expect(subject.constraint_name).to eq("index_networks_on_network_id")
+            expect(subject.constraint_name).to eq("index_advertisers_on_network_id")
           end
         end
       end

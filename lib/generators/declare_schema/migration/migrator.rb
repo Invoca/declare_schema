@@ -336,12 +336,12 @@ module Generators
         # TODO: TECH-5338: optimize that index doesn't need to be dropped on undo since entire table will be dropped
         def create_indexes(model)
           model.index_definitions.map do |i|
-            ::DeclareSchema::SchemaChange::IndexAdd.new(model.table_name, i.columns, unique: i.unique, where: i.where, name: i.name)
+            ::DeclareSchema::SchemaChange::IndexAdd.new(model.table_name, i.columns, **i.options)
           end
         end
 
         def create_constraints(model)
-          model.constraint_specs.map do |fk|
+          model.constraint_definitions.map do |fk|
             ::DeclareSchema::SchemaChange::ForeignKeyAdd.new(fk.child_table_name, fk.parent_table_name,
                                                              column_name: fk.foreign_key_column, name: fk.constraint_name)
           end
@@ -432,7 +432,7 @@ module Generators
 
           new_table_name = model.table_name
           existing_indexes = ::DeclareSchema::Model::IndexDefinition.for_table(old_table_name || new_table_name, model.ignore_indexes, model.connection)
-          model_indexes_with_equivalents = model.index_definitions_with_primary_key
+          model_indexes_with_equivalents = model.index_definitions_with_primary_key.to_a
           model_indexes = model_indexes_with_equivalents.map do |i|
             if i.explicit_name.nil?
               if (existing = existing_indexes.find { |e| i != e && e.equivalent?(i) })
@@ -463,11 +463,11 @@ module Generators
           renamed_indexes_to_drop, renamed_indexes_to_add = index_changes_due_to_column_renames(indexes_to_drop, indexes_to_add, to_rename)
 
           drop_indexes = (indexes_to_drop - renamed_indexes_to_drop).map do |i|
-            ::DeclareSchema::SchemaChange::IndexRemove.new(new_table_name, i.columns, unique: i.unique, where: i.where, name: i.name)
+            ::DeclareSchema::SchemaChange::IndexRemove.new(new_table_name, i.columns, **i.options)
           end
 
           add_indexes = (indexes_to_add - renamed_indexes_to_add).map do |i|
-            ::DeclareSchema::SchemaChange::IndexAdd.new(new_table_name, i.columns, unique: i.unique, where: i.where, name: i.name)
+            ::DeclareSchema::SchemaChange::IndexAdd.new(new_table_name, i.columns, **i.options)
           end
 
           # the order is important here - adding a :unique, for instance needs to remove then add
@@ -496,7 +496,7 @@ module Generators
           end
 
           existing_fks = ::DeclareSchema::Model::ForeignKeyDefinition.for_table(old_table_name || model.table_name, model.connection, dependent: force_dependent_delete)
-          model_fks = model.constraint_specs
+          model_fks = model.constraint_definitions.to_a
 
           fks_to_drop = existing_fks - model_fks
           fks_to_add = model_fks - existing_fks
@@ -533,9 +533,8 @@ module Generators
         end
 
         def fk_field_options(model, field_name)
-          foreign_key = model.constraint_specs.find { |fk| field_name == fk.foreign_key_column }
-          if foreign_key && (parent_table = foreign_key.parent_table_name)
-            parent_columns = connection.columns(parent_table) rescue []
+          if (foreign_key = model.constraint_definitions.find { |fk| field_name == fk.foreign_key_column })
+            parent_columns = connection.columns(foreign_key.parent_table_name) rescue []
             pk_limit =
               if (pk_column = parent_columns.find { |column| column.name.to_s == "id" }) # right now foreign keys assume id is the target
                 pk_column.limit
@@ -595,6 +594,8 @@ module Generators
           case charset
           when "utf8"
             "utf8_general_ci"
+          when "utf8mb3"
+            "utf8mb3_general_ci"
           when "utf8mb4"
             "utf8mb4_general_ci"
           end
