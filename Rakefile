@@ -51,7 +51,7 @@ namespace "test" do
       sh "echo '' > app/models/.gitignore" # because git reset --hard would rm the dir
       rm ".gitignore" # we need to reset everything in a testapp
       sh "git init && git add . && git commit -nm \"initial commit\""
-      sh "rake db:create"
+      sh "bin/rails db:create"
       puts "The testapp has been created in '#{TESTAPP_PATH}'"
     else
       FileUtils.chdir(TESTAPP_PATH)
