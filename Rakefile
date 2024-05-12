@@ -29,7 +29,7 @@ namespace "test" do
   task :prepare_testapp, :force do |_t, args|
     if args.force || !File.directory?(TESTAPP_PATH)
       FileUtils.remove_entry_secure(TESTAPP_PATH, true)
-      sh %(#{BIN} new #{TESTAPP_PATH} --skip-wizard --skip-bundle)
+      sh %(#{BIN} new #{TESTAPP_PATH} --skip-wizard --skip-bundle --api)
       FileUtils.chdir(TESTAPP_PATH)
       begin
         require 'mysql2'
