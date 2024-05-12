@@ -7,6 +7,7 @@ Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0
 ## [1.5.0] - Unreleased
 ### Added
 - Added support for Rails 7.0 and 7.1
+- Add support for automatic enum scopes for each value in the `:limit` array
 
 ## [1.4.0] - 2024-01-24
 ### Added

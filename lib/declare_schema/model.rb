@@ -99,6 +99,7 @@ module DeclareSchema
         _add_formatting_for_field(name, type)
         _add_validations_for_field(name, type, args, options)
         _add_index_for_field(name, args, **options)
+        _add_scopes_for_field(name, type, **options)
         field_specs[name] = ::DeclareSchema::Model::FieldSpec.new(self, name, type, position: field_specs.size, **options)
         attr_order << name unless attr_order.include?(name)
       end
@@ -314,6 +315,16 @@ module DeclareSchema
               v = record.send(name)&.validate
               record.errors.add(name, v) if v.is_a?(String)
             end
+          end
+        end
+      end
+
+      def _add_scopes_for_field(field_name, field_type, options)
+        if field_type == :enum && options[:scopes]
+          scope_prefix = options[:scopes].is_a?(Hash) ? options[:scopes][:prefix] : nil
+          options[:limit].each do |enum_value|
+            scope_name = scope_prefix ? "#{scope_prefix}_#{enum_value}" : enum_value
+            scope scope_name, -> { where(field_name => enum_value) }
           end
         end
       end
