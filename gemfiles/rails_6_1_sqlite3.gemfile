@@ -8,12 +8,12 @@ gem "mail"
 gem "net-smtp"
 gem "pry"
 gem "pry-byebug"
-gem "rails", "~> 6.1"
+gem "rails", "~> 6.1.0"
 gem "responders"
 gem "rspec"
 gem "rubocop"
 gem "yard"
-gem "mysql2"
+gem "sqlite3", "~> 1.4"
 
 group :testapp do
   gem "bootsnap", ">= 1.1.0", require: false
