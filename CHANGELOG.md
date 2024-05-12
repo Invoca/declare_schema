@@ -4,6 +4,10 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - Unreleased
+### Added
+- Added support for Rails 7.0 and 7.1
+
 ## [1.4.0] - 2024-01-24
 ### Added
 - Added support for partial indexes with `length:` option.
