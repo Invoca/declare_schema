@@ -6,6 +6,7 @@ rescue LoadError
 end
 require 'rails'
 require 'rails/generators'
+require 'generators/declare_schema/migration/migrator'
 
 module Generators
   module DeclareSchema
