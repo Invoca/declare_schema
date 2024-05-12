@@ -19,13 +19,23 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
     EOS
 
-    expect_model_definition_to_eq('alpha', <<~EOS)
-      module Alpha
-        def self.table_name_prefix
-          'alpha_'
+    if ActiveSupport::VERSION::MAJOR >= 7
+      expect_model_definition_to_eq('alpha', <<~EOS)
+        module Alpha
+          def self.table_name_prefix
+            "alpha_"
+          end
         end
-      end
-    EOS
+      EOS
+    else
+      expect_model_definition_to_eq('alpha', <<~EOS)
+        module Alpha
+          def self.table_name_prefix
+            'alpha_'
+          end
+        end
+      EOS
+    end
 
     case ActiveSupport::VERSION::MAJOR
     when 5
@@ -88,7 +98,11 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     expect(File.exist?('db/schema.rb')).to be_truthy
 
     if defined?(SQLite3)
-      expect(File.exist?("db/development.sqlite3") || File.exist?("db/test.sqlite3")).to be_truthy
+      if ActiveSupport.version >= Gem::Version.new('7.1.0')
+        expect(File.exist?("storage/development.sqlite3") || File.exist?("storage/test.sqlite3")).to be_truthy
+      else
+        expect(File.exist?("db/development.sqlite3") || File.exist?("db/test.sqlite3")).to be_truthy
+      end
     end
 
     module Alpha; end

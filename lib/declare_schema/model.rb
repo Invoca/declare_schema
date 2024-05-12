@@ -263,9 +263,13 @@ module DeclareSchema
       # unlike the `primary_key` method, DOES NOT query the database to find the actual primary key in use right now
       # if no explicit primary key set, returns the _default_declared_primary_key
       def _declared_primary_key
-        if defined?(@primary_key)
+        if !defined?(@primary_key) ||
+           (ActiveSupport.version >= Gem::Version.new('7.1.0') &&
+             @primary_key == ActiveRecord::AttributeMethods::PrimaryKey::ClassMethods::PRIMARY_KEY_NOT_SET)
+          _default_declared_primary_key
+        else
           @primary_key&.to_s
-        end || _default_declared_primary_key
+        end
       end
 
       private

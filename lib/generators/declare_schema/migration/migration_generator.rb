@@ -94,18 +94,7 @@ module DeclareSchema
     private
 
     def migrations_pending?
-      migrations = case ActiveSupport::VERSION::MAJOR
-                   when 5
-                     ActiveRecord::MigrationContext.new(ActiveRecord::Migrator.migrations_paths).migrations
-                   else
-                     ActiveRecord::MigrationContext.new(ActiveRecord::Migrator.migrations_paths, ActiveRecord::SchemaMigration).migrations
-                   end
-      pending_migrations = case ActiveSupport::VERSION::MAJOR
-                           when 5
-                             ActiveRecord::Migrator.new(:up, migrations).pending_migrations
-                           else
-                             ActiveRecord::Migrator.new(:up, migrations, ActiveRecord::SchemaMigration).pending_migrations
-                           end
+      pending_migrations = load_pending_migrations
 
       pending_migrations.any?.tap do |any|
         if any
@@ -114,6 +103,36 @@ module DeclareSchema
             say format('  %4d %s', pending_migration.version, pending_migration.name)
           end
         end
+      end
+    end
+
+    def load_migrations
+      if ActiveSupport.version >= Gem::Version.new('7.1.0')
+        ActiveRecord::MigrationContext.new(
+          ActiveRecord::Migrator.migrations_paths,
+          ActiveRecord::Base.connection.schema_migration,
+          ActiveRecord::Base.connection.internal_metadata
+        ).migrations
+      elsif ActiveSupport.version >= Gem::Version.new('6.0.0')
+        ActiveRecord::MigrationContext.new(ActiveRecord::Migrator.migrations_paths, ActiveRecord::SchemaMigration).migrations
+      else # Rails 5.2 and earlier
+        ActiveRecord::MigrationContext.new(ActiveRecord::Migrator.migrations_paths).migrations
+      end
+    end
+
+    def load_pending_migrations
+      migrations = load_migrations
+      if ActiveSupport.version >= Gem::Version.new('7.1.0')
+        ActiveRecord::Migrator.new(
+          :up,
+          migrations,
+          ActiveRecord::Base.connection.schema_migration,
+          ActiveRecord::Base.connection.internal_metadata
+        ).pending_migrations
+      elsif ActiveSupport.version >= Gem::Version.new('6.0.0')
+        ActiveRecord::Migrator.new(:up, migrations, ActiveRecord::SchemaMigration).pending_migrations
+      else # Rails 5.2 and earlier
+        ActiveRecord::Migrator.new(:up, migrations).pending_migrations
       end
     end
 
