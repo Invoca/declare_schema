@@ -113,10 +113,8 @@ module DeclareSchema
           ActiveRecord::Base.connection.schema_migration,
           ActiveRecord::Base.connection.internal_metadata
         ).migrations
-      elsif ActiveSupport.version >= Gem::Version.new('6.0.0')
+      else
         ActiveRecord::MigrationContext.new(ActiveRecord::Migrator.migrations_paths, ActiveRecord::SchemaMigration).migrations
-      else # Rails 5.2 and earlier
-        ActiveRecord::MigrationContext.new(ActiveRecord::Migrator.migrations_paths).migrations
       end
     end
 
@@ -129,10 +127,8 @@ module DeclareSchema
           ActiveRecord::Base.connection.schema_migration,
           ActiveRecord::Base.connection.internal_metadata
         ).pending_migrations
-      elsif ActiveSupport.version >= Gem::Version.new('6.0.0')
+      else
         ActiveRecord::Migrator.new(:up, migrations, ActiveRecord::SchemaMigration).pending_migrations
-      else # Rails 5.2 and earlier
-        ActiveRecord::Migrator.new(:up, migrations).pending_migrations
       end
     end
 
