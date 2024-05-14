@@ -19,23 +19,13 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
     EOS
 
-    if ActiveSupport::VERSION::MAJOR >= 7
-      expect_model_definition_to_eq('alpha', <<~EOS)
-        module Alpha
-          def self.table_name_prefix
-            "alpha_"
-          end
+    expect_model_definition_to_eq('alpha', <<~EOS)
+      module Alpha
+        def self.table_name_prefix
+          #{ActiveSupport::VERSION::MAJOR >= 7 ? '"alpha_"' : "'alpha_'"}
         end
-      EOS
-    else
-      expect_model_definition_to_eq('alpha', <<~EOS)
-        module Alpha
-          def self.table_name_prefix
-            'alpha_'
-          end
-        end
-      EOS
-    end
+      end
+    EOS
 
     expect_test_definition_to_eq('alpha/beta', <<~EOS)
       require "test_helper"
@@ -51,7 +41,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
       # This model initially had no columns defined. If you add columns to the
-      # model remove the '{}' from the fixture names and add the columns immediately
+      # model remove the #{ActiveSupport::VERSION::MAJOR >= 7 ? '"{}"' : "'{}'"} from the fixture names and add the columns immediately
       # below each fixture, per the syntax in the comments below
       #
       one: {}
