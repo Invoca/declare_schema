@@ -39,10 +39,6 @@ RSpec.describe 'DeclareSchema API' do
 
       load_models
 
-      if ActiveSupport::VERSION::MAJOR == 5
-        generate_migrations '-n', '-m'
-      end
-
       require 'advert'
       Advert.reset_primary_key
 

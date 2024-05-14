@@ -39,11 +39,15 @@ RSpec.configure do |config|
   end
 
   def nuke_model_class(klass)
-    ActiveSupport::DescendantsTracker.instance_eval do
-      direct_descendants = class_variable_get('@@direct_descendants')
-      direct_descendants[ActiveRecord::Base] = direct_descendants[ActiveRecord::Base].to_a.reject { |descendant| descendant == klass }
-      if defined?(ApplicationRecord)
-        direct_descendants[ApplicationRecord] = direct_descendants[ApplicationRecord].to_a.reject { |descendant| descendant == klass }
+    if ActiveSupport.version >= Gem::Version.new('7.1.0') || (ActiveSupport.version >= Gem::Version.new('7.0.0') && Class.method_defined?(:subclasses))
+      ActiveSupport::DescendantsTracker.clear([klass])
+    else
+      ActiveSupport::DescendantsTracker.instance_eval do
+        direct_descendants = class_variable_get('@@direct_descendants')
+        direct_descendants[ActiveRecord::Base] = direct_descendants[ActiveRecord::Base].to_a.reject { |descendant| descendant == klass }
+        if defined?(ApplicationRecord)
+          direct_descendants[ApplicationRecord] = direct_descendants[ApplicationRecord].to_a.reject { |descendant| descendant == klass }
+        end
       end
     end
     Object.instance_eval { remove_const(klass.name.to_sym) rescue nil }

@@ -22,64 +22,34 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     expect_model_definition_to_eq('alpha', <<~EOS)
       module Alpha
         def self.table_name_prefix
-          'alpha_'
+          #{ActiveSupport::VERSION::MAJOR >= 7 ? '"alpha_"' : "'alpha_'"}
         end
       end
     EOS
 
-    case ActiveSupport::VERSION::MAJOR
-    when 5
-      expect_test_definition_to_eq('alpha/beta', <<~EOS)
-        require "test_helper"
+    expect_test_definition_to_eq('alpha/beta', <<~EOS)
+      require "test_helper"
 
-        class Alpha::BetaTest < ActiveSupport::TestCase
-          # test "the truth" do
-          #   assert true
-          # end
-        end
-      EOS
-    else
-      expect_test_definition_to_eq('alpha/beta', <<~EOS)
-        require "test_helper"
+      class Alpha::BetaTest < ActiveSupport::TestCase
+        # test "the truth" do
+        #   assert true
+        # end
+      end
+    EOS
 
-        class Alpha::BetaTest < ActiveSupport::TestCase
-          # test "the truth" do
-          #   assert true
-          # end
-        end
-      EOS
-    end
+    expect_test_fixture_to_eq('alpha/beta', <<~EOS)
+      # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
-    case ActiveSupport::VERSION::MAJOR
-    when 5
-      expect_test_fixture_to_eq('alpha/beta', <<~EOS)
-        # Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
-
-        # This model initially had no columns defined. If you add columns to the
-        # model remove the '{}' from the fixture names and add the columns immediately
-        # below each fixture, per the syntax in the comments below
-        #
-        one: {}
-        # column: value
-        #
-        two: {}
-        # column: value
-      EOS
-    when 6
-      expect_test_fixture_to_eq('alpha/beta', <<~EOS)
-        # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
-
-        # This model initially had no columns defined. If you add columns to the
-        # model remove the '{}' from the fixture names and add the columns immediately
-        # below each fixture, per the syntax in the comments below
-        #
-        one: {}
-        # column: value
-        #
-        two: {}
-        # column: value
-      EOS
-    end
+      # This model initially had no columns defined. If you add columns to the
+      # model remove the #{ActiveSupport::VERSION::MAJOR >= 7 ? '"{}"' : "'{}'"} from the fixture names and add the columns immediately
+      # below each fixture, per the syntax in the comments below
+      #
+      one: {}
+      # column: value
+      #
+      two: {}
+      # column: value
+    EOS
 
     $LOAD_PATH << "#{TESTAPP_PATH}/app/models"
 
@@ -88,7 +58,11 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     expect(File.exist?('db/schema.rb')).to be_truthy
 
     if defined?(SQLite3)
-      expect(File.exist?("db/development.sqlite3") || File.exist?("db/test.sqlite3")).to be_truthy
+      if ActiveSupport.version >= Gem::Version.new('7.1.0')
+        expect(File.exist?("storage/development.sqlite3") || File.exist?("storage/test.sqlite3")).to be_truthy
+      else
+        expect(File.exist?("db/development.sqlite3") || File.exist?("db/test.sqlite3")).to be_truthy
+      end
     end
 
     module Alpha; end

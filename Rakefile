@@ -29,7 +29,7 @@ namespace "test" do
   task :prepare_testapp, :force do |_t, args|
     if args.force || !File.directory?(TESTAPP_PATH)
       FileUtils.remove_entry_secure(TESTAPP_PATH, true)
-      sh %(#{BIN} new #{TESTAPP_PATH} --skip-wizard --skip-bundle)
+      sh %(#{BIN} new #{TESTAPP_PATH} --skip-wizard --skip-bundle --api)
       FileUtils.chdir(TESTAPP_PATH)
       begin
         require 'mysql2'
@@ -51,7 +51,7 @@ namespace "test" do
       sh "echo '' > app/models/.gitignore" # because git reset --hard would rm the dir
       rm ".gitignore" # we need to reset everything in a testapp
       sh "git init && git add . && git commit -nm \"initial commit\""
-      sh "rake db:create"
+      sh "bin/rails db:create"
       puts "The testapp has been created in '#{TESTAPP_PATH}'"
     else
       FileUtils.chdir(TESTAPP_PATH)

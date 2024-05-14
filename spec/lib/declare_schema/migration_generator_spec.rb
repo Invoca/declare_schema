@@ -30,18 +30,15 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     end
   end
   let(:datetime_precision) do
-    if defined?(Mysql2)
+    if ActiveSupport::VERSION::MAJOR >= 7
+      ', precision: 6'
+    elsif defined?(Mysql2)
       ', precision: 0'
     end
   end
   let(:table_options) do
     if defined?(Mysql2)
-      ", options: \"#{'ENGINE=InnoDB ' if ActiveSupport::VERSION::MAJOR == 5}DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin\"" +
-        if ActiveSupport::VERSION::MAJOR >= 6
-          ', charset: "utf8mb4", collation: "utf8mb4_bin"'
-        else
-          ''
-        end
+      ', options: "DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin", charset: "utf8mb4", collation: "utf8mb4_bin"'
     else
       ", id: :integer"
     end
@@ -860,21 +857,39 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
 
       expect(Generators::DeclareSchema::Migration::Migrator.run).to(
-        migrate_up(<<~EOS.strip)
-          create_table :advertisers, id: :bigint#{create_table_charset_and_collation} do |t|
-            t.string :name, limit: 250, null: false#{charset_and_collation}
-          end
-          create_table :advertisers_creatives, primary_key: [:advertiser_id, :creative_id]#{create_table_charset_and_collation} do |t|
-            t.integer :advertiser_id, limit: 8, null: false
-            t.integer :creative_id, limit: 8, null: false
-          end
-          create_table :creatives, id: :bigint#{create_table_charset_and_collation} do |t|
-            t.string :url, limit: 500, null: false#{charset_and_collation}
-          end
-          add_index :advertisers_creatives, [:creative_id], name: :index_advertisers_creatives_on_creative_id
-          add_foreign_key :advertisers_creatives, :advertisers, column: :advertiser_id, name: :advertisers_creatives_FK1
-          add_foreign_key :advertisers_creatives, :creatives, column: :creative_id, name: :advertisers_creatives_FK2
-      EOS
+        if ActiveSupport.version >= Gem::Version.new('7.0.0') && Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.1.0')
+          migrate_up(<<~EOS.strip)
+            create_table :advertisers_creatives, primary_key: [:advertiser_id, :creative_id]#{create_table_charset_and_collation} do |t|
+              t.integer :advertiser_id, limit: 8, null: false
+              t.integer :creative_id, limit: 8, null: false
+            end
+            create_table :creatives, id: :bigint#{create_table_charset_and_collation} do |t|
+              t.string :url, limit: 500, null: false#{charset_and_collation}
+            end
+            create_table :advertisers, id: :bigint#{create_table_charset_and_collation} do |t|
+              t.string :name, limit: 250, null: false#{charset_and_collation}
+            end
+            add_index :advertisers_creatives, [:creative_id], name: :index_advertisers_creatives_on_creative_id
+            add_foreign_key :advertisers_creatives, :advertisers, column: :advertiser_id, name: :advertisers_creatives_FK1
+            add_foreign_key :advertisers_creatives, :creatives, column: :creative_id, name: :advertisers_creatives_FK2
+          EOS
+        else
+          migrate_up(<<~EOS.strip)
+            create_table :advertisers, id: :bigint#{create_table_charset_and_collation} do |t|
+              t.string :name, limit: 250, null: false#{charset_and_collation}
+            end
+            create_table :advertisers_creatives, primary_key: [:advertiser_id, :creative_id]#{create_table_charset_and_collation} do |t|
+              t.integer :advertiser_id, limit: 8, null: false
+              t.integer :creative_id, limit: 8, null: false
+            end
+            create_table :creatives, id: :bigint#{create_table_charset_and_collation} do |t|
+              t.string :url, limit: 500, null: false#{charset_and_collation}
+            end
+            add_index :advertisers_creatives, [:creative_id], name: :index_advertisers_creatives_on_creative_id
+            add_foreign_key :advertisers_creatives, :advertisers, column: :advertiser_id, name: :advertisers_creatives_FK1
+            add_foreign_key :advertisers_creatives, :creatives, column: :creative_id, name: :advertisers_creatives_FK2
+          EOS
+        end
       )
 
       nuke_model_class(Ad)
@@ -905,23 +920,43 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       it 'will generate unique constraint names' do
         expect(Generators::DeclareSchema::Migration::Migrator.run).to(
-          migrate_up(<<~EOS.strip)
-            create_table :categories, id: :bigint, options: "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin" do |t|
-              t.string :name, limit: 250, null: true, charset: "utf8mb4", collation: "utf8mb4_bin"
-            end
-            create_table :advertisers, id: :bigint, options: "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin" do |t|
-              t.string  :name, limit: 250, null: true, charset: "utf8mb4", collation: "utf8mb4_bin"
-              t.integer :category_id, limit: 8, null: false
-            end
-            create_table :affiliates, id: :bigint, options: "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin" do |t|
-              t.string  :name, limit: 250, null: true, charset: "utf8mb4", collation: "utf8mb4_bin"
-              t.integer :category_id, limit: 8, null: false
-            end
-            add_index :advertisers, [:category_id], name: :index_advertisers_on_category_id
-            add_index :affiliates, [:category_id], name: :index_affiliates_on_category_id
-            add_foreign_key :advertisers, :categories, column: :category_id, name: :index_advertisers_on_category_id
-            add_foreign_key :affiliates, :categories, column: :category_id, name: :index_affiliates_on_category_id
-        EOS
+          if ActiveSupport.version >= Gem::Version.new('7.0.0') && Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.1.0')
+            migrate_up(<<~EOS.strip)
+              create_table :affiliates, id: :bigint, options: "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin" do |t|
+                t.string  :name, limit: 250, null: true, charset: "utf8mb4", collation: "utf8mb4_bin"
+                t.integer :category_id, limit: 8, null: false
+              end
+              create_table :advertisers, id: :bigint, options: "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin" do |t|
+                t.string  :name, limit: 250, null: true, charset: "utf8mb4", collation: "utf8mb4_bin"
+                t.integer :category_id, limit: 8, null: false
+              end
+              create_table :categories, id: :bigint, options: "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin" do |t|
+                t.string :name, limit: 250, null: true, charset: "utf8mb4", collation: "utf8mb4_bin"
+              end
+              add_index :affiliates, [:category_id], name: :index_affiliates_on_category_id
+              add_index :advertisers, [:category_id], name: :index_advertisers_on_category_id
+              add_foreign_key :affiliates, :categories, column: :category_id, name: :index_affiliates_on_category_id
+              add_foreign_key :advertisers, :categories, column: :category_id, name: :index_advertisers_on_category_id
+            EOS
+          else
+            migrate_up(<<~EOS.strip)
+              create_table :categories, id: :bigint, options: "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin" do |t|
+                t.string :name, limit: 250, null: true, charset: "utf8mb4", collation: "utf8mb4_bin"
+              end
+              create_table :advertisers, id: :bigint, options: "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin" do |t|
+                t.string  :name, limit: 250, null: true, charset: "utf8mb4", collation: "utf8mb4_bin"
+                t.integer :category_id, limit: 8, null: false
+              end
+              create_table :affiliates, id: :bigint, options: "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin" do |t|
+                t.string  :name, limit: 250, null: true, charset: "utf8mb4", collation: "utf8mb4_bin"
+                t.integer :category_id, limit: 8, null: false
+              end
+              add_index :advertisers, [:category_id], name: :index_advertisers_on_category_id
+              add_index :affiliates, [:category_id], name: :index_affiliates_on_category_id
+              add_foreign_key :advertisers, :categories, column: :category_id, name: :index_advertisers_on_category_id
+              add_foreign_key :affiliates, :categories, column: :category_id, name: :index_affiliates_on_category_id
+            EOS
+          end
         )
         migrate
 
