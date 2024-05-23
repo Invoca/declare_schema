@@ -1,0 +1,10 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: declare_schema
+  annotations:
+    github.com/project-slug: invoca/declare_schema
+spec:
+  type: other
+  lifecycle: unknown
+  owner: octothorpe
