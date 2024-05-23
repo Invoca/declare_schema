@@ -1,0 +1,15 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: declare_schema
+  title: DeclareSchema gem
+  annotations:
+    github.com/project-slug: invoca/declare_schema
+    endoflife.date/products: ruby@3.1
+  tags:
+  - ruby
+  - open-source
+spec:
+  type: library
+  lifecycle: production
+  owner: octothorpe
