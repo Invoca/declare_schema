@@ -1,10 +1,5 @@
 # frozen_string_literal: true
 
-begin
-  require 'mysql2'
-rescue LoadError
-end
-
 require_relative '../../../../lib/declare_schema/model/column'
 
 RSpec.describe DeclareSchema::Model::Column do
@@ -109,7 +104,7 @@ RSpec.describe DeclareSchema::Model::Column do
 
       describe '#schema_attributes' do
         it 'returns a hash with relevant key/values' do
-          if defined?(Mysql2)
+          if ActiveRecord::Base.connection_config[:adapter] == 'mysql2'
             expect(subject.schema_attributes).to eq(type: :integer, null: false, limit: 4)
           else
             expect(subject.schema_attributes).to eq(type: :integer, null: false)

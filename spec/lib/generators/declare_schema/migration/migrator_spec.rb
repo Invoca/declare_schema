@@ -1,9 +1,5 @@
 # frozen_string_literal: true
 
-begin
-  require 'mysql2'
-rescue LoadError
-end
 require 'rails'
 require 'rails/generators'
 require 'generators/declare_schema/migration/migrator'
