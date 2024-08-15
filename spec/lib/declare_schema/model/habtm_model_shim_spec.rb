@@ -1,10 +1,5 @@
 # frozen_string_literal: true
 
-begin
-  require 'mysql2'
-rescue LoadError
-end
-
 require_relative '../../../../lib/declare_schema/model/habtm_model_shim'
 
 RSpec.describe DeclareSchema::Model::HabtmModelShim do

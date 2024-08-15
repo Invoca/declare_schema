@@ -26,11 +26,11 @@
     {
       "warning_type": "Command Injection",
       "warning_code": 14,
-      "fingerprint": "601f18b634f67229235d6e91434d1ea4c3c845876c4786d27380034e66178ee6",
+      "fingerprint": "6b90f8dd199afbdf79cc8c4d00a0853e0696b067d00c0fe93071e31b69de8628",
       "check_name": "Execute",
       "message": "Possible command injection",
       "file": "lib/declare_schema/command.rb",
-      "line": 51,
+      "line": 45,
       "link": "https://brakemanscanner.org/docs/warning_types/command_injection/",
       "code": "system(\"rails new #{\"new\"} #{(args * \" \")} -m #{File.join(Dir.tmpdir, \"declare_schema_app_template\")}#{begin\n  (require(\"mysql2\")\n  \" -d mysql\")\nrescue LoadError\n  # do nothing\nend}\")",
       "render_path": null,

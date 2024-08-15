@@ -1,10 +1,5 @@
 # frozen_string_literal: true
 
-begin
-  require 'mysql2'
-  require 'active_record/connection_adapters/mysql2_adapter'
-rescue LoadError
-end
 require_relative '../../../../lib/declare_schema/model/table_options_definition'
 
 RSpec.describe DeclareSchema::Model::TableOptionsDefinition do
@@ -36,7 +31,11 @@ RSpec.describe DeclareSchema::Model::TableOptionsDefinition do
         subject { model.settings }
         it { is_expected.to eq("CHARACTER SET #{charset} COLLATE #{collation}") }
 
-        if defined?(Mysql2)
+        context 'MySQL only' do
+          include_context 'skip unless' do
+            let(:adapter) { 'mysql2' }
+          end
+
           context 'when running in MySQL 8' do
             around do |spec|
               DeclareSchema.mysql_version = Gem::Version.new('8.0.21')
@@ -75,10 +74,11 @@ RSpec.describe DeclareSchema::Model::TableOptionsDefinition do
       describe '#for_model' do
         context 'when database migrated' do
           let(:options) do
-            if defined?(Mysql2)
+            case current_adapter(model_class)
+            when 'mysql2'
               { charset: "utf8mb4", collation: "utf8mb4_bin" }
             else
-              { }
+              {}
             end
           end
           subject { described_class.for_model(model_class) }

@@ -1,10 +1,5 @@
 # frozen_string_literal: true
 
-begin
-  require 'mysql2'
-rescue LoadError
-end
-
 RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
   before do
     load File.expand_path('prepare_testapp.rb', __dir__)
@@ -56,12 +51,12 @@ RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
       # (0.1ms)  DROP TABLE "afoos"
       #  (pry):17
       # (0.9ms)  commit transaction
-      if defined?(SQLite3)
+      if current_adapter == 'sqlite3'
         ActiveRecord::Base.connection.execute("drop table foos")
         ActiveRecord::Base.connection.execute("CREATE TABLE foos (id integer PRIMARY KEY AUTOINCREMENT NOT NULL)")
       end
 
-      if !defined?(Mysql2) # TODO TECH-4814 Put this test back for Mysql2
+      unless current_adapter == 'mysql2' # TODO TECH-4814 Put this test back for Mysql2
         # replace custom primary_key
         class Foo < ActiveRecord::Base
           declare_schema do

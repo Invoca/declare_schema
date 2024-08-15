@@ -378,8 +378,8 @@ or add it to your `bundler` Gemfile:
   gem 'declare_schema'
 ```
 ## Testing
-To run tests:
+To run tests locally, you need to prepare a test application using the specific adapter you'd like to test against. For example, to test against MySQL:
 ```
-rake test:prepare_testapp[force]
+rake test:prepare_testapp[mysql,true]
 rake test:all
 ```

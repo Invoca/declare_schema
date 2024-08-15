@@ -6,6 +6,7 @@ require 'climate_control'
 require 'pry'
 
 require_relative "./support/acceptance_spec_helpers"
+require_relative "./support/adapter_specific_test_helpers"
 
 RSpec.configure do |config|
   config.include AcceptanceSpecHelpers

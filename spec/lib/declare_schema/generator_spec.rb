@@ -57,7 +57,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     expect(File.exist?('db/schema.rb')).to be_truthy
 
-    if defined?(SQLite3)
+    if current_adapter == 'sqlite3'
       if ActiveSupport.version >= Gem::Version.new('7.1.0')
         expect(File.exist?("storage/development.sqlite3") || File.exist?("storage/test.sqlite3")).to be_truthy
       else

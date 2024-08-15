@@ -135,13 +135,13 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
         ActiveRecord::Base.connection.execute <<~EOS
           CREATE TABLE index_definition_test_models (
             id INTEGER NOT NULL PRIMARY KEY,
-            name #{if defined?(SQLite3) then 'TEXT' else 'VARCHAR(255)' end} NOT NULL
+            name #{if current_adapter == 'sqlite3' then 'TEXT' else 'VARCHAR(255)' end} NOT NULL
           )
         EOS
         ActiveRecord::Base.connection.execute <<~EOS
           CREATE UNIQUE INDEX index_definition_test_models_on_name ON index_definition_test_models(name)
         EOS
-        if defined?(Mysql2)
+        if current_adapter == 'mysql2'
           ActiveRecord::Base.connection.execute <<~EOS
             CREATE INDEX index_definition_test_models_on_name_partial ON index_definition_test_models(name(10))
           EOS
@@ -164,7 +164,7 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
           it 'returns the indexes for the model' do
             expect(subject.map(&:to_key)).to eq([
               ["index_definition_test_models_on_name", ["name"], { unique: true, where: nil, length: nil }],
-              (["index_definition_test_models_on_name_partial", ["name"], { unique: false, where: nil, length: { name: 10 } }] if defined?(Mysql2)),
+              (["index_definition_test_models_on_name_partial", ["name"], { unique: false, where: nil, length: { name: 10 } }] if current_adapter == 'mysql2'),
               ["PRIMARY", ["id"], { unique: true, where: nil, length: nil }]
             ].compact)
           end
@@ -185,7 +185,7 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
 
           it 'skips the ignored index' do
             expect(subject.map(&:to_key)).to eq([
-              (["index_definition_test_models_on_name_partial", ["name"], { unique: false, where: nil, length: { name: 10 } }] if defined?(Mysql2)),
+              (["index_definition_test_models_on_name_partial", ["name"], { unique: false, where: nil, length: { name: 10 } }] if current_adapter == 'mysql2'),
               ["PRIMARY", ["id"], { length: nil, unique: true, where: nil }]
             ].compact)
           end
@@ -279,7 +279,7 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
         context 'with multiple columns' do
           let(:columns) { ["last_name", "first_name"] }
 
-          it { expect { subject }.to raise_exception(ArgumentError, /Index length of Integer only allowed when exactly one column; got 10 for \["last_name", "first_name"]/i) }
+          it { expect { subject }.to raise_exception(ArgumentError, /Index length of Integer only allowed when exactly one column; got 10 for \["last_name", "first_name"\]/i) }
         end
       end
 
@@ -320,7 +320,7 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
       context 'with an invalid length' do
         let(:length) { 10.5 }
 
-        it { expect { subject }.to raise_exception(ArgumentError, /length must be nil or Integer or a Hash of column names to lengths; got 10\.5 for \[:last_name]/i) }
+        it { expect { subject }.to raise_exception(ArgumentError, /length must be nil or Integer or a Hash of column names to lengths; got 10\.5 for \[:last_name\]/i) }
       end
     end
   end

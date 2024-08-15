@@ -1,15 +1,5 @@
 # frozen_string_literal: true
 
-begin
-  require 'mysql2'
-rescue LoadError
-end
-
-begin
-  require 'sqlite3'
-rescue LoadError
-end
-
 RSpec.describe DeclareSchema::Model::FieldSpec do
   let(:model) { double('model', _table_options: {}, _declared_primary_key: 'id') }
   let(:col_spec) { double('col_spec', type: :string) }
@@ -56,20 +46,25 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
     describe 'string' do
       it 'returns schema attributes (including charset/collation iff mysql)' do
         subject = described_class.new(model, :title, :string, limit: 100, null: true, charset: 'utf8mb4', position: 0)
-        if defined?(Mysql2)
+        case current_adapter
+        when 'mysql2'
           expect(subject.schema_attributes(col_spec)).to eq(type: :string, limit: 100, null: true, charset: 'utf8mb4', collation: 'utf8mb4_bin')
         else
           expect(subject.schema_attributes(col_spec)).to eq(type: :string, limit: 100, null: true)
         end
       end
 
-      if defined?(Mysql2)
+      context 'MySQL only' do
+        include_context 'skip unless' do
+          let(:adapter) { 'mysql2' }
+        end
+
         context 'when running on MySQL 8.0' do
           around do |spec|
             DeclareSchema.mysql_version = Gem::Version.new('8.0.21')
             spec.run
           ensure
-            DeclareSchema.remove_instance_variable('@mysql_version') rescue nil
+            DeclareSchema.remove_instance_variable('@mysql_version') rescue nil # rubocop:disable Style/RescueModifier
           end
 
           it 'normalizes charset and collation' do
@@ -91,7 +86,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
     describe 'text' do
       it 'returns schema attributes (including charset/collation iff mysql)' do
         subject = described_class.new(model, :title, :text, limit: 200, null: true, charset: 'utf8mb4', position: 2)
-        if defined?(Mysql2)
+        if current_adapter == 'mysql2'
           expect(subject.schema_attributes(col_spec)).to eq(type: :text, limit: 255, null: true, charset: 'utf8mb4', collation: 'utf8mb4_bin')
         else
           expect(subject.schema_attributes(col_spec)).to eq(type: :text, null: true)
@@ -99,7 +94,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
       end
 
       it 'allows a default to be set unless mysql' do
-        if defined?(Mysql2)
+        if current_adapter == 'mysql2'
           expect do
             described_class.new(model, :title, :text, limit: 200, null: true, default: 'none', charset: 'utf8mb4', position: 2)
           end.to raise_exception(DeclareSchema::MysqlTextMayNotHaveDefault)
@@ -113,7 +108,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
         it 'uses default_text_limit option when not explicitly set in field spec' do
           allow(::DeclareSchema).to receive(:default_text_limit) { 100 }
           subject = described_class.new(model, :title, :text, null: true, charset: 'utf8mb4', position: 2)
-          if defined?(Mysql2)
+          if current_adapter == 'mysql2'
             expect(subject.schema_attributes(col_spec)).to eq(type: :text, limit: 255, null: true, charset: 'utf8mb4', collation: 'utf8mb4_bin')
           else
             expect(subject.schema_attributes(col_spec)).to eq(type: :text, null: true)
@@ -121,7 +116,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
         end
 
         it 'raises error when default_text_limit option is nil when not explicitly set in field spec' do
-          if defined?(Mysql2)
+          if current_adapter == 'mysql2'
             expect(::DeclareSchema).to receive(:default_text_limit) { nil }
             expect do
               described_class.new(model, :title, :text, null: true, charset: 'utf8mb4', position: 2)
@@ -173,7 +168,11 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
       end
     end
 
-    if defined?(Mysql2)
+    context 'MySQL only' do
+      include_context 'skip unless' do
+        let(:adapter) { 'mysql2' }
+      end
+
       describe 'varbinary' do # TODO: :varbinary is an Invoca addition to Rails; make it a configurable option
         it 'is supported' do
           subject = described_class.new(model, :binary_dump, :varbinary, limit: 200, null: false, position: 2)
@@ -199,9 +198,17 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
       end
     end
 
-    [:integer, :bigint, :string, :text, :binary, :datetime, :date, :time, (:varbinary if defined?(Mysql2))].compact.each do |t|
+    [:integer, :bigint, :string, :text, :binary, :datetime, :date, :time, :varbinary].compact.each do |t|
       describe t.to_s do
         let(:extra) { t == :string ? { limit: 100 } : {} }
+
+        around do |spec|
+          if t == :varbinary && current_adapter != 'mysql2'
+            spec.skip
+          else
+            spec.run
+          end
+        end
 
         it 'does not allow precision:' do
           expect_any_instance_of(described_class).to receive(:warn).with(/precision: only allowed for :decimal type/)

@@ -146,6 +146,10 @@ module DeclareSchema
       length.is_a?(Integer) || length.nil? or raise ArgumentError, "max_index_and_constraint_name_length must be an Integer or nil (meaning unlimited)"
       @max_index_and_constraint_name_length = length
     end
+
+    def deprecator
+      @deprecator ||= ActiveSupport::Deprecation.new('3.0', 'DeclareSchema')
+    end
   end
 end
 
