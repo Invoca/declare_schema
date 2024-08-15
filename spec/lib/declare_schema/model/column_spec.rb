@@ -104,7 +104,7 @@ RSpec.describe DeclareSchema::Model::Column do
 
       describe '#schema_attributes' do
         it 'returns a hash with relevant key/values' do
-          if ActiveRecord::Base.connection_config[:adapter] == 'mysql2'
+          if current_adapter == 'mysql2'
             expect(subject.schema_attributes).to eq(type: :integer, null: false, limit: 4)
           else
             expect(subject.schema_attributes).to eq(type: :integer, null: false)

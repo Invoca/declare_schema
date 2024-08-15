@@ -46,7 +46,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
     describe 'string' do
       it 'returns schema attributes (including charset/collation iff mysql)' do
         subject = described_class.new(model, :title, :string, limit: 100, null: true, charset: 'utf8mb4', position: 0)
-        case ActiveRecord::Base.connection_config[:adapter]
+        case current_adapter
         when 'mysql2'
           expect(subject.schema_attributes(col_spec)).to eq(type: :string, limit: 100, null: true, charset: 'utf8mb4', collation: 'utf8mb4_bin')
         else
@@ -86,7 +86,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
     describe 'text' do
       it 'returns schema attributes (including charset/collation iff mysql)' do
         subject = described_class.new(model, :title, :text, limit: 200, null: true, charset: 'utf8mb4', position: 2)
-        if ActiveRecord::Base.connection_config[:adapter] == 'mysql2'
+        if current_adapter == 'mysql2'
           expect(subject.schema_attributes(col_spec)).to eq(type: :text, limit: 255, null: true, charset: 'utf8mb4', collation: 'utf8mb4_bin')
         else
           expect(subject.schema_attributes(col_spec)).to eq(type: :text, null: true)
@@ -94,7 +94,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
       end
 
       it 'allows a default to be set unless mysql' do
-        if ActiveRecord::Base.connection_config[:adapter] == 'mysql2'
+        if current_adapter == 'mysql2'
           expect do
             described_class.new(model, :title, :text, limit: 200, null: true, default: 'none', charset: 'utf8mb4', position: 2)
           end.to raise_exception(DeclareSchema::MysqlTextMayNotHaveDefault)
@@ -108,7 +108,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
         it 'uses default_text_limit option when not explicitly set in field spec' do
           allow(::DeclareSchema).to receive(:default_text_limit) { 100 }
           subject = described_class.new(model, :title, :text, null: true, charset: 'utf8mb4', position: 2)
-          if ActiveRecord::Base.connection_config[:adapter] == 'mysql2'
+          if current_adapter == 'mysql2'
             expect(subject.schema_attributes(col_spec)).to eq(type: :text, limit: 255, null: true, charset: 'utf8mb4', collation: 'utf8mb4_bin')
           else
             expect(subject.schema_attributes(col_spec)).to eq(type: :text, null: true)
@@ -116,7 +116,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
         end
 
         it 'raises error when default_text_limit option is nil when not explicitly set in field spec' do
-          if ActiveRecord::Base.connection_config[:adapter] == 'mysql2'
+          if current_adapter == 'mysql2'
             expect(::DeclareSchema).to receive(:default_text_limit) { nil }
             expect do
               described_class.new(model, :title, :text, null: true, charset: 'utf8mb4', position: 2)
@@ -203,7 +203,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
         let(:extra) { t == :string ? { limit: 100 } : {} }
 
         around do |spec|
-          if t == :varbinary && ActiveRecord::Base.connection_config[:adapter] != 'mysql2'
+          if t == :varbinary && current_adapter != 'mysql2'
             spec.skip
           else
             spec.run

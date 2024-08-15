@@ -5,36 +5,36 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     load File.expand_path('prepare_testapp.rb', __dir__)
   end
   let(:text_limit) do
-    if ActiveRecord::Base.connection_config[:adapter] == 'mysql2'
+    if current_adapter == 'mysql2'
       ", limit: 4294967295"
     end
   end
   let(:charset_and_collation) do
-    if ActiveRecord::Base.connection_config[:adapter] == 'mysql2'
+    if current_adapter == 'mysql2'
       ', charset: "utf8mb4", collation: "utf8mb4_bin"'
     end
   end
   let(:create_table_charset_and_collation) do
-    if ActiveRecord::Base.connection_config[:adapter] == 'mysql2'
+    if current_adapter == 'mysql2'
       ", options: \"CHARACTER SET utf8mb4 COLLATE utf8mb4_bin\""
     end
   end
   let(:datetime_precision) do
     if ActiveSupport::VERSION::MAJOR >= 7
       ', precision: 6'
-    elsif ActiveRecord::Base.connection_config[:adapter] == 'mysql2'
+    elsif current_adapter == 'mysql2'
       ', precision: 0'
     end
   end
   let(:table_options) do
-    if ActiveRecord::Base.connection_config[:adapter] == 'mysql2'
+    if current_adapter == 'mysql2'
       ', options: "DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin", charset: "utf8mb4", collation: "utf8mb4_bin"'
     else
       ", id: :integer"
     end
   end
   let(:lock_version_limit) do
-    if ActiveRecord::Base.connection_config[:adapter] == 'mysql2'
+    if current_adapter == 'mysql2'
       ", limit: 4"
     else
       ''
@@ -212,7 +212,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       # If a `limit` is given, it will only be used in MySQL, to choose the smallest TEXT field that will accommodate
       # that limit (0xff for TINYTEXT, 0xffff for TEXT, 0xffffff for MEDIUMTEXT, 0xffffffff for LONGTEXT).
 
-      if ActiveRecord::Base.connection_config[:adapter] == 'sqlite3'
+      if current_adapter == 'sqlite3'
         expect(::DeclareSchema::Model::FieldSpec.mysql_text_limits?).to be_falsey
       end
 
@@ -227,7 +227,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           migrate_up(<<~EOS.strip)
           add_column :adverts, :price, :decimal, precision: 4, scale: 1, null: true
           add_column :adverts, :notes, :text#{text_limit}, null: false#{charset_and_collation}
-          add_column :adverts, :description, :text#{', limit: 65535' if ActiveRecord::Base.connection_config[:adapter] == 'mysql2'}, null: false#{charset_and_collation}
+          add_column :adverts, :description, :text#{', limit: 65535' if current_adapter == 'mysql2'}, null: false#{charset_and_collation}
       EOS
       )
 
@@ -237,7 +237,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       # In MySQL, limits are applied, rounded up:
 
-      if ActiveRecord::Base.connection_config[:adapter] == 'mysql2'
+      if current_adapter == 'mysql2'
         expect(::DeclareSchema::Model::FieldSpec.mysql_text_limits?).to be_truthy
 
         class Advert < ActiveRecord::Base
@@ -293,7 +293,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
             change_column :adverts, :description, :text, limit: 4294967295, null: false#{charset_and_collation}
             EOS
                 .and migrate_down(<<~EOS.strip)
-                change_column :adverts, :description, :text#{', limit: 255' if ActiveRecord::Base.connection_config[:adapter] == 'mysql2'}, null: true#{charset_and_collation}
+                change_column :adverts, :description, :text#{', limit: 255' if current_adapter == 'mysql2'}, null: true#{charset_and_collation}
         EOS
         )
 
@@ -310,7 +310,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
             change_column :adverts, :description, :text, limit: 4294967295, null: false#{charset_and_collation}
             EOS
                 .and migrate_down(<<~EOS.strip)
-                change_column :adverts, :description, :text#{', limit: 255' if ActiveRecord::Base.connection_config[:adapter] == 'mysql2'}, null: true#{charset_and_collation}
+                change_column :adverts, :description, :text#{', limit: 255' if current_adapter == 'mysql2'}, null: true#{charset_and_collation}
         EOS
         )
       end
@@ -347,10 +347,10 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         migrate_up(<<~EOS.strip)
           add_column :adverts, :category_id, :integer, limit: 8, null: false
           add_index :adverts, [:category_id], name: :index_adverts_on_category_id
-          #{"add_foreign_key :adverts, :categories, column: :category_id, name: :index_adverts_on_category_id\n" if ActiveRecord::Base.connection_config[:adapter] == 'mysql2'}
+          #{"add_foreign_key :adverts, :categories, column: :category_id, name: :index_adverts_on_category_id\n" if current_adapter == 'mysql2'}
         EOS
         .and migrate_down(<<~EOS.strip)
-            #{"remove_foreign_key :adverts, name: :index_adverts_on_category_id" if ActiveRecord::Base.connection_config[:adapter] == 'mysql2'}
+            #{"remove_foreign_key :adverts, name: :index_adverts_on_category_id" if current_adapter == 'mysql2'}
             remove_index :adverts, name: :index_adverts_on_category_id
             remove_column :adverts, :category_id
         EOS
@@ -372,7 +372,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           add_column :adverts, :c_id, :integer, limit: 8, null: false
           add_index :adverts, [:c_id], name: :index_adverts_on_c_id
           #{"add_foreign_key :adverts, :categories, column: :category_id, name: :index_adverts_on_category_id\n" +
-            "add_foreign_key :adverts, :categories, column: :c_id, name: :index_adverts_on_c_id" if ActiveRecord::Base.connection_config[:adapter] == 'mysql2'}
+            "add_foreign_key :adverts, :categories, column: :c_id, name: :index_adverts_on_c_id" if current_adapter == 'mysql2'}
         EOS
       )
 
@@ -391,7 +391,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       expect(Generators::DeclareSchema::Migration::Migrator.run).to(
         migrate_up(<<~EOS.strip)
           add_column :adverts, :category_id, :integer, limit: 8, null: false
-          #{"add_foreign_key :adverts, :categories, column: :category_id, name: :index_adverts_on_category_id" if ActiveRecord::Base.connection_config[:adapter] == 'mysql2'}
+          #{"add_foreign_key :adverts, :categories, column: :category_id, name: :index_adverts_on_category_id" if current_adapter == 'mysql2'}
        EOS
       )
 
@@ -413,7 +413,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         migrate_up(<<~EOS.strip)
           add_column :adverts, :category_id, :integer, limit: 8, null: false
           add_index :adverts, [:category_id], name: :my_index
-          #{"add_foreign_key :adverts, :categories, column: :category_id, name: :my_index" if ActiveRecord::Base.connection_config[:adapter] == 'mysql2'}
+          #{"add_foreign_key :adverts, :categories, column: :category_id, name: :my_index" if current_adapter == 'mysql2'}
         EOS
       )
 
@@ -433,7 +433,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         migrate_up(<<~EOS.strip)
           add_column :adverts, :category_id, :integer, limit: 8, null: false
           add_index :adverts, [:category_id], name: :my_index
-          #{"add_foreign_key :adverts, :categories, column: :category_id, name: :my_index" if ActiveRecord::Base.connection_config[:adapter] == 'mysql2'}
+          #{"add_foreign_key :adverts, :categories, column: :category_id, name: :my_index" if current_adapter == 'mysql2'}
         EOS
       )
 
@@ -490,7 +490,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           add_column :adverts, :category_id, :integer, limit: 8, null: false
           add_index :adverts, [:title], name: :index_adverts_on_title
           add_index :adverts, [:category_id], name: :my_index
-          #{"add_foreign_key :adverts, :categories, column: :category_id, name: :my_index" if ActiveRecord::Base.connection_config[:adapter] == 'mysql2'}
+          #{"add_foreign_key :adverts, :categories, column: :category_id, name: :my_index" if current_adapter == 'mysql2'}
         EOS
       )
 
@@ -603,7 +603,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         migrate_up(<<~EOS.strip)
           rename_table :adverts, :ads
           add_column :ads, :title, :string, limit: 250, null: true#{charset_and_collation}
-          add_column :ads, :body, :text#{', limit: 4294967295' if ActiveRecord::Base.connection_config[:adapter] == 'mysql2'}, null: true#{charset_and_collation}
+          add_column :ads, :body, :text#{', limit: 4294967295' if current_adapter == 'mysql2'}, null: true#{charset_and_collation}
         EOS
           .and migrate_down(<<~EOS.strip)
             remove_column :ads, :body
@@ -639,7 +639,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         migrate_up(<<~EOS.strip)
           rename_table :adverts, :advertisements
           add_column :advertisements, :title, :string, limit: 250, null: true#{charset_and_collation}
-          add_column :advertisements, :body, :text#{', limit: 4294967295' if ActiveRecord::Base.connection_config[:adapter] == 'mysql2'}, null: true#{charset_and_collation}
+          add_column :advertisements, :body, :text#{', limit: 4294967295' if current_adapter == 'mysql2'}, null: true#{charset_and_collation}
           remove_column :advertisements, :name
         EOS
         .and migrate_down(<<~EOS.strip)
@@ -1280,7 +1280,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
             up = Generators::DeclareSchema::Migration::Migrator.run.first
 
             create_fks = up.split("\n").grep(/t\.integer /).map { |command| command.gsub(', null: false', '').gsub(/^ +/, '') }
-            if ActiveRecord::Base.connection_config[:adapter] == 'sqlite3'
+            if current_adapter == 'sqlite3'
               create_fks.map! { |command| command.gsub(/limit: [a-z0-9]+/, 'limit: X') }
               expect(create_fks).to eq([
                                          't.integer :id_default_id, limit: X',
@@ -1331,7 +1331,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
               up = Generators::DeclareSchema::Migration::Migrator.run.first
 
               create_fks = up.split("\n").grep(/t\.integer /).map { |command| command.gsub(', null: false', '').gsub(/^ +/, '') }
-              if ActiveRecord::Base.connection_config[:adapter] == 'sqlite3'
+              if current_adapter == 'sqlite3'
                 create_fks.map! { |command| command.gsub(/limit: [a-z0-9]+/, 'limit: X') }
                 expect(create_fks).to eq([
                                            't.integer :new_id_default_id, limit: X',

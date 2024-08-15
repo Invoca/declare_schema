@@ -74,7 +74,7 @@ RSpec.describe DeclareSchema::Model::TableOptionsDefinition do
       describe '#for_model' do
         context 'when database migrated' do
           let(:options) do
-            case model_class.connection_config[:adapter]
+            case current_adapter(model_class)
             when 'mysql2'
               { charset: "utf8mb4", collation: "utf8mb4_bin" }
             else
