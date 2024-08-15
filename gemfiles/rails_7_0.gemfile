@@ -14,6 +14,7 @@ gem "rspec"
 gem "rubocop"
 gem "yard"
 gem "sqlite3", "~> 1.4"
+gem "mysql2", "~> 0.5"
 
 group :testapp do
   gem "bootsnap", ">= 1.1.0", require: false

@@ -20,4 +20,7 @@ gem 'responders'
 gem 'rspec'
 gem 'rubocop'
 gem 'yard'
-gem 'sqlite3',           '~> 1.4'
+
+# Adapters to test against
+gem 'sqlite3', '~> 1.4'
+gem 'mysql2',  '~> 0.5'
