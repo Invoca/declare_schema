@@ -24,6 +24,12 @@ jobs:
         - adapter: sqlite3
           ruby: 3.3
           gemfile: gemfiles/rails_6_1.gemfile
+        - adapter: mysql
+          ruby: '3.0'
+          gemfile: gemfiles/rails_7_2.gemfile
+        - adapter: sqlite3
+          ruby: '3.0'
+          gemfile: gemfiles/rails_7_2.gemfile
 
     env:
       BUNDLE_GEMFILE: "${{ matrix.gemfile }}"

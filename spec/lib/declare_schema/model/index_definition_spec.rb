@@ -279,7 +279,7 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
         context 'with multiple columns' do
           let(:columns) { ["last_name", "first_name"] }
 
-          it { expect { subject }.to raise_exception(ArgumentError, /Index length of Integer only allowed when exactly one column; got 10 for \["last_name", "first_name"]/i) }
+          it { expect { subject }.to raise_exception(ArgumentError, /Index length of Integer only allowed when exactly one column; got 10 for \["last_name", "first_name"\]/i) }
         end
       end
 
@@ -320,7 +320,7 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
       context 'with an invalid length' do
         let(:length) { 10.5 }
 
-        it { expect { subject }.to raise_exception(ArgumentError, /length must be nil or Integer or a Hash of column names to lengths; got 10\.5 for \[:last_name]/i) }
+        it { expect { subject }.to raise_exception(ArgumentError, /length must be nil or Integer or a Hash of column names to lengths; got 10\.5 for \[:last_name\]/i) }
       end
     end
   end
