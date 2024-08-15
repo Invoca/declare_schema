@@ -157,7 +157,7 @@ module DeclareSchema
         column_options[:default] = options.delete(:default) if options.has_key?(:default)
         if options.has_key?(:limit)
           options.delete(:limit)
-          ActiveSupport::Deprecation.warn("belongs_to #{name.inspect}, limit: is deprecated since it is now inferred")
+          DeclareSchema.deprecator.warn("belongs_to #{name.inspect}, limit: is deprecated since it is now inferred")
         end
 
         # index: true means create an index on the foreign key
@@ -171,7 +171,7 @@ module DeclareSchema
           index_options = {} # create an index
           case index_value
           when String, Symbol
-            ActiveSupport::Deprecation.warn("[declare_schema] belongs_to #{name.inspect}, index: 'name' is deprecated; use index: { name: 'name' } instead (in #{self.name})")
+            DeclareSchema.deprecator.warn("[declare_schema] belongs_to #{name.inspect}, index: 'name' is deprecated; use index: { name: 'name' } instead (in #{self.name})")
             index_options[:name] = index_value.to_s
           when true
           when nil
@@ -182,7 +182,7 @@ module DeclareSchema
           end
 
           if options.has_key?(:unique)
-            ActiveSupport::Deprecation.warn("[declare_schema] belongs_to #{name.inspect}, unique: true|false is deprecated; use index: { unique: true|false } instead (in #{self.name})")
+            DeclareSchema.deprecator.warn("[declare_schema] belongs_to #{name.inspect}, unique: true|false is deprecated; use index: { unique: true|false } instead (in #{self.name})")
             index_options[:unique] = options.delete(:unique)
           end
 

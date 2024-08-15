@@ -401,7 +401,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       # You can specify the index name with index: 'name' [deprecated]
 
-      expect(ActiveSupport::Deprecation).to receive(:warn).with(/belongs_to :category, index: 'name' is deprecated; use index: \{ name: 'name' \} instead/i)
+      expect(DeclareSchema.deprecator).to receive(:warn).with(/belongs_to :category, index: 'name' is deprecated; use index: \{ name: 'name' \} instead/i)
 
       class Category < ActiveRecord::Base; end
       class Advert < ActiveRecord::Base
@@ -474,8 +474,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       # You can add an index to a field definition
 
-      expect(ActiveSupport::Deprecation).to receive(:warn).with(/belongs_to :category, index: 'name' is deprecated; use index: \{ name: 'name' \} instead/i)
-      expect(ActiveSupport::Deprecation).to receive(:warn).with(/belongs_to :category, unique: true\|false is deprecated; use index: \{ unique: true\|false \} instead/i)
+      expect(DeclareSchema.deprecator).to receive(:warn).with(/belongs_to :category, index: 'name' is deprecated; use index: \{ name: 'name' \} instead/i)
+      expect(DeclareSchema.deprecator).to receive(:warn).with(/belongs_to :category, unique: true\|false is deprecated; use index: \{ unique: true\|false \} instead/i)
 
       class Advert < ActiveRecord::Base
         declare_schema do
@@ -1229,7 +1229,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           end
 
           it 'deprecates limit:' do
-            expect(ActiveSupport::Deprecation).to receive(:warn).with("belongs_to :ad_category, limit: is deprecated since it is now inferred")
+            expect(DeclareSchema.deprecator).to receive(:warn).with("belongs_to :ad_category, limit: is deprecated since it is now inferred")
             eval <<~EOS
               class UsingLimit < ActiveRecord::Base
                 declare_schema { }
