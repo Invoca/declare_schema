@@ -110,8 +110,8 @@ module DeclareSchema
       if ActiveSupport.version >= Gem::Version.new('7.1.0')
         ActiveRecord::MigrationContext.new(
           ActiveRecord::Migrator.migrations_paths,
-          ActiveRecord::SchemaMigration.new(ActiveRecord::Base.connection),
-          ActiveRecord::InternalMetadata.new(ActiveRecord::Base.connection)
+          ActiveRecord::SchemaMigration.new(ActiveRecord::Base.connection_pool),
+          ActiveRecord::InternalMetadata.new(ActiveRecord::Base.connection_pool)
         ).migrations
       else
         ActiveRecord::MigrationContext.new(ActiveRecord::Migrator.migrations_paths, ActiveRecord::SchemaMigration).migrations
@@ -124,8 +124,8 @@ module DeclareSchema
         ActiveRecord::Migrator.new(
           :up,
           migrations,
-          ActiveRecord::SchemaMigration.new(ActiveRecord::Base.connection),
-          ActiveRecord::InternalMetadata.new(ActiveRecord::Base.connection)
+          ActiveRecord::SchemaMigration.new(ActiveRecord::Base.connection_pool),
+          ActiveRecord::InternalMetadata.new(ActiveRecord::Base.connection_pool)
         ).pending_migrations
       else
         ActiveRecord::Migrator.new(:up, migrations, ActiveRecord::SchemaMigration).pending_migrations
