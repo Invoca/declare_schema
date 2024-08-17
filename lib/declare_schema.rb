@@ -24,14 +24,14 @@ module DeclareSchema
 
   SEMVER_8 = Gem::Version.new('8.0.0').freeze
 
-  @default_charset               = "utf8mb4"
-  @default_collation             = "utf8mb4_bin"
-  @default_text_limit            = 0xffff_ffff
-  @default_string_limit          = nil
-  @default_null                  = false
-  @default_generate_foreign_keys = true
-  @default_generate_indexing     = true
-  @db_migrate_command            = "bundle exec rails db:migrate"
+  @default_charset                      = "utf8mb4"
+  @default_collation                    = "utf8mb4_bin"
+  @default_text_limit                   = 0xffff_ffff
+  @default_string_limit                 = nil
+  @default_null                         = false
+  @default_generate_foreign_keys        = true
+  @default_generate_indexing            = true
+  @db_migrate_command                   = "bundle exec rails db:migrate"
   @max_index_and_constraint_name_length = 64  # limit for MySQL
 
   class << self
@@ -149,6 +149,14 @@ module DeclareSchema
 
     def deprecator
       @deprecator ||= ActiveSupport::Deprecation.new('3.0', 'DeclareSchema')
+    end
+
+    def current_adapter(model_class = ActiveRecord::Base)
+      if Rails::VERSION::MAJOR >= 7
+        model_class.connection_db_config.adapter
+      else
+        model_class.connection_config[:adapter]
+      end
     end
   end
 end

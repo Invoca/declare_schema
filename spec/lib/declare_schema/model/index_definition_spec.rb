@@ -214,12 +214,20 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
       end
 
       context 'with short max_index_and_constraint_name_length' do
+        include_context 'skip if' do
+          let(:adapter) { 'postgresql' }
+        end
+
         let(:max_index_and_constraint_name_length) { 40 }
 
         it { is_expected.to eq("users__last_name_first_name_middle_name") }
       end
 
       context 'with long table name' do
+        include_context 'skip if' do
+          let(:adapter) { 'postgresql' }
+        end
+
         let(:table_name2) { 'user_domains_extra' }
         {
           34 => '__last_name_first_name_middle_name',

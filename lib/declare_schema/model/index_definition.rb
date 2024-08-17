@@ -64,6 +64,8 @@ module DeclareSchema
         end
 
         def default_index_name(table_name, columns)
+          return long_index_name(table_name, columns) if DeclareSchema.current_adapter == 'postgresql'
+
           index_name = nil
           [:long_index_name, :short_index_name].find do |method_name|
             index_name = send(method_name, table_name, columns)
