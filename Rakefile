@@ -32,14 +32,8 @@ namespace "test" do
       sh %(#{BIN} new #{TESTAPP_PATH} --skip-wizard --skip-bundle --api -d #{args.adapter})
       FileUtils.chdir(TESTAPP_PATH)
       if args.adapter == 'mysql'
-        sh "(echo 'H';
-              echo '1,$s/localhost/127.0.0.1/';
-              echo '/host:/';
-              echo 'a';
-              echo '  port: #{ENV['MYSQL_PORT']}';
-              echo '.';
-              echo w;
-              echo q) | ed #{TESTAPP_PATH}/config/database.yml || echo ed failed!"
+        sh "sed -i -e 's/host:.*/host: <%= ENV[\"MYSQL_HOST\"].presence || \"localhost\" %>/g' #{TESTAPP_PATH}/config/database.yml || echo sed failed!"
+        sh "sed -i -e 's/password:.*/password: <%= ENV[\"MYSQL_PASSWORD\"].presence %>/g' #{TESTAPP_PATH}/config/database.yml || echo sed failed!"
       end
       sh "bundle install"
       sh "(echo '';
