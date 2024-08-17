@@ -95,13 +95,19 @@ RSpec.describe DeclareSchema::Model::ForeignKeyDefinition do
     end
 
     describe 'class << self' do
-      let(:connection) { instance_double(ActiveRecord::Base.connection.class) }
-      let(:model) { instance_double('Model', table_name: 'models', connection: connection) }
+      let(:connection)     { instance_double(ActiveRecord::Base.connection.class) }
+      let(:model)          { instance_double('Model', table_name: 'models', connection: connection) }
       let(:old_table_name) { 'networks' }
+      let(:foreign_keys) do
+        [
+          instance_double(ActiveRecord::ConnectionAdapters::ForeignKeyDefinition,
+                          column: 'network_id', name: 'constraint',
+                          from_table: 'models', to_table: 'networks', on_delete: nil)
+        ]
+      end
+
       before do
-        allow(connection).to receive(:quote_table_name).with('networks') { 'networks' }
-        allow(connection).to receive(:select_rows) { [['CONSTRAINT `constraint` FOREIGN KEY (`network_id`) REFERENCES `networks` (`id`)']] }
-        allow(connection).to receive(:index_name).with('models', column: 'network_id') { }
+        allow(connection).to receive(:foreign_keys).with(old_table_name) { foreign_keys }
       end
 
       describe '.for_table' do

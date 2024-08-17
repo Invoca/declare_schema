@@ -17,15 +17,25 @@ RSpec.describe DeclareSchema::SchemaChange::PrimaryKeyChange do
     context 'when PRIMARY KEY set -> set' do
       describe '#up' do
         it 'responds with command' do
-          command = "ALTER TABLE #{ActiveRecord::Base.connection.quote_table_name(table_name)} DROP PRIMARY KEY, ADD PRIMARY KEY (#{new_column_names.join(', ')})"
-          expect(subject.up).to eq("execute #{command.inspect}\n")
+          if current_adapter == 'postgresql'
+            expect(subject.up.split("\n")).to include('execute "ALTER TABLE \"users\" DROP CONSTRAINT users_pkey;"')
+            expect(subject.up.split("\n")).to include('execute "ALTER TABLE \"users\" ADD PRIMARY KEY (last_name, first_name);"')
+          else
+            command = "ALTER TABLE #{ActiveRecord::Base.connection.quote_table_name(table_name)} DROP PRIMARY KEY, ADD PRIMARY KEY (last_name, first_name)"
+            expect(subject.up).to eq("execute #{command.inspect}\n")
+          end
         end
       end
 
       describe '#down' do
         it 'responds with command' do
-          command = "ALTER TABLE #{ActiveRecord::Base.connection.quote_table_name(table_name)} DROP PRIMARY KEY, ADD PRIMARY KEY (#{old_column_names.join(', ')})"
-          expect(subject.down).to eq("execute #{command.inspect}\n")
+          if current_adapter == 'postgresql'
+            expect(subject.down.split("\n")).to include('execute "ALTER TABLE \"users\" DROP CONSTRAINT users_pkey;"')
+            expect(subject.down.split("\n")).to include('execute "ALTER TABLE \"users\" ADD PRIMARY KEY (id);"')
+          else
+            command = "ALTER TABLE #{ActiveRecord::Base.connection.quote_table_name(table_name)} DROP PRIMARY KEY, ADD PRIMARY KEY (id)"
+            expect(subject.down).to eq("execute #{command.inspect}\n")
+          end
         end
       end
     end
@@ -35,15 +45,23 @@ RSpec.describe DeclareSchema::SchemaChange::PrimaryKeyChange do
 
       describe '#up' do
         it 'responds with command' do
-          command = "ALTER TABLE #{ActiveRecord::Base.connection.quote_table_name(table_name)} ADD PRIMARY KEY (#{new_column_names.join(', ')})"
-          expect(subject.up).to eq("execute #{command.inspect}\n")
+          if current_adapter == 'postgresql'
+            expect(subject.up.split("\n")).to include('execute "ALTER TABLE \"users\" ADD PRIMARY KEY (last_name, first_name);"')
+          else
+            command = "ALTER TABLE #{ActiveRecord::Base.connection.quote_table_name(table_name)} ADD PRIMARY KEY (#{new_column_names.join(', ')})"
+            expect(subject.up).to eq("execute #{command.inspect}\n")
+          end
         end
       end
 
       describe '#down' do
         it 'responds with command' do
-          command = "ALTER TABLE #{ActiveRecord::Base.connection.quote_table_name(table_name)} DROP PRIMARY KEY"
-          expect(subject.down).to eq("execute #{command.inspect}\n")
+          if current_adapter == 'postgresql'
+            expect(subject.down.split("\n")).to include('execute "ALTER TABLE \"users\" DROP CONSTRAINT users_pkey;"')
+          else
+            command = "ALTER TABLE #{ActiveRecord::Base.connection.quote_table_name(table_name)} DROP PRIMARY KEY"
+            expect(subject.down).to eq("execute #{command.inspect}\n")
+          end
         end
       end
     end
@@ -53,15 +71,23 @@ RSpec.describe DeclareSchema::SchemaChange::PrimaryKeyChange do
 
       describe '#up' do
         it 'responds with command' do
-          command = "ALTER TABLE #{ActiveRecord::Base.connection.quote_table_name(table_name)} DROP PRIMARY KEY"
-          expect(subject.up).to eq("execute #{command.inspect}\n")
+          if current_adapter == 'postgresql'
+            expect(subject.up.split("\n")).to include('execute "ALTER TABLE \"users\" DROP CONSTRAINT users_pkey;"')
+          else
+            command = "ALTER TABLE #{ActiveRecord::Base.connection.quote_table_name(table_name)} DROP PRIMARY KEY"
+            expect(subject.up).to eq("execute #{command.inspect}\n")
+          end
         end
       end
 
       describe '#down' do
         it 'responds with command' do
-          command = "ALTER TABLE #{ActiveRecord::Base.connection.quote_table_name(table_name)} ADD PRIMARY KEY (#{old_column_names.join(', ')})"
-          expect(subject.down).to eq("execute #{command.inspect}\n")
+          if current_adapter == 'postgresql'
+            expect(subject.down.split("\n")).to include('execute "ALTER TABLE \"users\" ADD PRIMARY KEY (id);"')
+          else
+            command = "ALTER TABLE #{ActiveRecord::Base.connection.quote_table_name(table_name)} ADD PRIMARY KEY (#{old_column_names.join(', ')})"
+            expect(subject.down).to eq("execute #{command.inspect}\n")
+          end
         end
       end
     end

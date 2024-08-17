@@ -31,19 +31,16 @@ module DeclareSchema
       end
 
       class << self
+        # TODO: I think we might just be able to start using the AR built in moving forward
         def for_table(child_table_name, connection, dependent: nil)
-          show_create_table = connection.select_rows("show create table #{connection.quote_table_name(child_table_name)}").first.last
-          constraints = show_create_table.split("\n").map { |line| line.strip if line['CONSTRAINT'] }.compact
-
-          constraints.map do |fkc|
-            constraint_name, foreign_key_column, parent_table_name = fkc.match(/CONSTRAINT `([^`]*)` FOREIGN KEY \(`([^`]*)`\) REFERENCES `([^`]*)`/).captures
-            dependent_value = :delete if dependent || fkc['ON DELETE CASCADE']
-
-            new(foreign_key_column,
-                constraint_name: constraint_name,
-                child_table_name: child_table_name,
-                parent_table_name: parent_table_name,
-                dependent: dependent_value)
+          connection.foreign_keys(child_table_name).map do |fkc|
+            new(
+              fkc.column,
+              constraint_name: fkc.name,
+              child_table_name: fkc.to_table,
+              parent_table_name: fkc.from_table,
+              dependent: dependent || fkc.on_delete == :cascade ? :delete : nil
+            )
           end
         end
       end

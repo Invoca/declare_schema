@@ -52,7 +52,7 @@ module DeclareSchema
 
         def deserialize_default_value(column, type, default_value)
           type or raise ArgumentError, "must pass type; got #{type.inspect}"
-          cast_type = ActiveRecord::Base.connection.send(:lookup_cast_type, type.to_s) or
+          cast_type = ActiveRecord::Base.connection.lookup_cast_type_from_column(column) or
             raise "cast_type not found for #{type}"
           cast_type.deserialize(default_value)
         end

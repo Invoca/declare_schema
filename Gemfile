@@ -18,6 +18,7 @@ gem 'pry-byebug'
 gem 'rails',            '~> 6.0'
 gem 'responders'
 gem 'rspec'
+gem 'rspec-its'
 gem 'rubocop'
 gem 'yard'
 

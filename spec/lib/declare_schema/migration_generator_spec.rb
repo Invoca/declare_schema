@@ -14,6 +14,13 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       ', charset: "utf8mb4", collation: "utf8mb4_bin"'
     end
   end
+  let(:primary_key_type) do
+    if current_adapter == 'postgresql'
+      ':bigserial'
+    else
+      ':bigint'
+    end
+  end
   let(:create_table_charset_and_collation) do
     if current_adapter == 'mysql2'
       ", options: \"CHARACTER SET utf8mb4 COLLATE utf8mb4_bin\""
@@ -27,17 +34,20 @@ RSpec.describe 'DeclareSchema Migration Generator' do
     end
   end
   let(:table_options) do
-    if current_adapter == 'mysql2'
+    case current_adapter
+    when 'mysql2'
       ', options: "DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin", charset: "utf8mb4", collation: "utf8mb4_bin"'
+    when 'postgresql'
+      ""
     else
       ", id: :integer"
     end
   end
   let(:lock_version_limit) do
-    if current_adapter == 'mysql2'
-      ", limit: 4"
-    else
+    if current_adapter == 'sqlite3'
       ''
+    else
+      ', limit: 4'
     end
   end
 
@@ -48,8 +58,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       expect(Generators::DeclareSchema::Migration::Migrator.run).to migrate_up("").and migrate_down("")
 
-      class Advert < ActiveRecord::Base
-      end
+      class Advert < ActiveRecord::Base; end # rubocop:disable Lint/ConstantDefinitionInBlock
 
       expect(Generators::DeclareSchema::Migration::Migrator.run).to migrate_up("").and migrate_down("")
 
@@ -58,7 +67,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       Advert.connection.schema_cache.clear!
       Advert.reset_column_information
 
-      class Advert < ActiveRecord::Base
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           string :name, limit: 250, null: true
         end
@@ -67,18 +76,18 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       up, _ = Generators::DeclareSchema::Migration::Migrator.run.tap do |migrations|
         expect(migrations).to(
           migrate_up(<<~EOS.strip)
-            create_table :adverts, id: :bigint#{create_table_charset_and_collation} do |t|
+            create_table :adverts, id: #{primary_key_type}#{create_table_charset_and_collation} do |t|
               t.string :name, limit: 250, null: true#{charset_and_collation}
             end
           EOS
-          .and migrate_down("drop_table :adverts")
+          .and(migrate_down("drop_table :adverts"))
         )
       end
 
       ActiveRecord::Migration.class_eval(up)
       expect(Advert.columns.map(&:name)).to eq(["id", "name"])
 
-      class Advert < ActiveRecord::Base
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           string :name, limit: 250, null: true
           text :body, null: true
@@ -94,14 +103,14 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           add_column :adverts, :body, :text#{text_limit}, null: true#{charset_and_collation}
           add_column :adverts, :published_at, :datetime, null: true
         EOS
-        .and migrate_down(<<~EOS.strip)
-            remove_column :adverts, :published_at
-            remove_column :adverts, :body
+        .and(migrate_down(<<~EOS.strip))
+          remove_column :adverts, :published_at
+          remove_column :adverts, :body
         EOS
       )
 
       Advert.field_specs.clear # not normally needed
-      class Advert < ActiveRecord::Base
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           string :name, limit: 250, null: true
           text :body, null: true
@@ -109,13 +118,13 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
 
       expect(migrate).to(
-          migrate_up("remove_column :adverts, :published_at").and(
-              migrate_down("add_column :adverts, :published_at, :datetime#{datetime_precision}, null: true")
-          )
+        migrate_up("remove_column :adverts, :published_at").and(
+          migrate_down("add_column :adverts, :published_at, :datetime#{datetime_precision}, null: true")
+        )
       )
 
       nuke_model_class(Advert)
-      class Advert < ActiveRecord::Base
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           string :title, limit: 250, null: true
           text :body, null: true
@@ -127,21 +136,21 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           add_column :adverts, :title, :string, limit: 250, null: true#{charset_and_collation}
           remove_column :adverts, :name
         EOS
-        .and migrate_down(<<~EOS.strip)
-            add_column :adverts, :name, :string, limit: 250, null: true#{charset_and_collation}
-            remove_column :adverts, :title
+        .and(migrate_down(<<~EOS.strip))
+          add_column :adverts, :name, :string, limit: 250, null: true#{charset_and_collation}
+          remove_column :adverts, :title
         EOS
       )
 
       expect(Generators::DeclareSchema::Migration::Migrator.run(adverts: { name: :title })).to(
-          migrate_up("rename_column :adverts, :name, :title").and(
-              migrate_down("rename_column :adverts, :title, :name")
-          )
+        migrate_up("rename_column :adverts, :name, :title").and(
+          migrate_down("rename_column :adverts, :title, :name")
+        )
       )
 
       migrate
 
-      class Advert < ActiveRecord::Base
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           text :title, null: true
           text :body, null: true
@@ -149,12 +158,12 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
 
       expect(Generators::DeclareSchema::Migration::Migrator.run).to(
-          migrate_up("change_column :adverts, :title, :text#{text_limit}, null: true#{charset_and_collation}").and(
-              migrate_down("change_column :adverts, :title, :string, limit: 250, null: true#{charset_and_collation}")
-          )
+        migrate_up("change_column :adverts, :title, :text#{text_limit}, null: true#{charset_and_collation}").and(
+          migrate_down("change_column :adverts, :title, :string, limit: 250, null: true#{charset_and_collation}")
+        )
       )
 
-      class Advert < ActiveRecord::Base
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           string :title, default: "Untitled", limit: 250, null: true
           text :body, null: true
@@ -162,17 +171,17 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
 
       expect(migrate).to(
-          migrate_up(<<~EOS.strip)
+        migrate_up(<<~EOS.strip)
           change_column :adverts, :title, :string, limit: 250, null: true, default: "Untitled"#{charset_and_collation}
-          EOS
-              .and migrate_down(<<~EOS.strip)
-              change_column :adverts, :title, :string, limit: 250, null: true#{charset_and_collation}
-      EOS
+        EOS
+        .and(migrate_down(<<~EOS.strip))
+          change_column :adverts, :title, :string, limit: 250, null: true#{charset_and_collation}
+        EOS
       )
 
       ### Limits
 
-      class Advert < ActiveRecord::Base
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           integer :price, null: true, limit: 2
         end
@@ -185,23 +194,23 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       # Now run the migration, then change the limit:
 
       ActiveRecord::Migration.class_eval(up)
-      class Advert < ActiveRecord::Base
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           integer :price, null: true, limit: 3
         end
       end
 
       expect(Generators::DeclareSchema::Migration::Migrator.run).to(
-          migrate_up(<<~EOS.strip)
+        migrate_up(<<~EOS.strip)
           change_column :adverts, :price, :integer, limit: 3, null: true
-          EOS
-              .and migrate_down(<<~EOS.strip)
-              change_column :adverts, :price, :integer, limit: 2, null: true
-      EOS
+        EOS
+        .and(migrate_down(<<~EOS.strip))
+          change_column :adverts, :price, :integer, limit: 2, null: true
+        EOS
       )
 
-      ActiveRecord::Migration.class_eval("remove_column :adverts, :price")
-      class Advert < ActiveRecord::Base
+      ActiveRecord::Migration.class_eval("remove_column :adverts, :price", __FILE__, __LINE__)
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           decimal :price, precision: 4, scale: 1, null: true
         end
@@ -216,7 +225,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         expect(::DeclareSchema::Model::FieldSpec.mysql_text_limits?).to be_falsey
       end
 
-      class Advert < ActiveRecord::Base
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           text :notes
           text :description, limit: 30000
@@ -224,11 +233,11 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
 
       expect(Generators::DeclareSchema::Migration::Migrator.run).to(
-          migrate_up(<<~EOS.strip)
+        migrate_up(<<~EOS.strip)
           add_column :adverts, :price, :decimal, precision: 4, scale: 1, null: true
           add_column :adverts, :notes, :text#{text_limit}, null: false#{charset_and_collation}
           add_column :adverts, :description, :text#{', limit: 65535' if current_adapter == 'mysql2'}, null: false#{charset_and_collation}
-      EOS
+        EOS
       )
 
       Advert.field_specs.delete :price
@@ -248,10 +257,10 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         end
 
         expect(Generators::DeclareSchema::Migration::Migrator.run).to(
-            migrate_up(<<~EOS.strip)
+          migrate_up(<<~EOS.strip)
             add_column :adverts, :notes, :text, limit: 4294967295, null: false#{charset_and_collation}
             add_column :adverts, :description, :text, limit: 255, null: false#{charset_and_collation}
-        EOS
+          EOS
         )
 
         Advert.field_specs.delete :notes
@@ -259,7 +268,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         # Limits that are too high for MySQL will raise an exception.
 
         expect do
-          class Advert < ActiveRecord::Base
+          class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
             declare_schema do
               text :notes
               text :description, limit: 0x1_0000_0000
@@ -276,8 +285,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         Advert.connection.execute "ALTER TABLE adverts ADD COLUMN description TINYTEXT"
         Advert.connection.schema_cache.clear!
         Advert.reset_column_information
-        expect(Advert.connection.tables - Generators::DeclareSchema::Migration::Migrator.always_ignore_tables).
-            to eq(["adverts"])
+        expect(Advert.connection.tables - Generators::DeclareSchema::Migration::Migrator.always_ignore_tables).to eq(["adverts"])
         expect(Advert.columns.map(&:name)).to eq(["id", "body", "title", "description"])
 
         # Now migrate to an unstated text limit:
@@ -289,12 +297,12 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         end
 
         expect(Generators::DeclareSchema::Migration::Migrator.run).to(
-            migrate_up(<<~EOS.strip)
+          migrate_up(<<~EOS.strip)
             change_column :adverts, :description, :text, limit: 4294967295, null: false#{charset_and_collation}
-            EOS
-                .and migrate_down(<<~EOS.strip)
-                change_column :adverts, :description, :text#{', limit: 255' if current_adapter == 'mysql2'}, null: true#{charset_and_collation}
-        EOS
+          EOS
+          .and(migrate_down(<<~EOS.strip))
+            change_column :adverts, :description, :text#{', limit: 255' if current_adapter == 'mysql2'}, null: true#{charset_and_collation}
+          EOS
         )
 
         # And migrate to a stated text limit that is the same as the unstated one:
@@ -306,19 +314,20 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         end
 
         expect(Generators::DeclareSchema::Migration::Migrator.run).to(
-            migrate_up(<<~EOS.strip)
+          migrate_up(<<~EOS.strip)
             change_column :adverts, :description, :text, limit: 4294967295, null: false#{charset_and_collation}
-            EOS
-                .and migrate_down(<<~EOS.strip)
-                change_column :adverts, :description, :text#{', limit: 255' if current_adapter == 'mysql2'}, null: true#{charset_and_collation}
-        EOS
+          EOS
+          .and(migrate_down(<<~EOS.strip))
+            change_column :adverts, :description, :text#{', limit: 255' if current_adapter == 'mysql2'}, null: true#{charset_and_collation}
+          EOS
         )
       end
 
       Advert.field_specs.clear
       Advert.connection.schema_cache.clear!
       Advert.reset_column_information
-      class Advert < ActiveRecord::Base
+
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           string :name, limit: 250, null: true
         end
@@ -335,8 +344,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       # DeclareSchema extends the `belongs_to` macro so that it also declares the
       # foreign-key field.  It also generates an index on the field.
 
-      class Category < ActiveRecord::Base; end
-      class Advert < ActiveRecord::Base
+      class Category < ActiveRecord::Base; end # rubocop:disable Lint/ConstantDefinitionInBlock
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           string :name, limit: 250, null: true
         end
@@ -347,12 +356,12 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         migrate_up(<<~EOS.strip)
           add_column :adverts, :category_id, :integer, limit: 8, null: false
           add_index :adverts, [:category_id], name: :index_adverts_on_category_id
-          #{"add_foreign_key :adverts, :categories, column: :category_id, name: :index_adverts_on_category_id\n" if current_adapter == 'mysql2'}
+          #{"add_foreign_key :adverts, :categories, column: :category_id, name: :index_adverts_on_category_id\n" unless current_adapter == 'sqlite3'}
         EOS
-        .and migrate_down(<<~EOS.strip)
-            #{"remove_foreign_key :adverts, name: :index_adverts_on_category_id" if current_adapter == 'mysql2'}
-            remove_index :adverts, name: :index_adverts_on_category_id
-            remove_column :adverts, :category_id
+        .and(migrate_down(<<~EOS.strip))
+          #{'remove_foreign_key :adverts, name: :index_adverts_on_category_id' unless current_adapter == 'sqlite3'}
+          remove_index :adverts, name: :index_adverts_on_category_id
+          remove_column :adverts, :category_id
         EOS
       )
 
@@ -361,8 +370,9 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       # If you specify a custom foreign key, the migration generator observes that:
 
-      class Category < ActiveRecord::Base; end
-      class Advert < ActiveRecord::Base
+      class Category < ActiveRecord::Base; end # rubocop:disable Lint/ConstantDefinitionInBlock
+
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema { }
         belongs_to :category, foreign_key: "c_id", class_name: 'Category'
       end
@@ -371,8 +381,10 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         migrate_up(<<~EOS.strip)
           add_column :adverts, :c_id, :integer, limit: 8, null: false
           add_index :adverts, [:c_id], name: :index_adverts_on_c_id
-          #{"add_foreign_key :adverts, :categories, column: :category_id, name: :index_adverts_on_category_id\n" +
-            "add_foreign_key :adverts, :categories, column: :c_id, name: :index_adverts_on_c_id" if current_adapter == 'mysql2'}
+          #{unless current_adapter == 'sqlite3'
+              "add_foreign_key :adverts, :categories, column: :category_id, name: :index_adverts_on_category_id\n" \
+              'add_foreign_key :adverts, :categories, column: :c_id, name: :index_adverts_on_c_id'
+            end}
         EOS
       )
 
@@ -382,8 +394,9 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       # You can avoid generating the index by specifying `index: false`
 
-      class Category < ActiveRecord::Base; end
-      class Advert < ActiveRecord::Base
+      class Category < ActiveRecord::Base; end # rubocop:disable Lint/ConstantDefinitionInBlock
+
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema { }
         belongs_to :category, index: false
       end
@@ -391,8 +404,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       expect(Generators::DeclareSchema::Migration::Migrator.run).to(
         migrate_up(<<~EOS.strip)
           add_column :adverts, :category_id, :integer, limit: 8, null: false
-          #{"add_foreign_key :adverts, :categories, column: :category_id, name: :index_adverts_on_category_id" if current_adapter == 'mysql2'}
-       EOS
+          #{'add_foreign_key :adverts, :categories, column: :category_id, name: :index_adverts_on_category_id' unless current_adapter == 'sqlite3'}
+        EOS
       )
 
       Advert.field_specs.delete(:category_id)
@@ -401,10 +414,13 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       # You can specify the index name with index: 'name' [deprecated]
 
-      expect(DeclareSchema.deprecator).to receive(:warn).with(/belongs_to :category, index: 'name' is deprecated; use index: \{ name: 'name' \} instead/i)
+      expect(DeclareSchema.deprecator).to(
+        receive(:warn).with(/belongs_to :category, index: 'name' is deprecated; use index: \{ name: 'name' \} instead/i)
+      )
 
-      class Category < ActiveRecord::Base; end
-      class Advert < ActiveRecord::Base
+      class Category < ActiveRecord::Base; end # rubocop:disable Lint/ConstantDefinitionInBlock
+
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema { }
         belongs_to :category, index: 'my_index'
       end
@@ -413,7 +429,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         migrate_up(<<~EOS.strip)
           add_column :adverts, :category_id, :integer, limit: 8, null: false
           add_index :adverts, [:category_id], name: :my_index
-          #{"add_foreign_key :adverts, :categories, column: :category_id, name: :my_index" if current_adapter == 'mysql2'}
+          #{'add_foreign_key :adverts, :categories, column: :category_id, name: :my_index' unless current_adapter == 'sqlite3'}
         EOS
       )
 
@@ -423,8 +439,9 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       # You can specify the index name with index: { name: }'name', unique: true|false }
 
-      class Category < ActiveRecord::Base; end
-      class Advert < ActiveRecord::Base
+      class Category < ActiveRecord::Base; end # rubocop:disable Lint/ConstantDefinitionInBlock
+
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema { }
         belongs_to :category, index: { name: 'my_index', unique: false }
       end
@@ -433,7 +450,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         migrate_up(<<~EOS.strip)
           add_column :adverts, :category_id, :integer, limit: 8, null: false
           add_index :adverts, [:category_id], name: :my_index
-          #{"add_foreign_key :adverts, :categories, column: :category_id, name: :my_index" if current_adapter == 'mysql2'}
+          #{'add_foreign_key :adverts, :categories, column: :category_id, name: :my_index' unless current_adapter == 'sqlite3'}
         EOS
       )
 
@@ -446,7 +463,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       # `updated_at` and `created_at` can be declared with the shorthand `timestamps`.
       # Similarly, `lock_version` can be declared with the "shorthand" `optimimistic_lock`.
 
-      class Advert < ActiveRecord::Base
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           timestamps
           optimistic_lock
@@ -459,10 +476,10 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           add_column :adverts, :updated_at, :datetime, null: true
           add_column :adverts, :lock_version, :integer#{lock_version_limit}, null: false, default: 1
         EOS
-        .and migrate_down(<<~EOS.strip)
-            remove_column :adverts, :lock_version
-            remove_column :adverts, :updated_at
-            remove_column :adverts, :created_at
+        .and(migrate_down(<<~EOS.strip))
+          remove_column :adverts, :lock_version
+          remove_column :adverts, :updated_at
+          remove_column :adverts, :created_at
         EOS
       )
 
@@ -474,10 +491,14 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       # You can add an index to a field definition
 
-      expect(DeclareSchema.deprecator).to receive(:warn).with(/belongs_to :category, index: 'name' is deprecated; use index: \{ name: 'name' \} instead/i)
-      expect(DeclareSchema.deprecator).to receive(:warn).with(/belongs_to :category, unique: true\|false is deprecated; use index: \{ unique: true\|false \} instead/i)
+      expect(DeclareSchema.deprecator).to(
+        receive(:warn).with(/belongs_to :category, index: 'name' is deprecated; use index: \{ name: 'name' \} instead/i)
+      )
+      expect(DeclareSchema.deprecator).to(
+        receive(:warn).with(/belongs_to :category, unique: true\|false is deprecated; use index: \{ unique: true\|false \} instead/i)
+      )
 
-      class Advert < ActiveRecord::Base
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           string :title, index: true, limit: 250, null: true
         end
@@ -490,7 +511,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           add_column :adverts, :category_id, :integer, limit: 8, null: false
           add_index :adverts, [:title], name: :index_adverts_on_title
           add_index :adverts, [:category_id], name: :my_index
-          #{"add_foreign_key :adverts, :categories, column: :category_id, name: :my_index" if current_adapter == 'mysql2'}
+          #{'add_foreign_key :adverts, :categories, column: :category_id, name: :my_index' unless current_adapter == 'sqlite3'}
         EOS
       )
 
@@ -500,7 +521,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       # You can ask for a unique index (deprecated syntax; use index: { unique: true } instead).
 
-      class Advert < ActiveRecord::Base
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           string :title, index: true, unique: true, null: true, limit: 250
         end
@@ -517,7 +538,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       # You can specify the name for the index
 
-      class Advert < ActiveRecord::Base
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           string :title, index: 'my_index', limit: 250, null: true
         end
@@ -534,7 +555,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       # You can ask for an index outside of the fields block
 
-      class Advert < ActiveRecord::Base
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           string :title, limit: 250, null: true
         end
@@ -552,7 +573,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       # The available options for the index function are :unique, :name, :where, and :length.
 
-      class Advert < ActiveRecord::Base
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         index :title, unique: false, name: 'my_index', length: 10
       end
 
@@ -567,7 +588,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       # You can create an index on more than one field
 
-      class Advert < ActiveRecord::Base
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         index [:title, :category_id]
       end
 
@@ -588,7 +609,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       # The migration generator respects the `set_table_name` declaration, although as before, we need to explicitly tell the generator that we want a rename rather than a create and a drop.
 
-      class Advert < ActiveRecord::Base
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         self.table_name = "ads"
         declare_schema do
           string :title, limit: 250, null: true
@@ -605,18 +626,18 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           add_column :ads, :title, :string, limit: 250, null: true#{charset_and_collation}
           add_column :ads, :body, :text#{', limit: 4294967295' if current_adapter == 'mysql2'}, null: true#{charset_and_collation}
         EOS
-          .and migrate_down(<<~EOS.strip)
-            remove_column :ads, :body
-            remove_column :ads, :title
-            rename_table :ads, :adverts
-          EOS
+        .and(migrate_down(<<~EOS.strip))
+          remove_column :ads, :body
+          remove_column :ads, :title
+          rename_table :ads, :adverts
+        EOS
       )
 
       # Set the table name back to what it should be and confirm we're in sync:
 
       nuke_model_class(Advert)
 
-      class Advert < ActiveRecord::Base
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         self.table_name = "adverts"
       end
 
@@ -628,7 +649,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       nuke_model_class(Advert)
 
-      class Advertisement < ActiveRecord::Base
+      class Advertisement < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           string :title, limit: 250, null: true
           text :body, null: true
@@ -642,11 +663,11 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           add_column :advertisements, :body, :text#{', limit: 4294967295' if current_adapter == 'mysql2'}, null: true#{charset_and_collation}
           remove_column :advertisements, :name
         EOS
-        .and migrate_down(<<~EOS.strip)
-            add_column :advertisements, :name, :string, limit: 250, null: true#{charset_and_collation}
-            remove_column :advertisements, :body
-            remove_column :advertisements, :title
-            rename_table :advertisements, :adverts
+        .and(migrate_down(<<~EOS.strip))
+          add_column :advertisements, :name, :string, limit: 250, null: true#{charset_and_collation}
+          remove_column :advertisements, :body
+          remove_column :advertisements, :title
+          rename_table :advertisements, :adverts
         EOS
       )
 
@@ -662,10 +683,10 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         migrate_up(<<~EOS.strip)
           drop_table :adverts
         EOS
-        .and migrate_down(<<~EOS.strip)
-            create_table "adverts"#{table_options}, force: :cascade do |t|
-              t.string "name", limit: 250#{charset_and_collation}
-            end
+        .and(migrate_down(<<~EOS.strip))
+          create_table "adverts"#{table_options}, force: :cascade do |t|
+            t.string "name", limit: 250#{charset_and_collation}
+          end
         EOS
       )
 
@@ -675,7 +696,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       # Adding a subclass or two should introduce the 'type' column and no other changes
 
-      class Advert < ActiveRecord::Base
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           text :body, null: true
           string :title, default: "Untitled", limit: 250, null: true
@@ -684,9 +705,10 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       up = Generators::DeclareSchema::Migration::Migrator.run.first
       ActiveRecord::Migration.class_eval(up)
 
-      class FancyAdvert < Advert
+      class FancyAdvert < Advert # rubocop:disable Lint/ConstantDefinitionInBlock
       end
-      class SuperFancyAdvert < FancyAdvert
+
+      class SuperFancyAdvert < FancyAdvert # rubocop:disable Lint/ConstantDefinitionInBlock
       end
 
       expect(Generators::DeclareSchema::Migration::Migrator.run.first).to be_present
@@ -697,9 +719,9 @@ RSpec.describe 'DeclareSchema Migration Generator' do
             add_column :adverts, :type, :string, limit: 250, null: true#{charset_and_collation}
             add_index :adverts, [:type], name: :on_type
           EOS
-          .and migrate_down(<<~EOS.strip)
-              remove_index :adverts, name: :on_type
-              remove_column :adverts, :type
+          .and(migrate_down(<<~EOS.strip))
+            remove_index :adverts, name: :on_type
+            remove_column :adverts, :type
           EOS
         )
       end
@@ -719,17 +741,16 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       Advert.connection.schema_cache.clear!
       Advert.reset_column_information
 
-      expect(Advert.connection.tables - Generators::DeclareSchema::Migration::Migrator.always_ignore_tables).
-          to eq(["adverts"])
+      expect(Advert.connection.tables - Generators::DeclareSchema::Migration::Migrator.always_ignore_tables)
+        .to eq(["adverts"])
       expect(Advert.columns.map(&:name).sort).to eq(["body", "id", "title"])
       expect(Generators::DeclareSchema::Migration::Migrator.run).to eq(["", ""])
-
 
       ### Rename a column and change the default
 
       Advert.field_specs.clear
 
-      class Advert < ActiveRecord::Base
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           string :name, default: "No Name", limit: 250, null: true
           text :body, null: true
@@ -741,16 +762,16 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           rename_column :adverts, :title, :name
           change_column :adverts, :name, :string, limit: 250, null: true, default: "No Name"#{charset_and_collation}
         EOS
-        .and migrate_down(<<~EOS.strip)
-            change_column :adverts, :name, :string, limit: 250, null: true, default: "Untitled"#{charset_and_collation}
-            rename_column :adverts, :name, :title
+        .and(migrate_down(<<~EOS.strip))
+          change_column :adverts, :name, :string, limit: 250, null: true, default: "Untitled"#{charset_and_collation}
+          rename_column :adverts, :name, :title
         EOS
       )
 
       ### Rename a table and add a column
 
       nuke_model_class(Advert)
-      class Ad < ActiveRecord::Base
+      class Ad < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           string   :title, default: "Untitled", limit: 250
           text     :body, null: true
@@ -766,7 +787,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         EOS
       )
 
-      class Advert < ActiveRecord::Base
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           text :body, null: true
           string :title, default: "Untitled", limit: 250, null: true
@@ -779,7 +800,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       nuke_model_class(Ad)
 
-      class Advert < ActiveRecord::Base
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           text :body, null: true
         end
@@ -793,13 +814,13 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       )
 
       nuke_model_class(Advert)
-      ActiveRecord::Base.connection.execute("drop table `adverts`;")
+      ActiveRecord::Base.connection.execute("DROP TABLE #{ActiveRecord::Base.connection.quote_table_name('adverts')};")
 
       ## DSL
 
       # The DSL allows lambdas and constants
 
-      class User < ActiveRecord::Base
+      class User < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           string :company, limit: 250, ruby_default: -> { "BigCorp" }
         end
@@ -813,14 +834,14 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       # DeclareSchema can accept a validates hash in the field options.
 
-      class Ad < ActiveRecord::Base
+      class Ad < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         class << self
           def validates(field_name, options)
           end
         end
       end
       expect(Ad).to receive(:validates).with(:company, presence: true, uniqueness: { case_sensitive: false })
-      class Ad < ActiveRecord::Base
+      class Ad < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           string :company, limit: 250, index: true, unique: true, validates: { presence: true, uniqueness: { case_sensitive: false } }
         end
@@ -833,13 +854,14 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       # DeclareSchema supports has_and_belongs_to_many relationships and generates the intersection ("join") table
       # with appropriate primary key, indexes, and foreign keys.
 
-      class Advertiser < ActiveRecord::Base
+      class Advertiser < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           string :name, limit: 250
         end
         has_and_belongs_to_many :creatives
       end
-      class Creative < ActiveRecord::Base
+
+      class Creative < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           string :url, limit: 500
         end
@@ -853,10 +875,10 @@ RSpec.describe 'DeclareSchema Migration Generator' do
               t.integer :advertiser_id, limit: 8, null: false
               t.integer :creative_id, limit: 8, null: false
             end
-            create_table :creatives, id: :bigint#{create_table_charset_and_collation} do |t|
+            create_table :creatives, id: #{primary_key_type}#{create_table_charset_and_collation} do |t|
               t.string :url, limit: 500, null: false#{charset_and_collation}
             end
-            create_table :advertisers, id: :bigint#{create_table_charset_and_collation} do |t|
+            create_table :advertisers, id: #{primary_key_type}#{create_table_charset_and_collation} do |t|
               t.string :name, limit: 250, null: false#{charset_and_collation}
             end
             add_index :advertisers_creatives, [:creative_id], name: :index_advertisers_creatives_on_creative_id
@@ -865,14 +887,14 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           EOS
         else
           migrate_up(<<~EOS.strip)
-            create_table :advertisers, id: :bigint#{create_table_charset_and_collation} do |t|
+            create_table :advertisers, id: #{primary_key_type}#{create_table_charset_and_collation} do |t|
               t.string :name, limit: 250, null: false#{charset_and_collation}
             end
             create_table :advertisers_creatives, primary_key: [:advertiser_id, :creative_id]#{create_table_charset_and_collation} do |t|
               t.integer :advertiser_id, limit: 8, null: false
               t.integer :creative_id, limit: 8, null: false
             end
-            create_table :creatives, id: :bigint#{create_table_charset_and_collation} do |t|
+            create_table :creatives, id: #{primary_key_type}#{create_table_charset_and_collation} do |t|
               t.string :url, limit: 500, null: false#{charset_and_collation}
             end
             add_index :advertisers_creatives, [:creative_id], name: :index_advertisers_creatives_on_creative_id
@@ -893,18 +915,20 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
 
       before do
-        class Category < ActiveRecord::Base
+        class Category < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
           declare_schema do
             string :name, limit: 250, null: true
           end
         end
-        class Advertiser < ActiveRecord::Base
+
+        class Advertiser < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
           declare_schema do
             string :name, limit: 250, null: true
           end
           belongs_to :category, limit: 8
         end
-        class Affiliate < ActiveRecord::Base
+
+        class Affiliate < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
           declare_schema do
             string :name, limit: 250, null: true
           end
@@ -912,46 +936,17 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         end
       end
 
+      let(:fixture_file_path) do
+        if ActiveSupport.version >= Gem::Version.new('7.0.0') && Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.1.0')
+          "../../fixtures/migrations/#{current_adapter}/will_generate_unique_constraint_names_rails_7.txt"
+        else
+          "../../fixtures/migrations/#{current_adapter}/will_generate_unique_constraint_names_rails_6.txt"
+        end
+      end
+
       it 'will generate unique constraint names' do
-        expect(Generators::DeclareSchema::Migration::Migrator.run).to(
-          if ActiveSupport.version >= Gem::Version.new('7.0.0') && Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.1.0')
-            migrate_up(<<~EOS.strip)
-              create_table :affiliates, id: :bigint, options: "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin" do |t|
-                t.string  :name, limit: 250, null: true, charset: "utf8mb4", collation: "utf8mb4_bin"
-                t.integer :category_id, limit: 8, null: false
-              end
-              create_table :advertisers, id: :bigint, options: "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin" do |t|
-                t.string  :name, limit: 250, null: true, charset: "utf8mb4", collation: "utf8mb4_bin"
-                t.integer :category_id, limit: 8, null: false
-              end
-              create_table :categories, id: :bigint, options: "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin" do |t|
-                t.string :name, limit: 250, null: true, charset: "utf8mb4", collation: "utf8mb4_bin"
-              end
-              add_index :affiliates, [:category_id], name: :index_affiliates_on_category_id
-              add_index :advertisers, [:category_id], name: :index_advertisers_on_category_id
-              add_foreign_key :affiliates, :categories, column: :category_id, name: :index_affiliates_on_category_id
-              add_foreign_key :advertisers, :categories, column: :category_id, name: :index_advertisers_on_category_id
-            EOS
-          else
-            migrate_up(<<~EOS.strip)
-              create_table :categories, id: :bigint, options: "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin" do |t|
-                t.string :name, limit: 250, null: true, charset: "utf8mb4", collation: "utf8mb4_bin"
-              end
-              create_table :advertisers, id: :bigint, options: "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin" do |t|
-                t.string  :name, limit: 250, null: true, charset: "utf8mb4", collation: "utf8mb4_bin"
-                t.integer :category_id, limit: 8, null: false
-              end
-              create_table :affiliates, id: :bigint, options: "CHARACTER SET utf8mb4 COLLATE utf8mb4_bin" do |t|
-                t.string  :name, limit: 250, null: true, charset: "utf8mb4", collation: "utf8mb4_bin"
-                t.integer :category_id, limit: 8, null: false
-              end
-              add_index :advertisers, [:category_id], name: :index_advertisers_on_category_id
-              add_index :affiliates, [:category_id], name: :index_affiliates_on_category_id
-              add_foreign_key :advertisers, :categories, column: :category_id, name: :index_advertisers_on_category_id
-              add_foreign_key :affiliates, :categories, column: :category_id, name: :index_affiliates_on_category_id
-            EOS
-          end
-        )
+        expect(Generators::DeclareSchema::Migration::Migrator.run).to(migrate_up(File.read(File.expand_path(fixture_file_path, __dir__)).chomp))
+
         migrate
 
         nuke_model_class(Advertiser)
@@ -961,7 +956,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     describe 'serialize' do
       before do
-        class Ad < ActiveRecord::Base
+        class Ad < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
           @serialize_args = []
 
           class << self
@@ -976,7 +971,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       describe 'untyped' do
         it 'allows serialize: true' do
-          class Ad < ActiveRecord::Base
+          class Ad < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
             declare_schema do
               text :allow_list, limit: 0xFFFF, serialize: true
             end
@@ -986,7 +981,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         end
 
         it 'converts defaults with .to_yaml' do
-          class Ad < ActiveRecord::Base
+          class Ad < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
             declare_schema do
               string :allow_list, limit: 250, serialize: true, null: true, default: []
               string :allow_hash, limit: 250, serialize: true, null: true, default: {}
@@ -1004,7 +999,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       describe 'Array' do
         it 'allows serialize: Array' do
-          class Ad < ActiveRecord::Base
+          class Ad < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
             declare_schema do
               string :allow_list, limit: 250, serialize: Array, null: true
             end
@@ -1014,7 +1009,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         end
 
         it 'allows Array defaults' do
-          class Ad < ActiveRecord::Base
+          class Ad < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
             declare_schema do
               string :allow_list, limit: 250, serialize: Array, null: true, default: [2]
               string :allow_string, limit: 250, serialize: Array, null: true, default: ['abc']
@@ -1032,7 +1027,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       describe 'Hash' do
         it 'allows serialize: Hash' do
-          class Ad < ActiveRecord::Base
+          class Ad < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
             declare_schema do
               string :allow_list, limit: 250, serialize: Hash, null: true
             end
@@ -1042,7 +1037,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         end
 
         it 'allows Hash defaults' do
-          class Ad < ActiveRecord::Base
+          class Ad < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
             declare_schema do
               string :allow_loc, limit: 250, serialize: Hash, null: true, default: { 'state' => 'CA' }
               string :allow_hash, limit: 250, serialize: Hash, null: true, default: {}
@@ -1058,7 +1053,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       describe 'JSON' do
         it 'allows serialize: JSON' do
-          class Ad < ActiveRecord::Base
+          class Ad < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
             declare_schema do
               string :allow_list, limit: 250, serialize: JSON
             end
@@ -1068,7 +1063,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         end
 
         it 'allows JSON defaults' do
-          class Ad < ActiveRecord::Base
+          class Ad < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
             declare_schema do
               string :allow_hash, limit: 250, serialize: JSON, null: true, default: { 'state' => 'CA' }
               string :allow_empty_array, limit: 250, serialize: JSON, null: true, default: []
@@ -1084,7 +1079,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         end
       end
 
-      class ValueClass
+      class ValueClass # rubocop:disable Lint/ConstantDefinitionInBlock
         delegate :present?, :inspect, to: :@value
 
         def initialize(value)
@@ -1108,7 +1103,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       describe 'custom coder' do
         it 'allows serialize: ValueClass' do
-          class Ad < ActiveRecord::Base
+          class Ad < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
             declare_schema do
               string :allow_list, limit: 250, serialize: ValueClass
             end
@@ -1118,7 +1113,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         end
 
         it 'allows ValueClass defaults' do
-          class Ad < ActiveRecord::Base
+          class Ad < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
             declare_schema do
               string :allow_hash, limit: 250, serialize: ValueClass, null: true, default: ValueClass.new([2])
               string :allow_empty_array, limit: 250, serialize: ValueClass, null: true, default: ValueClass.new([])
@@ -1134,7 +1129,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       it 'disallows serialize: with a non-string column type' do
         expect do
-          class Ad < ActiveRecord::Base
+          class Ad < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
             declare_schema do
               integer :allow_list, limit: 8, serialize: true
             end
@@ -1157,7 +1152,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
               end
             end
 
-            class Advert < ActiveRecord::Base
+            class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
               declare_schema do
                 string :name, limit: 250, null: true
                 integer :category_id, limit: 8
@@ -1169,7 +1164,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           end
 
           it 'passes through optional: when given' do
-            class AdvertBelongsTo < ActiveRecord::Base
+            class AdvertBelongsTo < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
               self.table_name = 'adverts'
               declare_schema { }
               reset_column_information
@@ -1180,7 +1175,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
           describe 'contradictory settings' do # contradictory settings are ok--for example, during migration
             it 'passes through optional: true, null: false' do
-              class AdvertBelongsTo < ActiveRecord::Base
+              class AdvertBelongsTo < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
                 self.table_name = 'adverts'
                 declare_schema { }
                 reset_column_information
@@ -1191,7 +1186,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
             end
 
             it 'passes through optional: false, null: true' do
-              class AdvertBelongsTo < ActiveRecord::Base
+              class AdvertBelongsTo < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
                 self.table_name = 'adverts'
                 declare_schema { }
                 reset_column_information
@@ -1205,7 +1200,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           [false, true].each do |nullable|
             context "nullable=#{nullable}" do
               it 'infers optional: from null:' do
-                eval <<~EOS
+                eval <<~EOS # rubocop:disable Style/EvalWithLocation,Security/Eval
                   class AdvertBelongsTo < ActiveRecord::Base
                     declare_schema { }
                     belongs_to :ad_category, null: #{nullable}
@@ -1216,7 +1211,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
               end
 
               it 'infers null: from optional:' do
-                eval <<~EOS
+                eval <<~EOS # rubocop:disable Style/EvalWithLocation,Security/Eval
                   class AdvertBelongsTo < ActiveRecord::Base
                     declare_schema { }
                     belongs_to :ad_category, optional: #{nullable}
@@ -1230,7 +1225,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
           it 'deprecates limit:' do
             expect(DeclareSchema.deprecator).to receive(:warn).with("belongs_to :ad_category, limit: is deprecated since it is now inferred")
-            eval <<~EOS
+            eval <<~EOS # rubocop:disable Style/EvalWithLocation
               class UsingLimit < ActiveRecord::Base
                 declare_schema { }
                 belongs_to :ad_category, limit: 4
@@ -1241,18 +1236,21 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
         context 'when parent object PKs have different limits' do
           before do
-            class IdDefault < ActiveRecord::Base
+            class IdDefault < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
               declare_schema { }
             end
-            class Id4 < ActiveRecord::Base
+
+            class Id4 < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
               declare_schema id: :integer do
               end
             end
-            class Id8 < ActiveRecord::Base
+
+            class Id8 < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
               declare_schema id: :bigint do
               end
             end
-            class Fk < ActiveRecord::Base
+
+            class Fk < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
               declare_schema { }
               belongs_to :id_default
               belongs_to :id4
@@ -1265,7 +1263,12 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
             create_id4_defaults = up.split("\n").grep(/create_table :id_defaults/).first
             expect(create_id4_defaults).to be, up
-            expect(create_id4_defaults).to match(/, id: :bigint/)
+            case current_adapter
+            when 'postgresql'
+              expect(create_id4_defaults).to match(/, id: :bigserial/)
+            else
+              expect(create_id4_defaults).to match(/, id: :bigint/)
+            end
 
             create_id4s = up.split("\n").grep(/create_table :id4s/).first
             expect(create_id4s).to be, up
@@ -1306,20 +1309,22 @@ RSpec.describe 'DeclareSchema Migration Generator' do
               nuke_model_class(Fk)
               ActiveRecord::Base.connection.schema_cache.clear!
 
-
-              class NewIdDefault < ActiveRecord::Base
+              class NewIdDefault < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
                 self.table_name = 'id_defaults'
                 declare_schema { }
               end
-              class NewId4 < ActiveRecord::Base
+
+              class NewId4 < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
                 self.table_name = 'id4s'
                 declare_schema { }
               end
-              class NewId8 < ActiveRecord::Base
+
+              class NewId8 < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
                 self.table_name = 'id8s'
                 declare_schema { }
               end
-              class NewFk < ActiveRecord::Base
+
+              class NewFk < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
                 declare_schema { }
                 belongs_to :new_id_default
                 belongs_to :new_id4
@@ -1353,7 +1358,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     describe 'migration base class' do
       it 'adapts to Rails 4' do
-        class Advert < active_record_base_class.constantize
+        class Advert < active_record_base_class.constantize # rubocop:disable Lint/ConstantDefinitionInBlock
           declare_schema do
             string :title, limit: 100
           end
@@ -1373,7 +1378,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     context 'Does not generate migrations' do
       it 'for aliased fields bigint -> integer limit 8' do
-        class Advert < active_record_base_class.constantize
+        class Advert < active_record_base_class.constantize # rubocop:disable Lint/ConstantDefinitionInBlock
           declare_schema do
             bigint :price
           end
@@ -1384,7 +1389,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         migrations = Dir.glob('db/migrate/*declare_schema_migration*.rb')
         expect(migrations.size).to eq(1), migrations.inspect
 
-        class Advert < active_record_base_class.constantize
+        class Advert < active_record_base_class.constantize # rubocop:disable Lint/ConstantDefinitionInBlock
           declare_schema do
             integer :price, limit: 8
           end
@@ -1398,7 +1403,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       let(:default_schema_block) { nil }
       let(:declare_model) do
         -> do
-          class Advert < active_record_base_class.constantize
+          class Advert < active_record_base_class.constantize # rubocop:disable Lint/ConstantDefinitionInBlock
             declare_schema do
               integer :price, limit: 8
             end
@@ -1438,7 +1443,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
         context 'and the model sets default_schema: false' do
           before do
-            class Advert < active_record_base_class.constantize
+            class Advert < active_record_base_class.constantize # rubocop:disable Lint/ConstantDefinitionInBlock
               declare_schema default_schema: false do
                 integer :price, limit: 8
               end
@@ -1452,7 +1457,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
         context 'and the block has redundant fields' do
           before do
-            class Advert < active_record_base_class.constantize
+            class Advert < active_record_base_class.constantize # rubocop:disable Lint/ConstantDefinitionInBlock
               declare_schema do
                 integer :price, limit: 8
                 timestamps
@@ -1469,7 +1474,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     context 'index' do
       before do
-        class Advert < active_record_base_class.constantize
+        class Advert < active_record_base_class.constantize # rubocop:disable Lint/ConstantDefinitionInBlock
           declare_schema { }
           belongs_to :ad_category
         end
@@ -1495,7 +1500,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       context 'constraint' do
         before do
-          class Advert < active_record_base_class.constantize
+          class Advert < active_record_base_class.constantize # rubocop:disable Lint/ConstantDefinitionInBlock
             declare_schema { }
             belongs_to :ad_category
           end
@@ -1503,13 +1508,14 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
         it "when exactly equal, it is idempotent and doesn't raise" do
           expect do
-            Advert.constraint :ad_category_id, parent_table_name: 'ad_categories', constraint_name: :index_adverts_on_ad_category_id, parent_class_name: 'AdCategory'
+            Advert.constraint(:ad_category_id, parent_table_name: 'ad_categories',
+                              constraint_name: :index_adverts_on_ad_category_id, parent_class_name: 'AdCategory')
           end.to_not change { Advert.index_definitions.size }
         end
 
         it "when equivalent, it is idempotent and doesn't raise" do
           expect do
-            Advert.constraint :ad_category_id, parent_table_name: 'ad_categories', constraint_name: :constraint_1, parent_class_name: 'AdCategory'
+            Advert.constraint(:ad_category_id, parent_table_name: 'ad_categories', constraint_name: :constraint_1, parent_class_name: 'AdCategory')
           end.to_not change { Advert.index_definitions.size }
         end
       end
