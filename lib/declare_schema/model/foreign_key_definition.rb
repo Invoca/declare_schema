@@ -37,8 +37,8 @@ module DeclareSchema
             new(
               fkc.column,
               constraint_name: fkc.name,
-              child_table_name: fkc.to_table,
-              parent_table_name: fkc.from_table,
+              child_table_name: fkc.from_table,
+              parent_table_name: fkc.to_table,
               dependent: dependent || fkc.on_delete == :cascade ? :delete : nil
             )
           end

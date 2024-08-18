@@ -102,7 +102,7 @@ RSpec.describe DeclareSchema::Model::ForeignKeyDefinition do
         [
           instance_double(ActiveRecord::ConnectionAdapters::ForeignKeyDefinition,
                           column: 'network_id', name: 'constraint',
-                          from_table: 'models', to_table: 'networks', on_delete: nil)
+                          from_table: 'networks', to_table: 'models', on_delete: nil)
         ]
       end
 
