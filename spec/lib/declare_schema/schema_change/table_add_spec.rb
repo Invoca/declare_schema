@@ -3,9 +3,7 @@
 require_relative '../../../../lib/declare_schema/schema_change/table_add'
 
 RSpec.describe DeclareSchema::SchemaChange::TableAdd do
-  before do
-    load File.expand_path('../prepare_testapp.rb', __dir__)
-  end
+  include_context 'prepare test app'
 
   let(:table_name) { 'networks' }
   let(:fields) { [[:string, :title, limit: 255, null: false ], [:boolean, :admin, null: false]] }

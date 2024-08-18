@@ -358,24 +358,20 @@ module DeclareSchema
       end
 
       def _add_formatting_for_field(name, type)
-        if (type_class = DeclareSchema.to_class(type))
-          if "format".in?(type_class.instance_methods)
-            before_validation do |record|
-              record.send("#{name}=", record.send(name)&.format)
-            end
+        if (type_class = DeclareSchema.to_class(type)) && "format".in?(type_class.instance_methods)
+          before_validation do |record|
+            record.send("#{name}=", record.send(name)&.format)
           end
         end
       end
 
       def _add_index_for_field(column_name, args, **options)
-        if (index_name = options.delete(:index))
-          index_opts =
-            {
-              unique: args.include?(:unique) || !!options.delete(:unique)
-            }
+        if (index_config = options.delete(:index))
+          index_opts = index_config.is_a?(Hash) ? index_config : {}
+          index_opts[:unique] ||= args.include?(:unique) || !!options.delete(:unique)
 
           # support index: true declaration
-          index_opts[:name] = index_name unless index_name == true
+          index_opts[:name] = index_config unless index_config == true || index_config.is_a?(Hash)
           index([column_name], **index_opts)
         end
       end

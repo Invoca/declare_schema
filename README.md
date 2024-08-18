@@ -115,6 +115,8 @@ The following `index` options are supported:
 - `length` (integer or hash) - The partial index length(s). If an integer is provided, it is used as the length for all columns. If a hash is provided, it is used to specify the length for individual columns, where the column names are given as `Symbol` hash keys.
 - `where` (string) - The subset index predicate.
 
+**Note:** The `DeclareSchema.max_index_and_constraint_name_length` setting is ignored when using `PostgreSQL` since that database does not have a limit on the length of index names, and requires globally unique index names.
+
 ## Usage without Rails
 
 When using `DeclareSchema` without Rails, you can use the `declare_schema/rake` task to generate the migration file.
@@ -313,6 +315,9 @@ DeclareSchema.max_index_and_constraint_name_length = 64
 ```
 If you know that your migrations will only be used on a database type with a different limit, you can
 adjust this configuration value. A `nil` value means "unlimited".
+
+**Note:** This setting is ignored when using `PostgreSQL` since that database does not have a limit on the length of index names,
+and requires globally unique index names.
 
 ## Declaring Character Set and Collation
 _Note: This feature currently only works for MySQL database configurations._

@@ -3,9 +3,7 @@
 require_relative '../../../../lib/declare_schema/schema_change/index_add'
 
 RSpec.describe DeclareSchema::SchemaChange::IndexAdd do
-  before do
-    load File.expand_path('../prepare_testapp.rb', __dir__)
-  end
+  include_context 'prepare test app'
 
   let(:table_name) { 'users' }
   let(:column_names) { [:last_name, 'first_name'] }

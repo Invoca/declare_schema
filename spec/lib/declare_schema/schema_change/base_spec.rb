@@ -3,24 +3,22 @@
 require_relative '../../../../lib/declare_schema/schema_change/base'
 
 RSpec.describe DeclareSchema::SchemaChange::Base do
-  before do
-    load File.expand_path('../prepare_testapp.rb', __dir__)
-  end
+  include_context 'prepare test app'
 
   before :all do
-    class ChangeDefault < described_class
+    class ChangeDefault < described_class # rubocop:disable Lint/ConstantDefinitionInBlock
       attr_reader :up_command, :down_command
 
-      def initialize(up:, down:)
+      def initialize(up:, down:) # rubocop:disable Naming/MethodParameterName
         @up_command = up
         @down_command = down
       end
     end
 
-    class ChangeOverride < described_class
+    class ChangeOverride < described_class # rubocop:disable Lint/ConstantDefinitionInBlock
       attr_reader :up_command, :down_command
 
-      def initialize(up:, down:)
+      def initialize(up:, down:) # rubocop:disable Naming/MethodParameterName
         @up_command = up
         @down_command = down
       end

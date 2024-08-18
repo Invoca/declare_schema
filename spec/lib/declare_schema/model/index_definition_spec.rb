@@ -14,10 +14,10 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
   let(:table_name) { model_class.table_name }
 
   context 'Using declare_schema' do
-    before do
-      load File.expand_path('../prepare_testapp.rb', __dir__)
+    include_context 'prepare test app'
 
-      class IndexDefinitionTestModel < ActiveRecord::Base
+    before do
+      class IndexDefinitionTestModel < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           string :name, limit: 127, index: true
 
@@ -25,7 +25,7 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
         end
       end
 
-      class IndexDefinitionCompoundIndexModel < ActiveRecord::Base
+      class IndexDefinitionCompoundIndexModel < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           integer :fk1_id
           integer :fk2_id

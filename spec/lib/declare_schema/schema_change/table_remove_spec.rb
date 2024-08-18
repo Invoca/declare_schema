@@ -3,9 +3,7 @@
 require_relative '../../../../lib/declare_schema/schema_change/table_remove'
 
 RSpec.describe DeclareSchema::SchemaChange::TableRemove do
-  before do
-    load File.expand_path('../prepare_testapp.rb', __dir__)
-  end
+  include_context 'prepare test app'
 
   let(:table_name) { 'networks' }
   let(:add_table_back) { "create table networks(\n)" }

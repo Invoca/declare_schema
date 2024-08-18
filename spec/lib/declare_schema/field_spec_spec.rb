@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 RSpec.describe DeclareSchema::Model::FieldSpec do
+  include_context 'prepare test app'
+
   let(:model)    { double('model', _table_options: {}, _declared_primary_key: 'id') }
   let(:col_spec) do
     if current_adapter == 'postgresql'
@@ -8,10 +10,6 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
     else
       instance_double(ActiveRecord::ConnectionAdapters::Column, type: :string, sql_type: :string)
     end
-  end
-
-  before do
-    load File.expand_path('prepare_testapp.rb', __dir__)
   end
 
   describe '#initialize' do

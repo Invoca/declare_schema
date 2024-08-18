@@ -3,9 +3,7 @@
 require_relative '../../../../lib/declare_schema/model/column'
 
 RSpec.describe DeclareSchema::Model::Column do
-  before do
-    load File.expand_path('../prepare_testapp.rb', __dir__)
-  end
+  include_context 'prepare test app'
 
   describe 'class methods' do
     describe '.native_type?' do

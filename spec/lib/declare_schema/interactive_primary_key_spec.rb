@@ -1,9 +1,7 @@
 # frozen_string_literal: true
 
 RSpec.describe 'DeclareSchema Migration Generator interactive primary key' do
-  before do
-    load File.expand_path('prepare_testapp.rb', __dir__)
-  end
+  include_context 'prepare test app'
 
   context 'Using declare_schema' do
     it "allows alternate primary keys" do

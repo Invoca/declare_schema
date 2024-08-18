@@ -3,13 +3,13 @@
 require_relative '../../../../lib/declare_schema/model/foreign_key_definition'
 
 RSpec.describe DeclareSchema::Model::ForeignKeyDefinition do
+  include_context 'prepare test app'
+
   let(:model_class) { Network }
 
   context 'Using declare_schema' do
     before do
-      load File.expand_path('../prepare_testapp.rb', __dir__)
-
-      class Network < ActiveRecord::Base
+      class Network < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           string :name, limit: 127, index: true
 

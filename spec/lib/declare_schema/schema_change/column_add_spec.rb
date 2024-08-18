@@ -3,9 +3,7 @@
 require_relative '../../../../lib/declare_schema/schema_change/column_add'
 
 RSpec.describe DeclareSchema::SchemaChange::ColumnAdd do
-  before do
-    load File.expand_path('../prepare_testapp.rb', __dir__)
-  end
+  include_context 'prepare test app'
 
   let(:table_name) { 'networks' }
   let(:column_name) { 'title' }

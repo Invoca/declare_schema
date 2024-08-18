@@ -3,9 +3,7 @@
 require_relative '../../../../lib/declare_schema/schema_change/column_rename'
 
 RSpec.describe DeclareSchema::SchemaChange::ColumnRename do
-  before do
-    load File.expand_path('../prepare_testapp.rb', __dir__)
-  end
+  include_context 'prepare test app'
 
   let(:table_name) { 'networks' }
   let(:old_name) { 'title' }

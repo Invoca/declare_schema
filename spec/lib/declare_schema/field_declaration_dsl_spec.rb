@@ -3,14 +3,14 @@
 require_relative '../../../lib/declare_schema/field_declaration_dsl'
 
 RSpec.describe DeclareSchema::FieldDeclarationDsl do
+  include_context 'prepare test app'
+
   let(:model) { TestModel.new }
   subject { declared_class.new(model) }
 
   context 'Using declare_schema' do
     before do
-      load File.expand_path('prepare_testapp.rb', __dir__)
-
-      class TestModel < ActiveRecord::Base
+      class TestModel < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           string :name, limit: 127
 
