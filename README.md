@@ -2,6 +2,26 @@
 
 Declare your Rails/ActiveRecord model schemas and have database migrations generated for you!
 
+The `DeclareSchema` gem provides a DSL for declaring your model schemas in a block, and then generates the corresponding database migration for you. It also provides a way to configure the default schema for all models, and to ignore certain tables.
+
+Currently tested against:
+- Ruby 3.0+
+- Rails 6.1+
+- MySQL 5.7
+- SQLite
+- PostgreSQL 16
+
+## Installation
+
+Install the `DeclareSchema` gem directly:
+```
+  $ gem install declare_schema
+```
+or add it to your `bundler` Gemfile:
+```
+  gem 'declare_schema'
+```
+
 ## Example
 
 Make a model and declare your schema within a `declare_schema do ... end` block:
@@ -372,19 +392,18 @@ class Comment < ActiveRecord::Base
 end
 ```
 
-## Installing
+## Contributions
 
-Install the `DeclareSchema` gem directly:
-```
-  $ gem install declare_schema
-```
-or add it to your `bundler` Gemfile:
-```
-  gem 'declare_schema'
-```
-## Testing
+Contributions to this project are always welcome. Please thoroughly read our [Contribution Guidelines](CONTRIBUTING.md) before starting any work.
+
+### Local Development
+
+Depending on the database you are developing for, you may need to install the appropriate database client and server in order to appropriately test your changes. To help with this, we've provided a [DevContainer](https://github.com/devcontainers) configuration that will set up a development environment for you. To use this, you will need to have Docker installed on your machine.
+
+### Running Tests Locally
 To run tests locally, you need to prepare a test application using the specific adapter you'd like to test against. For example, to test against MySQL:
-```
-rake test:prepare_testapp[mysql,true]
-rake test:all
+
+```bash
+bundle exec rake test:prepare_testapp[mysql,true]
+bundle exec rake test:all
 ```
