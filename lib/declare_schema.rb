@@ -32,13 +32,12 @@ module DeclareSchema
   @default_generate_foreign_keys        = true
   @default_generate_indexing            = true
   @db_migrate_command                   = "bundle exec rails db:migrate"
-  @max_index_and_constraint_name_length = 64  # limit for MySQL
+  @max_index_and_constraint_name_length = :unset
 
   class << self
     attr_writer :mysql_version
     attr_reader :default_text_limit, :default_string_limit, :default_null,
-                :default_generate_foreign_keys, :default_generate_indexing, :db_migrate_command,
-                :max_index_and_constraint_name_length
+                :default_generate_foreign_keys, :default_generate_indexing, :db_migrate_command
 
     def to_class(type)
       case type
@@ -145,6 +144,18 @@ module DeclareSchema
     def max_index_and_constraint_name_length=(length)
       length.is_a?(Integer) || length.nil? or raise ArgumentError, "max_index_and_constraint_name_length must be an Integer or nil (meaning unlimited)"
       @max_index_and_constraint_name_length = length
+    end
+
+    def max_index_and_constraint_name_length
+      if @max_index_and_constraint_name_length == :unset
+        @max_index_and_constraint_name_length = case current_adapter
+                                                when 'postgresql'
+                                                  nil
+                                                else
+                                                  64  # limit for MySQL
+                                                end
+      end
+      @max_index_and_constraint_name_length
     end
 
     def deprecator
