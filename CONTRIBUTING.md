@@ -1,4 +1,4 @@
-# Contributing to ContextualLogger
+# Contributing to DeclareSchema
 
 This document explains our guidelines and workflows to contributing to an Invoca open source project.  Please take care to follow the guidelines, as they exist to help us manage changes in a timely and efficient manner.
 
