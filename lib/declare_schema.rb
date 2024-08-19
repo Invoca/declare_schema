@@ -32,7 +32,6 @@ module DeclareSchema
   @default_generate_foreign_keys        = true
   @default_generate_indexing            = true
   @db_migrate_command                   = "bundle exec rails db:migrate"
-  @max_index_and_constraint_name_length = :unset
 
   class << self
     attr_writer :mysql_version
@@ -147,7 +146,7 @@ module DeclareSchema
     end
 
     def max_index_and_constraint_name_length
-      if @max_index_and_constraint_name_length == :unset
+      unless defined?(@max_index_and_constraint_name_length)
         @max_index_and_constraint_name_length = case current_adapter
                                                 when 'postgresql'
                                                   nil
