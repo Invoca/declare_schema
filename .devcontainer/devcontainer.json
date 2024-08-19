@@ -19,7 +19,7 @@
 		"PGUSER": "postgres",
 		"PGPASSWORD": "postgres",
 		"MYSQL_HOST": "mariadb",
-		"MYSQL_PORT": "3306"
+		"MYSQL_PASSWORD": "root"
 	},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
