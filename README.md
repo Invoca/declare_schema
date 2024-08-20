@@ -2,6 +2,26 @@
 
 Declare your Rails/ActiveRecord model schemas and have database migrations generated for you!
 
+The `DeclareSchema` gem provides a DSL for declaring your model schemas in a block, and then generates the corresponding database migration for you. It also provides a way to configure the default schema for all models, and to ignore certain tables.
+
+Currently tested against:
+- Ruby 3.0+
+- Rails 6.1+
+- MySQL 5.7
+- SQLite
+- PostgreSQL 16
+
+## Installation
+
+Install the `DeclareSchema` gem directly:
+```
+  $ gem install declare_schema
+```
+or add it to your `bundler` Gemfile:
+```
+  gem 'declare_schema'
+```
+
 ## Example
 
 Make a model and declare your schema within a `declare_schema do ... end` block:
@@ -114,6 +134,8 @@ The following `index` options are supported:
 - `order` (synbol or hash) - The index order. If `:asc` or `:desc` is provided, it is used as the order for all columns. If hash is provided, it is used to specify the order of individual columns, where the column names are given as `Symbol` hash keys with values of `:asc` or `:desc` indicating the sort order of that column.
 - `length` (integer or hash) - The partial index length(s). If an integer is provided, it is used as the length for all columns. If a hash is provided, it is used to specify the length for individual columns, where the column names are given as `Symbol` hash keys.
 - `where` (string) - The subset index predicate.
+
+**Note:** The `DeclareSchema.max_index_and_constraint_name_length` setting is ignored when using `PostgreSQL` since that database does not have a limit on the length of index names, and requires globally unique index names.
 
 ## Usage without Rails
 
@@ -314,6 +336,9 @@ DeclareSchema.max_index_and_constraint_name_length = 64
 If you know that your migrations will only be used on a database type with a different limit, you can
 adjust this configuration value. A `nil` value means "unlimited".
 
+**Note:** This setting is ignored when using `PostgreSQL` since that database does not have a limit on the length of index names,
+and requires globally unique index names.
+
 ## Declaring Character Set and Collation
 _Note: This feature currently only works for MySQL database configurations._
 
@@ -367,19 +392,18 @@ class Comment < ActiveRecord::Base
 end
 ```
 
-## Installing
+## Contributions
 
-Install the `DeclareSchema` gem directly:
-```
-  $ gem install declare_schema
-```
-or add it to your `bundler` Gemfile:
-```
-  gem 'declare_schema'
-```
-## Testing
+Contributions to this project are always welcome. Please thoroughly read our [Contribution Guidelines](CONTRIBUTING.md) before starting any work.
+
+### Local Development
+
+Depending on the database you are developing for, you may need to install the appropriate database client and server in order to appropriately test your changes. To help with this, we've provided a [DevContainer](https://github.com/devcontainers) configuration that will set up a development environment for you. To use this, you will need to have Docker installed on your machine.
+
+### Running Tests Locally
 To run tests locally, you need to prepare a test application using the specific adapter you'd like to test against. For example, to test against MySQL:
-```
-rake test:prepare_testapp[mysql,true]
-rake test:all
+
+```bash
+bundle exec rake test:prepare_testapp[mysql,true]
+bundle exec rake test:all
 ```

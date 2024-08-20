@@ -303,7 +303,7 @@ module Generators
         private
 
         def up_and_down_migrations(migration_commands)
-          up   = migration_commands.map(&:up  ).select(&:present?)
+          up   = migration_commands.map(&:up).select(&:present?)
           down = migration_commands.map(&:down).select(&:present?).reverse
 
           [up * "\n", down * "\n"]
@@ -314,7 +314,7 @@ module Generators
           if primary_key.blank? || disable_auto_increment
             { id: false }
           elsif primary_key == "id"
-            { id: :bigint }
+            { id: current_adapter == 'postgresql' ? :bigserial : :bigint }
           elsif primary_key.is_a?(Array)
             { primary_key: primary_key.map(&:to_sym) }
           else
@@ -322,14 +322,18 @@ module Generators
           end.merge(model._table_options)
         end
 
+        def current_adapter(model_class = ActiveRecord::Base)
+          ::DeclareSchema.current_adapter(model_class)
+        end
+
         def table_options_for_model(model)
-          if ActiveRecord::Base.connection.class.name.match?(/SQLite3Adapter/)
-            {}
-          else
+          if current_adapter == 'mysql2'
             {
               charset:   model._table_options&.[](:charset) || ::DeclareSchema.default_charset,
               collation: model._table_options&.[](:collation) || ::DeclareSchema.default_collation
             }
+          else
+            {}
           end
         end
 
@@ -601,12 +605,15 @@ module Generators
           end
         end
 
-        SchemaDumper = ActiveRecord::ConnectionAdapters::SchemaDumper
-
-
         def add_table_back(table)
           dumped_schema_stream = StringIO.new
-          SchemaDumper.send(:new, ActiveRecord::Base.connection).send(:table, table, dumped_schema_stream)
+          dumper = case current_adapter
+                   when 'postgresql'
+                     ActiveRecord::ConnectionAdapters::PostgreSQL::SchemaDumper.create(ActiveRecord::Base.connection, {})
+                   else
+                     ActiveRecord::ConnectionAdapters::SchemaDumper.create(ActiveRecord::Base.connection, {})
+                   end
+          dumper.send(:table, table, dumped_schema_stream)
 
           dumped_schema = dumped_schema_stream.string.strip.gsub!("\n  ", "\n")
           if connection.class.name.match?(/mysql/i)

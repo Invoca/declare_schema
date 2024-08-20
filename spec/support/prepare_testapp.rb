@@ -21,7 +21,9 @@ Rails::Generators.configure!(Rails.application.config.generators)
 ActiveRecord::Base.connection.schema_cache.clear!
 
 (ActiveRecord::Base.connection.tables - Generators::DeclareSchema::Migration::Migrator.always_ignore_tables).each do |table|
-  ActiveRecord::Base.connection.execute("DROP TABLE #{ActiveRecord::Base.connection.quote_table_name(table)}")
+  ActiveRecord::Base.connection.execute("SET FOREIGN_KEY_CHECKS = 0") rescue nil # rubocop:disable Style/RescueModifier
+  ActiveRecord::Base.connection.execute("DROP TABLE #{ActiveRecord::Base.connection.quote_table_name(table)} #{current_adapter != 'sqlite3' ? 'CASCADE': ''}")
+  ActiveRecord::Base.connection.execute("SET FOREIGN_KEY_CHECKS = 1") rescue nil # rubocop:disable Style/RescueModifier
 end
 
 ActiveRecord::Base.send(:descendants).each do |model|

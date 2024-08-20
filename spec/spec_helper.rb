@@ -4,9 +4,11 @@ require 'bundler/setup'
 require 'declare_schema'
 require 'climate_control'
 require 'pry'
+require 'rspec/its'
 
 require_relative "./support/acceptance_spec_helpers"
 require_relative "./support/adapter_specific_test_helpers"
+require_relative "./support/test_app_spec_helpers"
 
 RSpec.configure do |config|
   config.include AcceptanceSpecHelpers

@@ -33,6 +33,10 @@ module DeclareSchema
 
       private
 
+      def current_adapter(model_class = ActiveRecord::Base)
+        DeclareSchema.current_adapter(model_class)
+      end
+
       def spacing(command)
         if command["\n"]
           "\n\n"

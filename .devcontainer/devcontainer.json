@@ -1,0 +1,55 @@
+// For format details, see https://aka.ms/devcontainer.json.
+{
+	"name": "DeclareSchema project development",
+	"dockerComposeFile": "docker-compose.yml",
+	"service": "declare_schema",
+	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	"features": {},
+
+	// Mount local SSH keys into the container. Use the same path as on the host.
+	"mounts": [
+		"type=bind,source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,readonly",
+		"type=bind,source=${localEnv:HOME}/.ultrahook,target=/home/vscode/.ultrahook,readonly"
+	],
+
+	"containerEnv": {
+		"PGHOST": "postgres",
+		"PGUSER": "postgres",
+		"PGPASSWORD": "postgres",
+		"MYSQL_HOST": "mariadb",
+		"MYSQL_PASSWORD": "root"
+	},
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// This can be used to network with other containers or the host.
+	// "forwardPorts": [3000, 5432],
+
+	// Use 'postCreateCommand' to run commands after the container is created.
+	"postCreateCommand": ".devcontainer/boot.sh",
+
+	// Configure tool-specific properties.
+	"customizations": {
+		"vscode": {
+			"settings": {
+				"rubyLsp.rubyVersionManager": {
+					"identifier": "none"
+				}
+			},
+			// Add the IDs of extensions you want installed when the container is created.
+			"extensions": [
+				"usernamehw.errorlens",
+				"christian-kohler.path-intellisense",
+				"blakeh.jump-to-test",
+				"ionutvmi.path-autocomplete",
+				"buenon.scratchpads",
+				"Shopify.ruby-extensions-pack",
+				"Shopify.ruby-lsp"
+			]
+		}
+	}
+
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	// "remoteUser": "root"
+}

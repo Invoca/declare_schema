@@ -1,16 +1,20 @@
 # frozen_string_literal: true
 
 RSpec.describe DeclareSchema::Model::FieldSpec do
-  let(:model) { double('model', _table_options: {}, _declared_primary_key: 'id') }
-  let(:col_spec) { double('col_spec', type: :string) }
+  include_context 'prepare test app'
 
-  before do
-    load File.expand_path('prepare_testapp.rb', __dir__)
+  let(:model)    { double('model', _table_options: {}, _declared_primary_key: 'id') }
+  let(:col_spec) do
+    if current_adapter == 'postgresql'
+      instance_double(ActiveRecord::ConnectionAdapters::PostgreSQL::Column, type: :string, sql_type: 'character varying(100)', oid: 1043, fmod: 2052)
+    else
+      instance_double(ActiveRecord::ConnectionAdapters::Column, type: :string, sql_type: :string)
+    end
   end
 
   describe '#initialize' do
+    subject { described_class.new(model, :price, :integer, anonymize_using: 'x', null: false, position: 0, limit: 4) }
     it 'normalizes option order' do
-      subject = described_class.new(model, :price, :integer, anonymize_using: 'x', null: false, position: 0, limit: 4)
       expect(subject.options.keys).to eq([:limit, :null, :anonymize_using])
     end
 
@@ -23,29 +27,30 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
 
   describe '#schema_attributes' do
     describe 'integer 4' do
+      subject { described_class.new(model, :price, :integer, limit: 4, null: false, position: 0) }
       it 'returns schema attributes' do
-        subject = described_class.new(model, :price, :integer, limit: 4, null: false, position: 0)
         expect(subject.schema_attributes(col_spec)).to eq(type: :integer, limit: 4, null: false)
       end
     end
 
     describe 'integer 8' do
+      subject { described_class.new(model, :price, :integer, limit: 8, null: true, position: 2) }
       it 'returns schema attributes' do
-        subject = described_class.new(model, :price, :integer, limit: 8, null: true, position: 2)
         expect(subject.schema_attributes(col_spec)).to eq(type: :integer, limit: 8, null: true)
       end
     end
 
     describe 'bigint' do
+      subject { described_class.new(model, :price, :bigint, null: false, position: 2) }
       it 'returns schema attributes' do
-        subject = described_class.new(model, :price, :bigint, null: false, position: 2)
         expect(subject.schema_attributes(col_spec)).to eq(type: :integer, limit: 8, null: false)
       end
     end
 
     describe 'string' do
+      subject { described_class.new(model, :title, :string, limit: 100, null: true, charset: 'utf8mb4', position: 0) }
+
       it 'returns schema attributes (including charset/collation iff mysql)' do
-        subject = described_class.new(model, :title, :string, limit: 100, null: true, charset: 'utf8mb4', position: 0)
         case current_adapter
         when 'mysql2'
           expect(subject.schema_attributes(col_spec)).to eq(type: :string, limit: 100, null: true, charset: 'utf8mb4', collation: 'utf8mb4_bin')
@@ -67,9 +72,9 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
             DeclareSchema.remove_instance_variable('@mysql_version') rescue nil # rubocop:disable Style/RescueModifier
           end
 
-          it 'normalizes charset and collation' do
-            subject = described_class.new(model, :title, :string, limit: 100, null: true, charset: 'utf8', collation: 'utf8_general', position: 0)
+          subject { described_class.new(model, :title, :string, limit: 100, null: true, charset: 'utf8', collation: 'utf8_general', position: 0) }
 
+          it 'normalizes charset and collation' do
             expect(subject.schema_attributes(col_spec)).to eq(type: :string, limit: 100, null: true, charset: 'utf8mb3', collation: 'utf8mb3_general')
           end
         end
@@ -84,8 +89,8 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
     end
 
     describe 'text' do
+      subject { described_class.new(model, :title, :text, limit: 200, null: true, charset: 'utf8mb4', position: 2) }
       it 'returns schema attributes (including charset/collation iff mysql)' do
-        subject = described_class.new(model, :title, :text, limit: 200, null: true, charset: 'utf8mb4', position: 2)
         if current_adapter == 'mysql2'
           expect(subject.schema_attributes(col_spec)).to eq(type: :text, limit: 255, null: true, charset: 'utf8mb4', collation: 'utf8mb4_bin')
         else
@@ -105,9 +110,9 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
       end
 
       describe 'limit' do
+        subject { described_class.new(model, :title, :text, null: true, charset: 'utf8mb4', position: 2) }
         it 'uses default_text_limit option when not explicitly set in field spec' do
           allow(::DeclareSchema).to receive(:default_text_limit) { 100 }
-          subject = described_class.new(model, :title, :text, null: true, charset: 'utf8mb4', position: 2)
           if current_adapter == 'mysql2'
             expect(subject.schema_attributes(col_spec)).to eq(type: :text, limit: 255, null: true, charset: 'utf8mb4', collation: 'utf8mb4_bin')
           else
@@ -118,9 +123,7 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
         it 'raises error when default_text_limit option is nil when not explicitly set in field spec' do
           if current_adapter == 'mysql2'
             expect(::DeclareSchema).to receive(:default_text_limit) { nil }
-            expect do
-              described_class.new(model, :title, :text, null: true, charset: 'utf8mb4', position: 2)
-            end.to raise_error(/limit: must be provided for :text field/)
+            expect { subject }.to raise_error(/limit: must be provided for :text field/)
           end
         end
       end
@@ -174,16 +177,16 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
       end
 
       describe 'varbinary' do # TODO: :varbinary is an Invoca addition to Rails; make it a configurable option
+        subject { described_class.new(model, :binary_dump, :varbinary, limit: 200, null: false, position: 2) }
         it 'is supported' do
-          subject = described_class.new(model, :binary_dump, :varbinary, limit: 200, null: false, position: 2)
           expect(subject.schema_attributes(col_spec)).to eq(type: :varbinary, limit: 200, null: false)
         end
       end
     end
 
     describe 'decimal' do
+      subject { described_class.new(model, :quantity, :decimal, precision: 8, scale: 10, null: true, position: 3) }
       it 'allows precision: and scale:' do
-        subject = described_class.new(model, :quantity, :decimal, precision: 8, scale: 10, null: true, position: 3)
         expect(subject.schema_attributes(col_spec)).to eq(type: :decimal, precision: 8, scale: 10, null: true)
       end
 
@@ -223,25 +226,31 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
     end
 
     describe 'datetime' do
+      subject { described_class.new(model, :created_at, :datetime, null: false, position: 1) }
       it 'keeps type as "datetime"' do
-        subject = described_class.new(model, :created_at, :datetime, null: false, position: 1)
         expect(subject.schema_attributes(col_spec)).to eq(type: :datetime, null: false)
       end
     end
 
     describe 'timestamp' do
+      subject { described_class.new(model, :created_at, :timestamp, null: true, position: 2) }
       it 'normalizes type to "datetime"' do
-        subject = described_class.new(model, :created_at, :timestamp, null: true, position: 2)
         expect(subject.schema_attributes(col_spec)).to eq(type: :datetime, null: true)
       end
     end
 
     describe 'default:' do
-      let(:col_spec) { double('col_spec', type: :integer) }
+      subject { described_class.new(model, :price, :integer, limit: 4, default: '42', null: true, position: 2) }
+
+      let(:col_spec) do
+        if current_adapter == 'postgresql'
+          instance_double(ActiveRecord::ConnectionAdapters::PostgreSQL::Column, type: :integer, sql_type: "integer", limit: 4, oid: 23, fmod: -1)
+        else
+          instance_double(ActiveRecord::ConnectionAdapters::Column, type: :integer, sql_type: "integer", limit: 4)
+        end
+      end
 
       it 'typecasts default value' do
-        allow(col_spec).to receive(:type_cast_from_database) { |default| Integer(default) }
-        subject = described_class.new(model, :price, :integer, limit: 4, default: '42', null: true, position: 2)
         expect(subject.schema_attributes(col_spec)).to eq(type: :integer, limit: 4, default: 42, null: true)
       end
     end
@@ -249,8 +258,15 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
 
   describe '#schema_attributes' do
     let(:col_spec) do
-      sql_type_metadata = ActiveRecord::ConnectionAdapters::SqlTypeMetadata.new(sql_type: "integer(8)", type: :integer, limit: 8)
-      ActiveRecord::ConnectionAdapters::Column.new("price", nil, sql_type_metadata, false, "adverts")
+      if current_adapter == 'postgresql'
+        instance_double(ActiveRecord::ConnectionAdapters::PostgreSQL::Column,
+                        name: "price", type: :integer, sql_type: "integer", limit: 4,
+                        null: false, default: nil, default_function: "adverts", oid: 23, fmod: -1)
+      else
+        instance_double(ActiveRecord::ConnectionAdapters::Column,
+                        name: "price", type: :integer, sql_type: "integer(8)", limit: 8,
+                        null: false, default: nil, default_function: "adverts")
+      end
     end
 
     it 'returns the attributes except name, position, and non-SQL options' do

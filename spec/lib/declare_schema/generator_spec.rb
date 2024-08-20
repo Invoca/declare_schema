@@ -1,9 +1,7 @@
 # frozen_string_literal: true
 
 RSpec.describe 'DeclareSchema Migration Generator' do
-  before do
-    load File.expand_path('prepare_testapp.rb', __dir__)
-  end
+  include_context 'prepare test app'
 
   it "generates nested models" do
     generate_model 'alpha/beta', 'one:string', 'two:integer'

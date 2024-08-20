@@ -18,9 +18,11 @@ gem 'pry-byebug'
 gem 'rails',            '~> 6.0'
 gem 'responders'
 gem 'rspec'
+gem 'rspec-its'
 gem 'rubocop'
 gem 'yard'
 
 # Adapters to test against
-gem 'sqlite3', '~> 1.4'
 gem 'mysql2',  '~> 0.5'
+gem 'pg',      '~> 1.1'
+gem 'sqlite3', '~> 1.4'

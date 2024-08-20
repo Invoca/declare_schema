@@ -196,8 +196,17 @@ RSpec.describe DeclareSchema do
   describe '#max_index_and_constraint_name_length' do
     subject { described_class.max_index_and_constraint_name_length }
 
+    let(:expected_default) do
+      case current_adapter
+      when 'postgresql'
+        nil
+      else
+        64
+      end
+    end
+
     context 'when not explicitly set' do
-      it { is_expected.to eq(64) }
+      it { is_expected.to eq(expected_default) }
     end
 
     context 'when explicitly set' do

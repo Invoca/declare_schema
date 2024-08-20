@@ -3,19 +3,19 @@
 require_relative '../../../../lib/declare_schema/model/habtm_model_shim'
 
 RSpec.describe DeclareSchema::Model::HabtmModelShim do
+  include_context 'prepare test app'
+
   let(:join_table) { "customers_users" }
   let(:foreign_keys) { ["user_id", "customer_id"] }
   let(:parent_table_names) { ["users", "customers"] }
   let(:connection) { instance_double(ActiveRecord::Base.connection.class, "connection") }
 
   before do
-    load File.expand_path('../prepare_testapp.rb', __dir__)
-
-    class User < ActiveRecord::Base
+    class User < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
       self.table_name = "users"
     end
 
-    class Customer < ActiveRecord::Base
+    class Customer < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
       self.table_name = "customers"
     end
   end

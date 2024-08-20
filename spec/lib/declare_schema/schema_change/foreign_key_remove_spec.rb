@@ -3,9 +3,7 @@
 require_relative '../../../../lib/declare_schema/schema_change/foreign_key_remove'
 
 RSpec.describe DeclareSchema::SchemaChange::ForeignKeyRemove do
-  before do
-    load File.expand_path('../prepare_testapp.rb', __dir__)
-  end
+  include_context 'prepare test app'
 
   let(:table_name) { 'users' }
   let(:parent_table_name) { 'organization' }

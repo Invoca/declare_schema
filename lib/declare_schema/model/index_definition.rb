@@ -64,14 +64,11 @@ module DeclareSchema
         end
 
         def default_index_name(table_name, columns)
-          index_name = nil
-          [:long_index_name, :short_index_name].find do |method_name|
-            index_name = send(method_name, table_name, columns)
-            if DeclareSchema.max_index_and_constraint_name_length.nil? || index_name.length <= DeclareSchema.max_index_and_constraint_name_length
-              break index_name
-            end
-          end or raise IndexNameTooLongError,
-                       "Default index name '#{index_name}' exceeds configured limit of #{DeclareSchema.max_index_and_constraint_name_length} characters. Use the `name:` option to give it a shorter name, or adjust DeclareSchema.max_index_and_constraint_name_length if you know your database can accept longer names."
+          if DeclareSchema.current_adapter == 'postgresql'
+            long_index_name(table_name, columns)
+          else
+            longest_valid_index_name(table_name, columns)
+          end
         end
 
         # This method normalizes the length option to be either nil or a Hash of Symbol column names to lengths,
@@ -106,6 +103,17 @@ module DeclareSchema
             sha = Digest::SHA256.hexdigest(name)
             (name_prefix + sha).first(max_len)
           end
+        end
+
+        def longest_valid_index_name(table_name, columns)
+          index_name = nil
+          [:long_index_name, :short_index_name].find do |method_name|
+            index_name = send(method_name, table_name, columns)
+            if DeclareSchema.max_index_and_constraint_name_length.nil? || index_name.length <= DeclareSchema.max_index_and_constraint_name_length
+              break index_name
+            end
+          end or raise IndexNameTooLongError,
+                       "Default index name '#{index_name}' exceeds configured limit of #{DeclareSchema.max_index_and_constraint_name_length} characters. Use the `name:` option to give it a shorter name, or adjust DeclareSchema.max_index_and_constraint_name_length if you know your database can accept longer names." # rubocop:disable Layout/LineLength
         end
 
         def long_index_name(table_name, columns)

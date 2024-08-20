@@ -3,15 +3,15 @@
 require_relative '../../../../lib/declare_schema/model/table_options_definition'
 
 RSpec.describe DeclareSchema::Model::TableOptionsDefinition do
+  include_context 'prepare test app'
+
   let(:model_class) { TableOptionsDefinitionTestModel }
   let(:charset) { DeclareSchema.normalize_charset('utf8') }
   let(:collation) { DeclareSchema.normalize_collation('utf8_general') } # adapt so that tests will pass on MySQL 5.7 or 8+
 
   context 'Using declare_schema' do
     before do
-      load File.expand_path('../prepare_testapp.rb', __dir__)
-
-      class TableOptionsDefinitionTestModel < ActiveRecord::Base
+      class TableOptionsDefinitionTestModel < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
           string :name, limit: 127, index: true
         end

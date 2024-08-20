@@ -11,10 +11,12 @@ gem "pry-byebug"
 gem "rails", "~> 7.2.0"
 gem "responders"
 gem "rspec"
+gem "rspec-its"
 gem "rubocop"
 gem "yard"
-gem "sqlite3", "~> 1.4"
 gem "mysql2", "~> 0.5"
+gem "pg", "~> 1.1"
+gem "sqlite3", "~> 1.4"
 
 group :testapp do
   gem "bootsnap", ">= 1.1.0", require: false
