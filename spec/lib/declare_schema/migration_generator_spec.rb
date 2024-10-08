@@ -735,7 +735,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         .and(migrate_down(<<~EOS.strip))
           create_table "adverts"#{table_options}, force: :cascade do |t|
             t.string "title", limit: 250#{charset_and_collation}
-            t.text "body", limit: 4294967295#{charset_and_collation}
+            t.text "body"#{text_limit}#{charset_and_collation}
           end
         EOS
       )
