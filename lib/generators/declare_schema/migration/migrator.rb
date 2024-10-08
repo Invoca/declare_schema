@@ -285,10 +285,10 @@ module Generators
                                 ColumnRename
                                 ColumnChange
                                   PrimaryKeyChange
-                                  IndexAdd
-                                    ForeignKeyAdd
-                                    ForeignKeyRemove
                                   IndexRemove
+                                  IndexAdd
+                                    ForeignKeyRemove
+                                    ForeignKeyAdd
                                 ColumnRemove
                               TableRemove ]
 
@@ -464,7 +464,7 @@ module Generators
           indexes_to_drop = existing_indexes_without_primary_key - model_indexes_without_primary_key
           indexes_to_add = model_indexes_without_primary_key - existing_indexes_without_primary_key
 
-          renamed_indexes_to_drop, renamed_indexes_to_add = index_changes_due_to_column_renames(indexes_to_drop, indexes_to_add, to_rename)
+          renamed_indexes_to_drop, renamed_indexes_to_add = index_changes_solely_due_to_column_renames(indexes_to_drop, indexes_to_add, to_rename)
 
           drop_indexes = (indexes_to_drop - renamed_indexes_to_drop).map do |i|
             ::DeclareSchema::SchemaChange::IndexRemove.new(new_table_name, i.columns, **i.options)
@@ -478,17 +478,25 @@ module Generators
           [Array(change_primary_key) + drop_indexes + add_indexes]
         end
 
-        def index_changes_due_to_column_renames(indexes_to_drop, indexes_to_add, to_rename)
-          indexes_to_drop.each_with_object([[], []]) do |index_to_drop, (renamed_indexes_to_drop, renamed_indexes_to_add)|
+        # @return [Array<Array<IndexDefinition>>] pair of arrays of indexes that changed solely due to column renames...not any settings changes
+        # Note: if the columns have been reordered, that is considered a change of settings, not solely a column rename, so it will not be returned
+        def index_changes_solely_due_to_column_renames(indexes_to_drop, indexes_to_add, to_rename)
+          renamed_indexes_to_drop = []
+          renamed_indexes_to_add = []
+
+          indexes_to_drop.each do |index_to_drop|
             renamed_columns = index_to_drop.columns.map do |column|
               to_rename.fetch(column, column)
             end.sort
 
-            if (index_to_add = indexes_to_add.find { |index_to_add| renamed_columns == index_to_add.columns.sort })
+            if (index_to_add = indexes_to_add.find { |index_to_add| renamed_columns == index_to_add.columns.sort }) &&
+                index_to_add.settings == index_to_drop.settings
               renamed_indexes_to_drop << index_to_drop
               renamed_indexes_to_add << index_to_add
             end
           end
+
+          [renamed_indexes_to_drop, renamed_indexes_to_add]
         end
 
         def change_foreign_key_constraints(model, old_table_name, to_rename)

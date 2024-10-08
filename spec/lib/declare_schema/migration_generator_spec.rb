@@ -576,7 +576,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         index :title, unique: false, name: 'my_index', length: 10
       end
 
-      expect(Generators::DeclareSchema::Migration::Migrator.run).to(
+      up, down = Generators::DeclareSchema::Migration::Migrator.run
+      expect([up, down]).to(
         migrate_up(<<~EOS.strip)
           add_column :adverts, :title, :string, limit: 250, null: true#{charset_and_collation}
           add_index :adverts, [:title], name: :my_index, length: { title: 10 }
@@ -584,6 +585,26 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       )
 
       Advert.index_definitions.delete_if { |spec| spec.fields == ["title"] }
+
+      ActiveRecord::Migration.class_eval(up)
+
+      # You can migrate an index to have slightly different settings
+
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+        declare_schema do
+          string :title, limit: 250, null: true, index: { unique: true, name: 'my_index', length: 5 }
+        end
+      end
+
+      # Note: the index is removed first, then re-added so that we don't get an error about the index already existing.
+      expect(Generators::DeclareSchema::Migration::Migrator.run).to(
+        migrate_up(<<~EOS.strip)
+          remove_index :adverts, name: :my_index
+          add_index :adverts, [:title], name: :my_index, unique: true, length: { title: 5 }
+        EOS
+      )
+
+      ActiveRecord::Migration.class_eval(down)
 
       # You can create an index on more than one field
 
@@ -594,6 +615,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       expect(Generators::DeclareSchema::Migration::Migrator.run).to(
         migrate_up(<<~EOS.strip)
           add_column :adverts, :title, :string, limit: 250, null: true#{charset_and_collation}
+          add_index :adverts, [:title], name: :my_index, unique: true, length: { title: 5 }
           add_index :adverts, [:title, :category_id], name: :index_adverts_on_title_and_category_id
         EOS
       )
@@ -624,8 +646,10 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           rename_table :adverts, :ads
           add_column :ads, :title, :string, limit: 250, null: true#{charset_and_collation}
           add_column :ads, :body, :text#{', limit: 4294967295' if current_adapter == 'mysql2'}, null: true#{charset_and_collation}
+          add_index :ads, [:title], name: :my_index, unique: true, length: { title: 5 }
         EOS
         .and(migrate_down(<<~EOS.strip))
+          remove_index :ads, name: :my_index
           remove_column :ads, :body
           remove_column :ads, :title
           rename_table :ads, :adverts
@@ -944,7 +968,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
 
       it 'will generate unique constraint names' do
-        expect(Generators::DeclareSchema::Migration::Migrator.run).to(migrate_up(File.read(File.expand_path(fixture_file_path, __dir__)).chomp))
+        expect(Generators::DeclareSchema::Migration::Migrator.run).to(migrate_up(File.read(File.expand_path(fixture_file_path, __dir__)).chomp), fixture_file_path)
 
         migrate
 
