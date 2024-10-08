@@ -89,9 +89,9 @@ module Generators
                 ColumnRename
                 ColumnChange
                 PrimaryKeyChange
+                ForeignKeyRemove
                 IndexRemove
                 IndexAdd
-                ForeignKeyRemove
                 ForeignKeyAdd
                 ColumnRemove
                 TableRemove ]
