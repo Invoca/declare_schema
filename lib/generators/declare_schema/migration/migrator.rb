@@ -285,9 +285,9 @@ module Generators
                                 ColumnRename
                                 ColumnChange
                                   PrimaryKeyChange
-                                  IndexRemove
-                                  IndexAdd
                                   ForeignKeyRemove
+                                    IndexRemove
+                                    IndexAdd
                                   ForeignKeyAdd
                                 ColumnRemove
                               TableRemove ]
