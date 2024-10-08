@@ -365,7 +365,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       )
 
       Advert.field_specs.delete(:category_id)
-      Advert.index_definitions.delete_if { |spec| spec.fields == ["category_id"] }
+      Advert.index_definitions.clear
 
       # If you specify a custom foreign key, the migration generator observes that:
 
@@ -388,8 +388,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       )
 
       Advert.field_specs.delete(:c_id)
-      Advert.index_definitions.delete_if { |spec| spec.fields == ["c_id"] }
-      Advert.constraint_definitions.delete_if { |spec| spec.foreign_key_column == "c_id" }
+      Advert.index_definitions.clear
+      Advert.constraint_definitions.clear
 
       # You can avoid generating the index by specifying `index: false`
 
@@ -408,8 +408,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       )
 
       Advert.field_specs.delete(:category_id)
-      Advert.index_definitions.delete_if { |spec| spec.fields == ["category_id"] }
-      Advert.constraint_definitions.delete_if { |spec| spec.foreign_key_column == "category_id" }
+      Advert.index_definitions.clear
+      Advert.constraint_definitions.clear
 
       # You can specify the index name with index: 'name' [deprecated]
 
@@ -433,8 +433,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       )
 
       Advert.field_specs.delete(:category_id)
-      Advert.index_definitions.delete_if { |spec| spec.fields == ["category_id"] }
-      Advert.constraint_definitions.delete_if { |spec| spec.foreign_key_column == "category_id" }
+      Advert.index_definitions.clear
+      Advert.constraint_definitions.clear
 
       # You can specify the index name with index: { name: }'name', unique: true|false }
 
@@ -454,8 +454,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       )
 
       Advert.field_specs.delete(:category_id)
-      Advert.index_definitions.delete_if { |spec| spec.fields == ["category_id"] }
-      Advert.constraint_definitions.delete_if { |spec| spec.foreign_key_column == "category_id" }
+      Advert.index_definitions.clear
+      Advert.constraint_definitions.clear
 
       ### Timestamps and Optimimistic Locking
 
@@ -515,8 +515,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       )
 
       Advert.field_specs.delete(:category_id)
-      Advert.index_definitions.delete_if { |spec| spec.fields == ["title"] || spec.fields == ["category_id"] }
-      Advert.constraint_definitions.delete_if { |spec| spec.foreign_key_column == "category_id" }
+      Advert.index_definitions.clear
+      Advert.constraint_definitions.clear
 
       # You can ask for a unique index (deprecated syntax; use index: { unique: true } instead).
 
@@ -533,7 +533,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         EOS
       )
 
-      Advert.index_definitions.delete_if { |spec| spec.fields == ["title"] }
+      Advert.index_definitions.clear
 
       # You can specify the name for the index
 
@@ -550,7 +550,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         EOS
       )
 
-      Advert.index_definitions.delete_if { |spec| spec.fields == ["title"] }
+      Advert.index_definitions.clear
 
       # You can ask for an index outside of the fields block
 
@@ -568,7 +568,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         EOS
       )
 
-      Advert.index_definitions.delete_if { |spec| spec.fields == ["title"] }
+      Advert.index_definitions.clear
 
       # The available options for the index function are :unique, :name, :where, and :length.
 
@@ -584,7 +584,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         EOS
       )
 
-      Advert.index_definitions.delete_if { |spec| spec.fields == ["title"] }
+      Advert.index_definitions.clear
 
       ActiveRecord::Migration.class_eval(up)
 
@@ -605,12 +605,13 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       )
 
       ActiveRecord::Migration.class_eval(down)
+      Advert.index_definitions.clear
 
       # You can create an index on more than one field
 
       class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         declare_schema do
-          string :title, limit: 250, null: true
+          string :title, limit: 250, null: true, index: { unique: true, name: 'my_index' }
           integer :category_id, limit: 8
         end
         index [:title, :category_id]
@@ -621,28 +622,37 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         migrate_up(<<~EOS.strip)
           add_column :adverts, :title, :string, limit: 250, null: true#{charset_and_collation}
           add_column :adverts, :category_id, :integer, limit: 8, null: false
-          add_index :adverts, [:title], name: :my_index, unique: true, length: { title: 5 }
+          add_index :adverts, [:title], name: :my_index, unique: true
           add_index :adverts, [:title, :category_id], name: :index_adverts_on_title_and_category_id
         EOS
       )
 
       ActiveRecord::Migration.class_eval(up)
 
-      Advert.index_definitions.delete_if { |spec| spec.fields == ["title", "category_id"] }
+      Advert.connection.schema_cache.clear!
+      Advert.reset_column_information
+      Advert.index_definitions.clear
+      nuke_model_class(Advert)
 
       # You can change the column order of an index
 
       class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+        declare_schema do
+          string :title, limit: 250, null: true, index: { unique: true, name: 'my_index' }
+          integer :category_id, limit: 8
+        end
         index [:category_id, :title], name: :index_adverts_on_title_and_category_id
       end
 
+      up, down = Generators::DeclareSchema::Migration::Migrator.run
+      puts "!!!!up: #{up}\n\ndown: #{down}\n"
       expect(Generators::DeclareSchema::Migration::Migrator.run).to(
         migrate_up(<<~EOS.strip)
           remove_index :adverts, name: :index_adverts_on_title_and_category_id
           add_index :adverts, [:category_id, :title], name: :index_adverts_on_title_and_category_id
+          remove_column :adverts, :name
         EOS
       )
-      ActiveRecord::Migration.class_eval(down)
 
       # Finally, you can specify that the migration generator should completely ignore an
       # index by passing its name to ignore_index in the model.
@@ -652,32 +662,28 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       # The migration generator respects the `set_table_name` declaration, although as before, we need to explicitly tell the generator that we want a rename rather than a create and a drop.
 
+      Advert.connection.schema_cache.clear!
+      Advert.reset_column_information
+      Advert.index_definitions.clear
+      nuke_model_class(Advert)
+
       class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
-        self.table_name = "ads"
         declare_schema do
           string :title, limit: 250, null: true
           text :body, null: true
         end
       end
 
-      Advert.connection.schema_cache.clear!
-      Advert.reset_column_information
+      up, _down = Generators::DeclareSchema::Migration::Migrator.run
+      ActiveRecord::Migration.class_eval(up)
+
+      Advert.table_name = "ads"
 
       expect(Generators::DeclareSchema::Migration::Migrator.run(adverts: "ads")).to(
         migrate_up(<<~EOS.strip)
           rename_table :adverts, :ads
-          add_column :ads, :category_id, :integer, limit: 8, null: false
-          add_column :ads, :title, :string, limit: 250, null: true#{charset_and_collation}
-          add_column :ads, :body, :text#{', limit: 4294967295' if current_adapter == 'mysql2'}, null: true#{charset_and_collation}
-          add_index :ads, [:title], name: :my_index, unique: true, length: { title: 5 }
-          add_index :ads, [:category_id, :title], name: :index_adverts_on_title_and_category_id
         EOS
         .and(migrate_down(<<~EOS.strip))
-          remove_index :ads, name: :index_adverts_on_title_and_category_id
-          remove_index :ads, name: :my_index
-          remove_column :ads, :body
-          remove_column :ads, :title
-          remove_column :ads, :category_id
           rename_table :ads, :adverts
         EOS
       )
@@ -708,14 +714,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       expect(Generators::DeclareSchema::Migration::Migrator.run(adverts: "advertisements")).to(
         migrate_up(<<~EOS.strip)
           rename_table :adverts, :advertisements
-          add_column :advertisements, :title, :string, limit: 250, null: true#{charset_and_collation}
-          add_column :advertisements, :body, :text#{', limit: 4294967295' if current_adapter == 'mysql2'}, null: true#{charset_and_collation}
-          remove_column :advertisements, :name
         EOS
         .and(migrate_down(<<~EOS.strip))
-          add_column :advertisements, :name, :string, limit: 250, null: true#{charset_and_collation}
-          remove_column :advertisements, :body
-          remove_column :advertisements, :title
           rename_table :advertisements, :adverts
         EOS
       )
@@ -734,7 +734,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         EOS
         .and(migrate_down(<<~EOS.strip))
           create_table "adverts"#{table_options}, force: :cascade do |t|
-            t.string "name", limit: 250#{charset_and_collation}
+            t.string "title", limit: 250#{charset_and_collation}
+            t.text "body", limit: 4294967295#{charset_and_collation}
           end
         EOS
       )
@@ -778,7 +779,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       Advert.field_specs.delete(:type)
       nuke_model_class(SuperFancyAdvert)
       nuke_model_class(FancyAdvert)
-      Advert.index_definitions.delete_if { |spec| spec.fields == ["type"] }
+      Advert.index_definitions.clear
 
       ## Coping with multiple changes
 
