@@ -4,6 +4,12 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - Unreleased
+### Changed
+- Drop/add index if its settings change (`unique:`, `length:`, etc.)
+- Drop indexes before adding, in case any have identical names
+- Same for foreign key constraints
+
 ## [2.1.0] - 2024-08-20
 ### Added
 - Added support for Rails 7.2
