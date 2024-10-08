@@ -609,18 +609,40 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       # You can create an index on more than one field
 
       class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+        declare_schema do
+          string :title, limit: 250, null: true
+          integer :category_id, limit: 8
+        end
         index [:title, :category_id]
       end
 
-      expect(Generators::DeclareSchema::Migration::Migrator.run).to(
+      up, down = Generators::DeclareSchema::Migration::Migrator.run
+      expect([up, down]).to(
         migrate_up(<<~EOS.strip)
           add_column :adverts, :title, :string, limit: 250, null: true#{charset_and_collation}
+          add_column :adverts, :category_id, :integer, limit: 8, null: false
           add_index :adverts, [:title], name: :my_index, unique: true, length: { title: 5 }
           add_index :adverts, [:title, :category_id], name: :index_adverts_on_title_and_category_id
         EOS
       )
 
+      ActiveRecord::Migration.class_eval(up)
+
       Advert.index_definitions.delete_if { |spec| spec.fields == ["title", "category_id"] }
+
+      # You can change the column order of an index
+
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+        index [:category_id, :title], name: :index_adverts_on_title_and_category_id
+      end
+
+      expect(Generators::DeclareSchema::Migration::Migrator.run).to(
+        migrate_up(<<~EOS.strip)
+          remove_index :adverts, name: :index_adverts_on_title_and_category_id
+          add_index :adverts, [:category_id, :title], name: :index_adverts_on_title_and_category_id
+        EOS
+      )
+      ActiveRecord::Migration.class_eval(down)
 
       # Finally, you can specify that the migration generator should completely ignore an
       # index by passing its name to ignore_index in the model.
@@ -644,14 +666,18 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       expect(Generators::DeclareSchema::Migration::Migrator.run(adverts: "ads")).to(
         migrate_up(<<~EOS.strip)
           rename_table :adverts, :ads
+          add_column :ads, :category_id, :integer, limit: 8, null: false
           add_column :ads, :title, :string, limit: 250, null: true#{charset_and_collation}
           add_column :ads, :body, :text#{', limit: 4294967295' if current_adapter == 'mysql2'}, null: true#{charset_and_collation}
           add_index :ads, [:title], name: :my_index, unique: true, length: { title: 5 }
+          add_index :ads, [:category_id, :title], name: :index_adverts_on_title_and_category_id
         EOS
         .and(migrate_down(<<~EOS.strip))
+          remove_index :ads, name: :index_adverts_on_title_and_category_id
           remove_index :ads, name: :my_index
           remove_column :ads, :body
           remove_column :ads, :title
+          remove_column :ads, :category_id
           rename_table :ads, :adverts
         EOS
       )
