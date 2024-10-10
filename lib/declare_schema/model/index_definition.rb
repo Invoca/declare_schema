@@ -16,9 +16,9 @@ module DeclareSchema
 
       PRIMARY_KEY_NAME = "PRIMARY"
 
-      def initialize(columns, table_name:, name: nil, allow_equivalent: false, unique: false, where: nil, length: nil)
+      def initialize(columns, table_name:, name: nil, allow_equivalent: true, unique: false, where: nil, length: nil)
         @table_name = table_name
-        @name = (name || self.class.default_index_name(table_name, columns)).to_s
+        @name = name&.to_s || self.class.default_index_name(table_name, columns)
         @columns = Array.wrap(columns).map(&:to_s)
         @allow_equivalent = allow_equivalent
         unique.in?([false, true]) or raise ArgumentError, "unique must be true or false: got #{unique.inspect}"
