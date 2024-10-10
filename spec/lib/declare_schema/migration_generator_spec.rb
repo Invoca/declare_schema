@@ -436,7 +436,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       Advert.index_definitions.clear
       Advert.constraint_definitions.clear
 
-      # You can specify the index name with index: { name: }'name', unique: true|false }
+      # You can specify the index name with index: { name: 'name', unique: true|false }
 
       class Category < ActiveRecord::Base; end # rubocop:disable Lint/ConstantDefinitionInBlock
 
@@ -570,7 +570,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       Advert.index_definitions.clear
 
-      # The available options for the index function are :unique, :name, :where, and :length.
+      # The available options for the index function are :unique, :name, :where, and :length (as well as :allow_equivalent, :ignore_equivalent_definitions).
 
       class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
         index :title, unique: false, name: 'my_index', length: 10
@@ -1274,7 +1274,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           end
 
           it 'deprecates limit:' do
-            expect(DeclareSchema.deprecator).to receive(:warn).with("belongs_to :ad_category, limit: is deprecated since it is now inferred")
+            expect(DeclareSchema.deprecator).to receive(:warn).with("belongs_to :ad_category, limit: 4 is deprecated since it is now inferred")
             eval <<~EOS # rubocop:disable Style/EvalWithLocation
               class UsingLimit < ActiveRecord::Base
                 declare_schema { }
@@ -1544,7 +1544,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       it "when equivalent and marked to allow, it is idempotent and doesn't raise" do
         expect do
-          Advert.index [:ad_category_id], name: :on_ad_category_id, allow_equivalent: true
+          Advert.index [:ad_category_id], name: :on_ad_category_id, ignore_equivalent_definitions: true
         end.to_not change { Advert.index_definitions.size }
       end
 

@@ -439,7 +439,9 @@ module Generators
           model_indexes_with_equivalents = model.index_definitions_with_primary_key.to_a
           model_indexes = model_indexes_with_equivalents.map do |index|
             if index.allow_equivalent
-              if (existing = existing_indexes.find { |existing_index| index != existing_index && existing_index.equivalent?(index) })
+              if (existing = existing_indexes.find { |existing_index| index != existing_index && existing_index.equivalent?(index) }) &&
+                  # TODO: push this logic into IndexDefinition so that it knows about column renames and includes the (renamed) columns in the settings it compares. -Colin
+                  existing.columns.map { |col_name| to_rename[col_name] || col_name } == index.columns
                 index.with_name(existing.name)
               end
             end || index
