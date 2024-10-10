@@ -49,7 +49,7 @@ module DeclareSchema
     end
 
     module ClassMethods
-      def index(columns, name: nil, allow_equivalent: false, unique: false, where: nil, length: nil)
+      def index(columns, name: nil, allow_equivalent: true, ignore_equivalent_definitions: false, unique: false, where: nil, length: nil)
         index_definition = ::DeclareSchema::Model::IndexDefinition.new(
           columns,
           name: name, table_name: table_name, allow_equivalent: allow_equivalent, unique: unique, where: where, length: length
@@ -59,9 +59,9 @@ module DeclareSchema
           if equivalent == index_definition
             # identical is always idempotent
           else
-            # equivalent is idempotent iff allow_equivalent: true passed
-            allow_equivalent or
-              raise ArgumentError, "equivalent index definition found (pass allow_equivalent: true to ignore):\n" \
+            # equivalent is idempotent iff ignore_equivalent_definitions: true passed
+            ignore_equivalent_definitions or
+              raise ArgumentError, "equivalent index definition found (pass ignore_equivalent_definitions: true to ignore):\n" \
                                    "#{index_definition.inspect}\n#{equivalent.inspect}"
           end
         else
@@ -156,8 +156,8 @@ module DeclareSchema
                                 end || false
         column_options[:default] = options.delete(:default) if options.has_key?(:default)
         if options.has_key?(:limit)
-          options.delete(:limit)
-          DeclareSchema.deprecator.warn("belongs_to #{name.inspect}, limit: is deprecated since it is now inferred")
+          limit = options.delete(:limit)
+          DeclareSchema.deprecator.warn("belongs_to #{name.inspect}, limit: #{limit} is deprecated since it is now inferred")
         end
 
         # index: true means create an index on the foreign key

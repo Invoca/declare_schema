@@ -56,19 +56,13 @@ RSpec.describe DeclareSchema::Model::IndexDefinition do
           it { is_expected.to eq(fields) }
         end
 
-        describe '#explicit_name' do
-          subject { instance.explicit_name }
+        describe '#allow_equivalent' do
+          subject { instance.allow_equivalent }
 
           context 'with allow_equivalent' do
             let(:options) { { table_name: table_name, allow_equivalent: true } }
 
-            it { is_expected.to eq(nil) }
-          end
-
-          context 'with name option' do
-            let(:options) { { table_name: table_name, name: 'index_auth_users_on_names' } }
-
-            it { is_expected.to eq('index_auth_users_on_names') }
+            it { is_expected.to eq(true) }
           end
         end
 
