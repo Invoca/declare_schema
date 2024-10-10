@@ -437,12 +437,12 @@ module Generators
           new_table_name = model.table_name
           existing_indexes = ::DeclareSchema::Model::IndexDefinition.for_table(old_table_name || new_table_name, model.ignore_indexes, model.connection)
           model_indexes_with_equivalents = model.index_definitions_with_primary_key.to_a
-          model_indexes = model_indexes_with_equivalents.map do |i|
-            if i.explicit_name.nil?
-              if (existing = existing_indexes.find { |e| i != e && e.equivalent?(i) })
-                i.with_name(existing.name)
+          model_indexes = model_indexes_with_equivalents.map do |index|
+            if index.allow_equivalent
+              if (existing = existing_indexes.find { |existing_index| index != existing_index && existing_index.equivalent?(index) })
+                index.with_name(existing.name)
               end
-            end || i
+            end || index
           end
           existing_primary_keys, existing_indexes_without_primary_key = existing_indexes.partition { |i| i.primary_key? }
           defined_primary_keys, model_indexes_without_primary_key = model_indexes.partition { |i| i.primary_key? }
