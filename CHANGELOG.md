@@ -4,6 +4,10 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - Unreleased
+### Updated
+- Updated the `current_adapter` method to use `connection_db_config` for Rails 6.1 and higher, while retaining `connection_config` for earlier versions
+
 ## [2.2.1] - 2024-10-11
 ### Changed
 - Re-release after yanking 2.2.0
