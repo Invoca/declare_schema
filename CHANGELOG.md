@@ -4,6 +4,11 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1] - Unreleased
+### Fixed
+- Fixed bug where a new model where `belongs_to :owner, polymorphic: true` would cause
+  a "Mysql2::Error: Table '<new table>' doesn't exist:" exception when generating a migration.
+
 ## [2.3.0] - 2024-10-31
 ### Updated
 - Updated the `current_adapter` method to use `connection_db_config` for Rails 6.1 and higher, while retaining `connection_config` for earlier versions
