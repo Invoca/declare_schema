@@ -1305,6 +1305,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
               belongs_to :id_default
               belongs_to :id4
               belongs_to :id8
+              belongs_to :owner, polymorphic: true
             end
           end
 
@@ -1332,20 +1333,24 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           it 'infers the correct FK type from the create_table id: type' do
             up = Generators::DeclareSchema::Migration::Migrator.run.first
 
-            create_fks = up.split("\n").grep(/t\.integer /).map { |command| command.gsub(', null: false', '').gsub(/^ +/, '') }
+            create_fks = up.split("\n").grep(/t\.integer|string /).map { |command| command.gsub(', null: false', '').gsub(/^ +/, '') }
             if current_adapter == 'sqlite3'
               create_fks.map! { |command| command.gsub(/limit: [a-z0-9]+/, 'limit: X') }
               expect(create_fks).to eq([
                                          't.integer :id_default_id, limit: X',
                                          't.integer :id4_id, limit: X',
-                                         't.integer :id8_id, limit: X'
-                                       ]), up
+                                         't.integer :id8_id, limit: X',
+                                         't.integer :owner_id, limit: X',
+                                         't.string  :owner_type, limit: X'
+                                       ])
             else
               expect(create_fks).to eq([
                                          't.integer :id_default_id, limit: 8',
                                          't.integer :id4_id, limit: 4',
-                                         't.integer :id8_id, limit: 8'
-                                       ]), up
+                                         't.integer :id8_id, limit: 8',
+                                         't.integer :owner_id, limit: 8',
+                                         "t.string  :owner_type, limit: 255#{charset_and_collation}"
+                                       ])
             end
           end
 
