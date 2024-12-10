@@ -6,7 +6,7 @@ Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0
 
 ## [2.3.1] - Unreleased
 ### Fixed
-- Fixed bug where a new model where `belongs_to :owner, polymorphic: true` would cause
+- Fixed bug where a new model with `belongs_to :owner, polymorphic: true` would cause
   a "Mysql2::Error: Table '<new table>' doesn't exist:" exception when generating a migration.
 
 ## [2.3.0] - 2024-10-31
