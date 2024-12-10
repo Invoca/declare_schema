@@ -240,7 +240,7 @@ module DeclareSchema
 
       def _infer_fk_limit(foreign_key_column, reflection)
         if reflection.options[:polymorphic]
-          if (foreign_key_column = columns_hash[foreign_key_column.to_s]) && foreign_key_column.type == :integer
+          if (foreign_key_column = _column(foreign_key_column)) && foreign_key_column.type == :integer
             foreign_key_column.limit
           end
         else
