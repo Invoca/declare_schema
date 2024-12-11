@@ -68,7 +68,7 @@ module DeclareSchema
       final_migration_name =
         name.presence ||
         if !options[:default_name]
-          choose("\nMigration filename (spaces will be converted to _) [#{default_migration_name}]:", /^[a-z0-9_ ]*$/,
+          choose("Migration filename (spaces will be converted to _) [#{default_migration_name}]:", /^[a-z0-9_ ]*$/,
                  default_migration_name).strip.gsub(' ', '_').presence
         end ||
         default_migration_name
