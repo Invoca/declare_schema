@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         adapter: [mysql, postgresql, sqlite3]
-        ruby: [3.1, 3.2, 3.3]
+        ruby: ['3.0', 3.1, 3.2, 3.3]
         gemfile:
         - gemfiles/rails_6_1.gemfile
         - gemfiles/rails_7_0.gemfile
@@ -19,6 +19,15 @@ jobs:
         - gemfiles/rails_7_2.gemfile
         - gemfiles/rails_8_0.gemfile
         exclude:
+        - adapter: mysql
+        - ruby: '3.0'
+        - gemfile: gemfiles/rails_7_2.gemfile
+        - adapter: postgresql
+        - ruby: '3.0'
+        - gemfile: gemfiles/rails_7_2.gemfile
+        - adapter: sqlite3
+        - ruby: '3.0'
+        - gemfile: gemfiles/rails_7_2.gemfile
         - adapter: mysql
           ruby: 3.3
           gemfile: gemfiles/rails_6_1.gemfile
@@ -28,6 +37,8 @@ jobs:
         - adapter: sqlite3
           ruby: 3.3
           gemfile: gemfiles/rails_6_1.gemfile
+        - ruby: '3.0' # Rails 8.0 requires Ruby 3.2 or later
+          gemfile: gemfiles/rails_8_0.gemfile
         - ruby: '3.1' # Rails 8.0 requires Ruby 3.2 or later
           gemfile: gemfiles/rails_8_0.gemfile
 
