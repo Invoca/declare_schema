@@ -26,6 +26,8 @@ metadata:
   - open-source
   - gem
   - executable
+  - public
+  - rails-dependent
   description: Declare your Rails/active_record model schemas and have database migrations
     generated for you!
 spec:
