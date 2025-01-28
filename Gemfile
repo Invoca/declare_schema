@@ -26,3 +26,7 @@ gem 'yard'
 gem 'mysql2',  '~> 0.5'
 gem 'pg',      '~> 1.1'
 gem 'sqlite3', '~> 1.4'
+
+gem "base64", "~> 0.2.0"
+gem "bigdecimal", "~> 3.1"
+gem "mutex_m", "~> 0.3.0"
