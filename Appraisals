@@ -18,5 +18,8 @@ end
 rails_versions_to_test.each do |version|
   appraise "rails-#{version.gsub('.', '_')}" do
     gem 'rails', "~> #{version}.0"
+    if version >= '8'
+      gem 'sqlite3', '~> 2.1'
+    end
   end
 end

@@ -4,6 +4,10 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2025-01-10
+### Added
+- Added support for Rails 8.0.
+
 ## [2.3.1] - 2024-12-10
 ### Fixed
 - Fixed bug where a new model with `belongs_to :owner, polymorphic: true` would cause
