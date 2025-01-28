@@ -231,15 +231,15 @@ PLATFORMS
 
 DEPENDENCIES
   appraisal
-  base64 (~> 0.2.0)
-  bigdecimal (~> 3.1)
+  base64 (>= 0.2.0)
+  bigdecimal (>= 3.1)
   bootsnap (>= 1.1.0)
   climate_control (~> 0.2)
   concurrent-ruby (~> 1.3, < 1.3.5)
   declare_schema!
   listen
   mail
-  mutex_m (~> 0.3.0)
+  mutex_m (>= 0.3.0)
   mysql2 (~> 0.5)
   net-smtp
   pg (~> 1.1)
