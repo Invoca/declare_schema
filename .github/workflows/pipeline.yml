@@ -1,0 +1,8 @@
+name: Pipeline
+on:
+  push:
+  schedule:
+  - cron: '0 1 * * 1' # Every Monday at 1AM UTC
+jobs:
+  tests:
+    uses: Invoca/ruby-test-matrix-workflow/.github/workflows/ruby-test-matrix.yml@main
