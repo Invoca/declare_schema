@@ -39,6 +39,9 @@ jobs:
         - adapter: sqlite3
           ruby: 3.4
           gemfile: gemfiles/rails_6_1.gemfile
+        # TODO: Support SQLite3 with Rails 8.0
+        - adapter: sqlite3
+          gemfile: gemfiles/rails_8_0.gemfile
     env:
       BUNDLE_GEMFILE: "${{ matrix.gemfile }}"
       MYSQL_HOST: 127.0.0.1
