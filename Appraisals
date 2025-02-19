@@ -3,7 +3,7 @@
 require 'json'
 require 'open-uri'
 
-MIN_RAILS_VERSION = Gem::Version.new('6.1.0')
+MIN_RAILS_VERSION = Gem::Version.new('7.0.0')
 
 rails_versions_to_test = Set.new
 
