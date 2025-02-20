@@ -899,7 +899,12 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       end
       up, _down = Generators::DeclareSchema::Migration::Migrator.run
       ActiveRecord::Migration.class_eval(up)
-      expect(Ad.field_specs['company'].options[:validates].inspect).to eq("{:presence=>true, :uniqueness=>{:case_sensitive=>false}}")
+
+      if Gem::Version.new(RUBY_VERSION) < Gem::Version.new("3.4")
+        expect(Ad.field_specs['company'].options[:validates].inspect).to eq("{:presence=>true, :uniqueness=>{:case_sensitive=>false}}")
+      else
+        expect(Ad.field_specs['company'].options[:validates].inspect).to eq("{presence: true, uniqueness: {case_sensitive: false}}")
+      end
 
       # DeclareSchema supports has_and_belongs_to_many relationships and generates the intersection ("join") table
       # with appropriate primary key, indexes, and foreign keys.
