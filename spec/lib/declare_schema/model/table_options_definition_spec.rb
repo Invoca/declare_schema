@@ -24,7 +24,11 @@ RSpec.describe DeclareSchema::Model::TableOptionsDefinition do
 
       describe '#to_key' do
         subject { model.to_key }
-        it { is_expected.to eq(['table_options_definition_test_models', "{:charset=>#{charset.inspect}, :collation=>#{collation.inspect}}"]) }
+        if Gem::Version.new(RUBY_VERSION) < Gem::Version.new("3.4")
+          it { is_expected.to eq(['table_options_definition_test_models', "{:charset=>#{charset.inspect}, :collation=>#{collation.inspect}}"]) }
+        else
+          it { is_expected.to eq(['table_options_definition_test_models', "{charset: #{charset.inspect}, collation: #{collation.inspect}}"]) }
+        end
       end
 
       describe '#settings' do
@@ -56,7 +60,11 @@ RSpec.describe DeclareSchema::Model::TableOptionsDefinition do
 
       describe '#hash' do
         subject { model.hash }
-        it { is_expected.to eq(['table_options_definition_test_models', "{:charset=>#{charset.inspect}, :collation=>#{collation.inspect}}"].hash) }
+        if Gem::Version.new(RUBY_VERSION) < Gem::Version.new("3.4")
+          it { is_expected.to eq(['table_options_definition_test_models', "{:charset=>#{charset.inspect}, :collation=>#{collation.inspect}}"].hash) }
+        else
+          it { is_expected.to eq(['table_options_definition_test_models', "{charset: #{charset.inspect}, collation: #{collation.inspect}}"].hash) }
+        end
       end
 
       describe '#to_s' do
