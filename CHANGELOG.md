@@ -4,6 +4,14 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.3] - Unreleased
+### Changed
+- The `timestamps` DSL method to create `created_at` and `updated_at` columns now defaults to `null: false` for `datetime` columns
+- The `timestamps` DSL method to allow additional options to be passed to the `datetime` fields
+
+### Fixed
+- Fixed a bug where `#validate` methods on core object classes with required arguments were cuasing model validations to fail
+
 ## [2.3.2] - 2025-02-21
 ### Fixed
 - Removed require of `activesupport/proxy_object` which is removed in Rails 8.0
