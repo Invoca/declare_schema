@@ -310,7 +310,7 @@ module DeclareSchema
 
         # Support for custom validations
         if (type_class = DeclareSchema.to_class(type))
-          if type_class.public_method_defined?("validate")
+          if type_class.public_method_defined?("validate") && type_class.instance_method("validate").arity.zero?
             validate do |record|
               v = record.send(name)&.validate
               record.errors.add(name, v) if v.is_a?(String)
