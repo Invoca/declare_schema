@@ -471,8 +471,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       expect(Generators::DeclareSchema::Migration::Migrator.run).to(
         migrate_up(<<~EOS.strip)
-          add_column :adverts, :created_at, :datetime, null: true
-          add_column :adverts, :updated_at, :datetime, null: true
+          add_column :adverts, :created_at, :datetime, null: false
+          add_column :adverts, :updated_at, :datetime, null: false
           add_column :adverts, :lock_version, :integer#{lock_version_limit}, null: false, default: 1
         EOS
         .and(migrate_down(<<~EOS.strip))
@@ -485,6 +485,30 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       Advert.field_specs.delete(:updated_at)
       Advert.field_specs.delete(:created_at)
       Advert.field_specs.delete(:lock_version)
+
+      ### Timestamps with null: true
+
+      # `updated_at` and `created_at` can be declared with the shorthand `timestamps` passed with null: true override
+
+      class Advert < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+        declare_schema do
+          timestamps null: true
+        end
+      end
+
+      expect(Generators::DeclareSchema::Migration::Migrator.run).to(
+        migrate_up(<<~EOS.strip)
+          add_column :adverts, :created_at, :datetime, null: true
+          add_column :adverts, :updated_at, :datetime, null: true
+        EOS
+        .and(migrate_down(<<~EOS.strip))
+          remove_column :adverts, :updated_at
+          remove_column :adverts, :created_at
+        EOS
+      )
+
+      Advert.field_specs.delete(:updated_at)
+      Advert.field_specs.delete(:created_at)
 
       ### Indices
 
