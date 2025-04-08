@@ -17,9 +17,9 @@ module DeclareSchema
 
     attr_reader :model
 
-    def timestamps
-      field(:created_at, :datetime, null: true)
-      field(:updated_at, :datetime, null: true)
+    def timestamps(**options)
+      field(:created_at, :datetime, null: false, **options)
+      field(:updated_at, :datetime, null: false, **options)
     end
 
     def optimistic_lock
