@@ -10,7 +10,7 @@ Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0
 - The `timestamps` DSL method to allow additional options to be passed to the `datetime` fields
 
 ### Fixed
-- Fixed a bug where `#validate` methods on core object classes with required arguments were cuasing model validations to fail
+- Fixed a bug where `#validate` methods on core object classes with required arguments was causing model validations to fail
 
 ## [2.3.2] - 2025-02-21
 ### Fixed
