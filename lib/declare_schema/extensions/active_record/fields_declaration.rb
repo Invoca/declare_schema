@@ -3,7 +3,6 @@
 require 'active_record'
 require 'declare_schema/dsl'
 require 'declare_schema/model'
-require 'declare_schema/field_declaration_dsl'
 
 module DeclareSchema
   module Macros
