@@ -47,10 +47,6 @@ module DeclareSchema
       end
 
       def initialize(model, name, type, position: 0, **options)
-        _declared_primary_key = model._declared_primary_key
-
-        name.to_s == _declared_primary_key and raise ArgumentError, "you may not provide a field spec for the primary key #{name.inspect}"
-
         @model = model
         @name = name.to_sym
         type.is_a?(Symbol) or raise ArgumentError, "type must be a Symbol; got #{type.inspect}"
@@ -122,6 +118,10 @@ module DeclareSchema
         @options = Hash[@options.sort_by { |k, _v| OPTION_INDEXES[k] || 9999 }]
 
         @sql_options = @options.slice(*SQL_OPTIONS)
+      end
+
+      def foreign_key_field_spec(model, name, position: 0, null: nil)
+        self.class.new(model, name, @type, position:, **@options.merge(null.nil? ? {} : { null: }))
       end
 
       # returns the attributes for schema migrations as a Hash

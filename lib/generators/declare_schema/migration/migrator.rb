@@ -80,15 +80,13 @@ module Generators
           self.class.native_types
         end
 
-        # list habtm join tables
+        # return habtm reflections keyed by join table name (so that habtm from each side has just one entry)
         def habtm_tables
-          reflections = Hash.new { |h, k| h[k] = [] }
-          ActiveRecord::Base.send(:descendants).map do |c|
+          ActiveRecord::Base.send(:descendants).each_with_object({}) do |c, result|
             c.reflect_on_all_associations(:has_and_belongs_to_many).each do |a|
-              reflections[a.join_table] << a
+              result[a.join_table] ||= a
             end
           end
-          reflections
         end
 
         # Returns an array of model classes and an array of table names
@@ -204,8 +202,8 @@ module Generators
             end
           end
           # generate shims for HABTM models
-          habtm_tables.each do |name, reflections|
-            models_by_table_name[name] = ::DeclareSchema::Model::HabtmModelShim.from_reflection(reflections.first)
+          habtm_tables.each do |name, reflection|
+            models_by_table_name[name] = ::DeclareSchema::Model::HabtmModelShim.from_reflection(reflection)
           end
           model_table_names = models_by_table_name.keys
 

@@ -100,6 +100,7 @@ module DeclareSchema
         _add_validations_for_field(name, type, args, options)
         _add_index_for_field(name, args, **options)
         _add_scopes_for_field(name, type, **options)
+        name.to_s == _declared_primary_key and raise ArgumentError, "no need to declare a field spec for the primary key #{name.inspect}"
         field_specs[name] = ::DeclareSchema::Model::FieldSpec.new(self, name, type, position: field_specs.size, **options)
         attr_order << name unless attr_order.include?(name)
       end
@@ -271,6 +272,19 @@ module DeclareSchema
         else
           @primary_key&.to_s
         end
+      end
+
+      def _primary_key_field_spec
+        declared_primary_key = _declared_primary_key
+        field_specs[declared_primary_key] || _primary_key_field_spec_from_table_options(declared_primary_key) or
+          raise "Declared primary key #{declared_primary_key.inspect} not found in field_specs or _table_options #{_table_options.inspect} for #{name}"
+      end
+
+      def _primary_key_field_spec_from_table_options(declared_primary_key)
+        primary_key_options = _table_options[declared_primary_key.to_sym] || _table_options[declared_primary_key]
+        options = primary_key_options.is_a?(Hash) ? primary_key_options.dup : {}
+        type = options.delete(:type) || Rails.application.config.generators.options.dig(:active_record, :primary_key_type) || :bigint
+        FieldSpec.new(self, declared_primary_key, type, **options)
       end
 
       private
