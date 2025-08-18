@@ -4,7 +4,11 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.0.0] - Unreleased
+## [3.1.0] - Unreleased
+### Added
+- Add HABTM support for arbitrary primary key in the referenced table (rather than just :bigint). 
+
+## [3.0.0] - 2025-04-08
 ### Changed
 - The `timestamps` DSL method to create `created_at` and `updated_at` columns now defaults to `null: false` for `datetime` columns
 - The `timestamps` DSL method to allow additional options to be passed to the `datetime` fields
