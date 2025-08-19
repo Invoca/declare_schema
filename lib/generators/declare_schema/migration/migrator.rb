@@ -374,21 +374,21 @@ module Generators
             ::DeclareSchema::SchemaChange::ColumnRename.new(new_table_name, old_name, new_name)
           end
 
-          to_add.sort_by! { |c| model.field_specs[c]&.position || 0 }
+          to_add.sort_by! { model.field_specs[_1]&.position || 0 }
 
-          adds = to_add.map do |c|
+          adds = to_add.map do |col_name_to_add|
             type, options =
-              if (spec = model.field_specs[c])
-                [spec.type, spec.sql_options.merge(fk_field_options(model, c)).compact]
+              if (spec = model.field_specs[col_name_to_add])
+                [spec.type, spec.sql_options.merge(fk_field_options(model, col_name_to_add)).compact]
               else
                 [:integer, {}]
               end
-            ::DeclareSchema::SchemaChange::ColumnAdd.new(new_table_name, c, type, **options)
+            ::DeclareSchema::SchemaChange::ColumnAdd.new(new_table_name, col_name_to_add, type, **options)
           end
 
-          removes = to_remove.map do |c|
-            old_type, old_options = add_column_back(model, current_table_name, c)
-            ::DeclareSchema::SchemaChange::ColumnRemove.new(new_table_name, c, old_type, **old_options)
+          removes = to_remove.map do |col_name_to_remove|
+            old_type, old_options = add_column_back(model, current_table_name, col_name_to_remove)
+            ::DeclareSchema::SchemaChange::ColumnRemove.new(new_table_name, col_name_to_remove, old_type, **old_options)
           end
 
           old_names = to_rename.invert
@@ -544,11 +544,14 @@ module Generators
           end
         end
 
+        # TODO: switch this to depend on _infer_foreign_key_field_spec instead
         def fk_field_options(model, field_name)
-          if (foreign_key = model.constraint_definitions.find { |fk| field_name == fk.foreign_key_column })
+          # check if the field_name is a foreign key
+          if (foreign_key = model.constraint_definitions.find { field_name == _1.foreign_key_column })
+            # if so, look up the target table's primary key column to get its limit (note: this is looking in the DB, not the spec)
             parent_columns = connection.columns(foreign_key.parent_table_name) rescue []
             pk_limit =
-              if (pk_column = parent_columns.find { |column| column.name.to_s == "id" }) # right now foreign keys assume id is the target
+              if (pk_column = parent_columns.find { _1.name.to_s == "id" }) # right now foreign keys assume id is the target
                 pk_column.limit
               else
                 8
