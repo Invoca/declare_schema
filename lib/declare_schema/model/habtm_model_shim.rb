@@ -22,7 +22,7 @@ module DeclareSchema
         parents.is_a?(Array) && parents.size == 2 or
           raise ArgumentError, "parents must be <Array[2]>; got #{parents.inspect}"
 
-        # Rails requires foreign keys to be in alphabetical order, so we start by sorting by those
+        # Rails requires HABTM foreign keys to be in alphabetical order, so we start by sorting by those
         parents.sort_by!(&:first)
         @foreign_keys = parents.map(&:first)
         @parent_models = parents.map(&:last)
@@ -41,12 +41,12 @@ module DeclareSchema
 
       def field_specs
         foreign_keys.each_with_index.each_with_object({}) do |(foreign_key, i), result|
-          pk_field_spec = parent_models[i]._primary_key_field_spec
-          result[foreign_key] = pk_field_spec.foreign_key_field_spec(self, foreign_key, position: i, null: false)
+          result[foreign_key] = parent_models[i]._foreign_key_field_spec(self, foreign_key, position: i, null: false)
         end
       end
 
       def primary_key
+        # TODO: ActiveRecord now supports composite primary keys, so we could return that here.
         false # no single-column primary key in database
       end
 

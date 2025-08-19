@@ -202,62 +202,44 @@ module DeclareSchema
         super
 
         reflection = reflections[name.to_s] or raise "Couldn't find reflection #{name} in #{reflections.keys}"
-        foreign_key_column = reflection.foreign_key or raise "Couldn't find foreign_key for #{name} in #{reflection.inspect}"
-        foreign_key_column_options = column_options.dup
+        foreign_key_column_name = reflection.foreign_key or raise "Couldn't find foreign_key for #{name} in #{reflection.inspect}"
 
-        # Note: the foreign key limit: should match the primary key limit:. (If there is a foreign key constraint,
-        # those limits _must_ match.) We'd like to call _infer_fk_limit and get the limit right from the PK.
-        # But we can't here, because that will mess up the autoloader to follow every belongs_to association right
-        # when it is declared. So instead we assume :bigint (integer limit: 8) below, while also registering this
-        # pre_migration: callback to double-check that assumption Just In Time--right before we generate a migration.
-        #
-        # The one downside of this approach is that application code that asks the field_spec for the declared
-        # foreign key limit: will always get 8 back even if this is a grandfathered foreign key that points to
-        # a limit: 4 primary key. It seems unlikely that any application code would do this.
-        foreign_key_column_options[:pre_migration] = ->(field_spec) do
-          if (inferred_limit = _infer_fk_limit(foreign_key_column, reflection))
-            field_spec.sql_options[:limit] = inferred_limit
-          end
-        end
-
-        declare_field(foreign_key_column.to_sym, :bigint, **foreign_key_column_options)
+        field_specs[foreign_key_column_name] = _infer_foreign_key_field_spec(foreign_key_column_name, reflection, column_options)
 
         if reflection.options[:polymorphic]
           foreign_type = options[:foreign_type] || "#{name}_type"
           _declare_polymorphic_type_field(foreign_type, column_options)
           if ::DeclareSchema.default_generate_indexing && index_options
-            index([foreign_type, foreign_key_column], **index_options)
+            index([foreign_type, foreign_key_column_name], **index_options)
           end
         else
           if ::DeclareSchema.default_generate_indexing && index_options
-            index([foreign_key_column], **index_options)
+            index([foreign_key_column_name], **index_options)
           end
 
           if ::DeclareSchema.default_generate_foreign_keys && constraint_name != false
-            constraint(foreign_key_column, constraint_name: constraint_name || index_options&.[](:name), parent_class_name: reflection.class_name, dependent: dependent_delete)
+            constraint(foreign_key_column_name,
+                       constraint_name: constraint_name || index_options&.[](:name),
+                       parent_class_name: reflection.class_name,
+                       dependent: dependent_delete)
           end
         end
       end
 
-      def _infer_fk_limit(foreign_key_column, reflection)
+      # Returns a FieldSpec for the foreign key column of a belongs_to association.
+      # If the association is polymorphic, the foreign key column is a bigint, or possibly a 4-byte integer
+      # if the foreign key column is already defined that way in the database.
+      # If the association is not polymorphic, the foreign key column matches the primary key type of the associated model.
+      def _infer_foreign_key_field_spec(foreign_key_column_name, reflection, column_options)
         if reflection.options[:polymorphic]
-          if (foreign_key_column = _column(foreign_key_column)) && foreign_key_column.type == :integer
-            foreign_key_column.limit
+          if (foreign_key_column = _column(foreign_key_column_name)) && foreign_key_column.type == :integer
+            # grandfather foreign key column to match what's in the database
+            column_options = column_options.merge(limit: foreign_key_column.limit)
           end
+          FieldSpec.new(self, foreign_key_column_name, :bigint, position: field_specs.size, **column_options)
         else
           klass = reflection.klass or raise "Couldn't find belongs_to klass for #{name} in #{reflection.inspect}"
-          if (pk_id_type = klass._table_options&.[](:id))
-            if pk_id_type == :integer
-              4
-            end
-          else
-            if klass.table_exists? && (pk_column = klass.columns_hash[klass._declared_primary_key])
-              pk_id_type = pk_column.type
-              if pk_id_type == :integer
-                pk_column.limit
-              end
-            end
-          end
+          klass._foreign_key_field_spec(self, foreign_key_column_name, position: field_specs.size, **column_options)
         end
       end
 
@@ -272,6 +254,12 @@ module DeclareSchema
         else
           @primary_key&.to_s
         end
+      end
+
+      # Returns a FieldSpec for a foreign key pointing to the primary key of this model.
+      # Exactly matches the primary key type.
+      def _foreign_key_field_spec(model, foreign_key, position:, null:)
+        _primary_key_field_spec.foreign_key_field_spec(model, foreign_key, position:, null:)
       end
 
       def _primary_key_field_spec
