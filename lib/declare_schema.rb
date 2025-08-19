@@ -65,7 +65,7 @@ module DeclareSchema
       if mysql_version && mysql_version >= SEMVER_8 && charset == 'utf8'
         'utf8mb3'
       else
-        charset
+        charset.downcase
       end
     end
 
@@ -74,7 +74,7 @@ module DeclareSchema
         collation.sub(/\Autf8_/, 'utf8mb3_')
       else
         collation
-      end
+      end.downcase
     end
 
     def default_charset=(charset)
