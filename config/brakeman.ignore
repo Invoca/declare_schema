@@ -3,29 +3,6 @@
     {
       "warning_type": "Command Injection",
       "warning_code": 14,
-      "fingerprint": "9914293cc386897d62f7f645fd2e0bfa51c582f3058ac34357f61b04866a33fe",
-      "check_name": "Execute",
-      "message": "Possible command injection",
-      "file": "lib/declare_schema/command.rb",
-      "line": 45,
-      "link": "https://brakemanscanner.org/docs/warning_types/command_injection/",
-      "code": "system(\"rails new #{\"new\"} #{(args * \" \")} -m #{File.join(Dir.tmpdir, \"declare_schema_app_template\")}\")",
-      "render_path": null,
-      "location": {
-        "type": "method",
-        "class": "DeclareSchema::Command",
-        "method": "run"
-      },
-      "user_input": "(args * \" \")",
-      "confidence": "Medium",
-      "cwe_id": [
-        77
-      ],
-      "note": ""
-    },
-    {
-      "warning_type": "Command Injection",
-      "warning_code": 14,
       "fingerprint": "069879c09668f26db81818bd906f169f4f3be6dc661c9b223fcd6f53b2155369",
       "check_name": "Execute",
       "message": "Possible command injection",
@@ -40,6 +17,29 @@
         "method": "run"
       },
       "user_input": "Regexp.last_match(1)",
+      "confidence": "Medium",
+      "cwe_id": [
+        77
+      ],
+      "note": ""
+    },
+    {
+      "warning_type": "Command Injection",
+      "warning_code": 14,
+      "fingerprint": "9914293cc386897d62f7f645fd2e0bfa51c582f3058ac34357f61b04866a33fe",
+      "check_name": "Execute",
+      "message": "Possible command injection",
+      "file": "lib/declare_schema/command.rb",
+      "line": 45,
+      "link": "https://brakemanscanner.org/docs/warning_types/command_injection/",
+      "code": "system(\"rails new #{\"new\"} #{(args * \" \")} -m #{File.join(Dir.tmpdir, \"declare_schema_app_template\")}\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "DeclareSchema::Command",
+        "method": "run"
+      },
+      "user_input": "(args * \" \")",
       "confidence": "Medium",
       "cwe_id": [
         77
