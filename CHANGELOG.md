@@ -8,6 +8,9 @@ Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0
 ### Added
 - Add HABTM support for arbitrary primary key in the referenced table (rather than just :bigint). 
 
+### Removed
+- Drop support for Rails 6.x. Minimum supported Rails is now 7.0.
+
 ## [3.0.0] - 2025-04-08
 ### Changed
 - The `timestamps` DSL method to create `created_at` and `updated_at` columns now defaults to `null: false` for `datetime` columns
