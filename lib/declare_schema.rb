@@ -164,6 +164,15 @@ module DeclareSchema
     def current_adapter(model_class = ActiveRecord::Base)
       model_class.connection_db_config.adapter
     end
+
+    # Default primary key type for generated foreign keys when we have no parent
+    # model to mirror (e.g. polymorphic FKs, non-declare_schema parents). Mirrors
+    # `config.generators.primary_key_type` so apps that override the Rails default
+    # get consistent behavior. Memoized — Rails config is set at boot.
+    def default_generated_primary_key_type
+      @default_generated_primary_key_type ||=
+        Rails.application.config.generators.options.dig(:active_record, :primary_key_type) || :bigint
+    end
   end
 end
 

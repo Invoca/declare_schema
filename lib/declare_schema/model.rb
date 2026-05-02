@@ -227,8 +227,9 @@ module DeclareSchema
       end
 
       # Returns a FieldSpec for the foreign key column of a belongs_to association.
-      # - For a polymorphic association, the FK is :bigint by default (or :integer with the
-      #   existing column's limit if the column already exists in the database).
+      # - For a polymorphic association, the FK uses `DeclareSchema.default_generated_primary_key_type`
+      #   (mirroring `config.generators.primary_key_type`, default :bigint), or :integer with the
+      #   existing column's limit if the column already exists in the database.
       # - For a non-polymorphic association, the FK should mirror the primary key it points
       #   at (same data type, same options like limit:, charset:, etc.). However we cannot
       #   load the parent model right now (at `belongs_to` time) without risking dependency
@@ -242,7 +243,7 @@ module DeclareSchema
             # grandfather foreign key column to match what's in the database
             column_options = column_options.merge(limit: foreign_key_column.limit)
           end
-          FieldSpec.new(self, foreign_key_column_name, :bigint, position: field_specs.size, **column_options)
+          FieldSpec.new(self, foreign_key_column_name, DeclareSchema.default_generated_primary_key_type, position: field_specs.size, **column_options)
         else
           # Capture only what we need from `reflection` (no `reflection.klass` here -- that
           # would force the parent model to load, which is exactly the cycle we are avoiding).
@@ -250,15 +251,15 @@ module DeclareSchema
           resolver = ->(placeholder) do
             _resolve_belongs_to_foreign_key_field_spec(reflection, placeholder)
           end
-          FieldSpec.new(self, foreign_key_column_name, :bigint,
+          FieldSpec.new(self, foreign_key_column_name, DeclareSchema.default_generated_primary_key_type,
                         position: field_specs.size, resolver:, **column_options)
         end
       end
 
       # Called at migration generation time to mirror the parent model's primary key.
       # Always returns a FieldSpec: the placeholder unchanged when the parent class is not
-      # a declare_schema model (we can't ask for its PK spec, so the placeholder's :bigint
-      # default is the best we can offer without inspecting the DB), otherwise a fully
+      # a declare_schema model (we can't ask for its PK spec, so the placeholder's configured
+      # default PK type is the best we can offer without inspecting the DB), otherwise a fully
       # mirrored FieldSpec.
       #
       # Reconciliation with the live DB: if the parent's PK column already exists in the
@@ -330,7 +331,7 @@ module DeclareSchema
 
       def _primary_key_field_spec_from_table_options(declared_primary_key)
         type, options = _parse_pk_table_options(_table_options[declared_primary_key.to_sym] || _table_options[declared_primary_key])
-        type ||= Rails.application.config.generators.options.dig(:active_record, :primary_key_type) || :bigint
+        type ||= DeclareSchema.default_generated_primary_key_type
         FieldSpec.new(self, declared_primary_key, type, **options)
       end
 

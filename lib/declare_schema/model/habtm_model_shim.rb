@@ -47,8 +47,8 @@ module DeclareSchema
               # declare_schema model: mirror the parent's primary key (type, limit, etc.)
               parent_model._foreign_key_field_spec(self, foreign_key, position: i, null: false)
             else
-              # Non-declare_schema parent: fall back to the historical :bigint default.
-              ::DeclareSchema::Model::FieldSpec.new(self, foreign_key, :bigint, position: i, null: false)
+              # Non-declare_schema parent: fall back to the configured default PK type.
+              ::DeclareSchema::Model::FieldSpec.new(self, foreign_key, ::DeclareSchema.default_generated_primary_key_type, position: i, null: false)
             end
         end
       end
