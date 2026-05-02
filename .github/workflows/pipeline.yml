@@ -48,7 +48,7 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{matrix.ruby}}
-          bundler: 2.2.29
+          bundler: latest
           bundler-cache: true
       - name: Setup
         run: |
