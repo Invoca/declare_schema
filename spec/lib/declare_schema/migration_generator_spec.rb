@@ -988,7 +988,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       nuke_model_class(Creative)
     end
 
-    context 'WEB-8347: foreign keys mirror non-default primary key types' do
+    context 'foreign keys mirror non-default primary key types' do
       after do
         nuke_model_class(Order)              if defined?(Order)
         nuke_model_class(LineItem)           if defined?(LineItem)
