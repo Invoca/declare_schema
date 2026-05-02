@@ -53,9 +53,11 @@ module DeclareSchema
         end
       end
 
+      # The HABTM join table's primary key is the composite of its two foreign keys.
+      # (Rails 7.1+ supports composite PKs natively; on 7.0 nothing in AR introspects this
+      # shim, so returning an Array is safe for our callers.)
       def primary_key
-        # TODO: ActiveRecord now supports composite primary keys, so we could return that here.
-        false # no single-column primary key in database
+        foreign_keys
       end
 
       def _declared_primary_key

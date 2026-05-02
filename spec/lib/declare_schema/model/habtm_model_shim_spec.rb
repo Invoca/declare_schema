@@ -93,8 +93,8 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
     end
 
     describe '#primary_key' do
-      it 'returns false because there is no single-column PK for ActiveRecord to use' do
-        expect(subject.primary_key).to eq(false)
+      it 'returns the composite of the two foreign keys (alphabetically sorted)' do
+        expect(subject.primary_key).to eq(["customer_id", "user_id"])
       end
     end
 
