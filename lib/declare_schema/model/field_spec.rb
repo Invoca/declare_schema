@@ -33,7 +33,7 @@ module DeclareSchema
         end
       end
 
-      attr_reader :model, :name, :type, :position, :options, :sql_options, :resolver
+      attr_reader :model, :name, :type, :position, :options, :sql_options
 
       TYPE_SYNONYMS = { timestamp: :datetime }.freeze # TODO: drop this synonym. -Colin
 
@@ -119,6 +119,13 @@ module DeclareSchema
         @options = Hash[@options.sort_by { |k, _v| OPTION_INDEXES[k] || 9999 }]
 
         @sql_options = @options.slice(*SQL_OPTIONS)
+      end
+
+      # Returns the final FieldSpec, invoking the deferred-resolution callback if one
+      # was supplied. Specs without a `resolver:` simply return `self`. Result is
+      # memoized so repeated calls (e.g. across migration generation passes) are cheap.
+      def resolve
+        @resolved ||= @resolver ? @resolver.call(self) : self
       end
 
       def foreign_key_field_spec(model, name, position:, null:)

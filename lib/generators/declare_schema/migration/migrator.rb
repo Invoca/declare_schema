@@ -187,13 +187,7 @@ module Generators
           models, db_tables = models_and_tables
           models_by_table_name = {}
           models.each do |m|
-            m.try(:field_specs)&.each do |field_name, field_spec|
-              if (resolver = field_spec.resolver)
-                # The resolver returns the final FieldSpec (mirrored from the parent's PK,
-                # or the default_spec unchanged when the resolver has no opinion).
-                m.field_specs[field_name] = resolver.call(field_spec)
-              end
-            end
+            m.try(:field_specs)&.transform_values!(&:resolve)
 
             if !models_by_table_name.has_key?(m.table_name)
               models_by_table_name[m.table_name] = m
