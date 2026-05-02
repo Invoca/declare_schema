@@ -383,7 +383,12 @@ module Generators
               if (spec = model.field_specs[col_name_to_add])
                 [spec.type, spec.sql_options.compact]
               else
-                [:integer, {}]
+                # No FieldSpec for this column: it's the declared PK appended at line 366
+                # because it isn't in the DB yet. Use the configured default PK type so
+                # apps that override config.generators.primary_key_type get consistent
+                # behavior; the actual PRIMARY KEY designation is added separately by
+                # PrimaryKeyChange.
+                [::DeclareSchema.default_generated_primary_key_type, {}]
               end
             ::DeclareSchema::SchemaChange::ColumnAdd.new(new_table_name, col_name_to_add, type, **options)
           end
