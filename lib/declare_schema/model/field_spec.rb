@@ -33,7 +33,7 @@ module DeclareSchema
         end
       end
 
-      attr_reader :model, :name, :type, :position, :options, :sql_options
+      attr_reader :model, :name, :type, :position, :options, :sql_options, :resolver
 
       TYPE_SYNONYMS = { timestamp: :datetime }.freeze # TODO: drop this synonym. -Colin
 
@@ -46,12 +46,13 @@ module DeclareSchema
         define_method(option) { @options[option] }
       end
 
-      def initialize(model, name, type, position: 0, **options)
+      def initialize(model, name, type, position: 0, resolver: nil, **options)
         @model = model
         @name = name.to_sym
         type.is_a?(Symbol) or raise ArgumentError, "type must be a Symbol; got #{type.inspect}"
         @type = TYPE_SYNONYMS[type] || type
         @position = position
+        @resolver = resolver
         @options = options.dup
 
         @options.has_key?(:null) or @options[:null] = ::DeclareSchema.default_null

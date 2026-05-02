@@ -188,7 +188,7 @@ module Generators
           models_by_table_name = {}
           models.each do |m|
             m.try(:field_specs)&.each do |field_name, field_spec|
-              if (resolver = field_spec.options.delete(:resolver))
+              if (resolver = field_spec.resolver)
                 # The resolver returns the final FieldSpec (mirrored from the parent's PK,
                 # or the default_spec unchanged when the resolver has no opinion).
                 m.field_specs[field_name] = resolver.call(field_spec)
