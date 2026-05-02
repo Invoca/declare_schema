@@ -41,7 +41,12 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
   end
 
   describe 'instance methods' do
-    subject { described_class.new(join_table, foreign_keys, parent_table_names, connection: connection) }
+    let(:parent_models) { [User, Customer] }
+    let(:parents) { foreign_keys.zip(parent_models) }
+
+    subject do
+      described_class.new(join_table, parents, connection: connection)
+    end
 
     describe '#initialize' do
       it 'stores initialization attributes' do
@@ -116,14 +121,15 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
       let(:foreign_keys_and_table_names) { [["advertiser_id", "advertisers"], ["campaign_id", "campaigns"]] }
       let(:foreign_keys) { foreign_keys_and_table_names.map(&:first) }
       let(:parent_table_names) { foreign_keys_and_table_names.map(&:last) }
+      let(:parent_models) { [Table1, Table2] }
 
       before do
-        class Table1 < ActiveRecord::Base
-          self.table_name = 'advertiser_campaign'
+        class Table1 < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+          self.table_name = 'advertisers'
         end
 
-        class Table2 < ActiveRecord::Base
-          self.table_name = 'tracking_pixel'
+        class Table2 < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+          self.table_name = 'campaigns'
         end
       end
 
