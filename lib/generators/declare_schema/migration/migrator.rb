@@ -190,7 +190,7 @@ module Generators
             m.try(:field_specs)&.each do |field_name, field_spec|
               if (resolver = field_spec.options.delete(:resolver))
                 # The resolver returns the final FieldSpec (mirrored from the parent's PK,
-                # or the placeholder unchanged when the resolver has no opinion).
+                # or the default_spec unchanged when the resolver has no opinion).
                 m.field_specs[field_name] = resolver.call(field_spec)
               end
             end

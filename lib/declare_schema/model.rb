@@ -236,7 +236,7 @@ module DeclareSchema
       #   cycles between models, so we install a `resolver:` callback. The migration
       #   generator calls that resolver at generation time -- after all models are
       #   eager-loaded -- and the resolver returns a fully-mirrored FieldSpec that the
-      #   generator swaps in for this placeholder.
+      #   generator swaps in for this default_spec.
       def _infer_foreign_key_field_spec(foreign_key_column_name, reflection, column_options)
         if reflection.options[:polymorphic]
           if (foreign_key_column = _column(foreign_key_column_name)) && foreign_key_column.type == :integer
@@ -248,8 +248,8 @@ module DeclareSchema
           # Capture only what we need from `reflection` (no `reflection.klass` here -- that
           # would force the parent model to load, which is exactly the cycle we are avoiding).
           # `reflection.klass` is resolved lazily inside the block below.
-          resolver = ->(placeholder) do
-            _resolve_belongs_to_foreign_key_field_spec(reflection, placeholder)
+          resolver = ->(default_spec) do
+            _resolve_belongs_to_foreign_key_field_spec(reflection, default_spec)
           end
           FieldSpec.new(self, foreign_key_column_name, DeclareSchema.default_generated_primary_key_type,
                         position: field_specs.size, resolver:, **column_options)
@@ -257,10 +257,10 @@ module DeclareSchema
       end
 
       # Called at migration generation time to mirror the parent model's primary key.
-      # Always returns a FieldSpec: the placeholder unchanged when the parent class is not
-      # a declare_schema model (we can't ask for its PK spec, so the placeholder's configured
-      # default PK type is the best we can offer without inspecting the DB), otherwise a fully
-      # mirrored FieldSpec.
+      # Always returns a FieldSpec: the default_spec unchanged when the parent class is not
+      # a declare_schema model (we can't ask for its PK spec, so the configured default PK
+      # type is the best we can offer without inspecting the DB), otherwise a fully mirrored
+      # FieldSpec.
       #
       # Reconciliation with the live DB: if the parent's PK column already exists in the
       # database with the same Rails type but a different :limit (e.g. a legacy table where
@@ -268,24 +268,24 @@ module DeclareSchema
       # column's :limit so the FK matches what's actually on disk. This preserves the
       # behavior of the old DB-column lookup (formerly `fk_field_options`) without
       # overriding intentional type changes.
-      def _resolve_belongs_to_foreign_key_field_spec(reflection, placeholder)
+      def _resolve_belongs_to_foreign_key_field_spec(reflection, default_spec)
         klass = reflection.klass or
           raise "Couldn't find belongs_to klass for #{reflection.name} on #{name} in #{reflection.inspect}"
 
         if klass.respond_to?(:_primary_key_field_spec)
-          _mirror_parent_primary_key(klass, placeholder)
+          _mirror_parent_primary_key(klass, default_spec)
         else
-          placeholder
+          default_spec
         end
       end
 
       # Build a FieldSpec for the FK by mirroring the parent's declared primary key,
       # then reconciling against the live DB column when it differs only in :limit
       # (see _resolve_belongs_to_foreign_key_field_spec for the full rationale).
-      def _mirror_parent_primary_key(klass, placeholder)
+      def _mirror_parent_primary_key(klass, default_spec)
         spec = klass._primary_key_field_spec.foreign_key_field_spec(
-          placeholder.model, placeholder.name,
-          position: placeholder.position, null: placeholder.null
+          default_spec.model, default_spec.name,
+          position: default_spec.position, null: default_spec.null
         )
 
         # Look up the parent's live PK column directly (not via _column, whose
