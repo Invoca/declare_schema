@@ -227,9 +227,15 @@ module DeclareSchema
       end
 
       # Returns a FieldSpec for the foreign key column of a belongs_to association.
-      # If the association is polymorphic, the foreign key column is a bigint, or possibly a 4-byte integer
-      # if the foreign key column is already defined that way in the database.
-      # If the association is not polymorphic, the foreign key column matches the primary key type of the associated model.
+      # - For a polymorphic association, the FK is :bigint by default (or :integer with the
+      #   existing column's limit if the column already exists in the database).
+      # - For a non-polymorphic association, the FK should mirror the primary key it points
+      #   at (same data type, same options like limit:, charset:, etc.). However we cannot
+      #   load the parent model right now (at `belongs_to` time) without risking dependency
+      #   cycles between models, so we install a `resolver:` callback. The migration
+      #   generator calls that resolver at generation time -- after all models are
+      #   eager-loaded -- and the resolver returns a fully-mirrored FieldSpec that the
+      #   generator swaps in for this placeholder.
       def _infer_foreign_key_field_spec(foreign_key_column_name, reflection, column_options)
         if reflection.options[:polymorphic]
           if (foreign_key_column = _column(foreign_key_column_name)) && foreign_key_column.type == :integer
@@ -238,9 +244,52 @@ module DeclareSchema
           end
           FieldSpec.new(self, foreign_key_column_name, :bigint, position: field_specs.size, **column_options)
         else
-          klass = reflection.klass or raise "Couldn't find belongs_to klass for #{name} in #{reflection.inspect}"
-          klass._foreign_key_field_spec(self, foreign_key_column_name, position: field_specs.size, **column_options)
+          # Capture only what we need from `reflection` (no `reflection.klass` here -- that
+          # would force the parent model to load, which is exactly the cycle we are avoiding).
+          # `reflection.klass` is resolved lazily inside the block below.
+          resolver = ->(placeholder) do
+            _resolve_belongs_to_foreign_key_field_spec(reflection, placeholder)
+          end
+          FieldSpec.new(self, foreign_key_column_name, :bigint,
+                        position: field_specs.size, resolver:, **column_options)
         end
+      end
+
+      # Called at migration generation time to mirror the parent model's primary key.
+      # Returns a new FieldSpec to replace the placeholder, or nil to keep the placeholder
+      # (used when the parent class is not a declare_schema model, in which case the
+      # placeholder's :bigint default is the best we can offer without inspecting the DB).
+      #
+      # Reconciliation with the live DB: if the parent's PK column already exists in the
+      # database with the same Rails type but a different :limit (e.g. a legacy table where
+      # `id` is INT(4) but the model now declares the default :bigint), prefer the live
+      # column's :limit so the FK matches what's actually on disk. This preserves the
+      # behavior of the old DB-column lookup (formerly `fk_field_options`) without
+      # overriding intentional type changes.
+      def _resolve_belongs_to_foreign_key_field_spec(reflection, placeholder)
+        klass = reflection.klass or
+          raise "Couldn't find belongs_to klass for #{reflection.name} on #{name} in #{reflection.inspect}"
+        return nil unless klass.respond_to?(:_primary_key_field_spec)
+
+        spec = klass._primary_key_field_spec.foreign_key_field_spec(
+          placeholder.model, placeholder.name,
+          position: placeholder.position, null: placeholder.null
+        )
+
+        # Look up the parent's live PK column directly (not via _column, whose
+        # @table_exists memoization can pin to a stale value when the parent table
+        # is created after the model class is first defined). The rescue covers
+        # the table-doesn't-exist-yet case (greenfield migration).
+        live_pk_column = klass.columns_hash[klass._declared_primary_key.to_s] rescue nil
+        if live_pk_column && live_pk_column.type == spec.type && live_pk_column.limit && live_pk_column.limit != spec.limit
+          spec = FieldSpec.new(
+            spec.model, spec.name, spec.type,
+            position: spec.position,
+            **spec.options.merge(limit: live_pk_column.limit)
+          )
+        end
+
+        spec
       end
 
       # returns the primary key (String) as declared with primary_key =
@@ -269,9 +318,21 @@ module DeclareSchema
       end
 
       def _primary_key_field_spec_from_table_options(declared_primary_key)
+        # `declare_schema id: ...` accepts either a Hash (`id: { type: :integer, limit: 4 }`)
+        # or a bare type Symbol (`id: :integer`). Handle both; otherwise fall back to the
+        # Rails generator default (or :bigint).
         primary_key_options = _table_options[declared_primary_key.to_sym] || _table_options[declared_primary_key]
-        options = primary_key_options.is_a?(Hash) ? primary_key_options.dup : {}
-        type = options.delete(:type) || Rails.application.config.generators.options.dig(:active_record, :primary_key_type) || :bigint
+        case primary_key_options
+        when Hash
+          options = primary_key_options.dup
+          type = options.delete(:type)
+        when Symbol
+          type = primary_key_options
+          options = {}
+        else
+          options = {}
+        end
+        type ||= Rails.application.config.generators.options.dig(:active_record, :primary_key_type) || :bigint
         FieldSpec.new(self, declared_primary_key, type, **options)
       end
 

@@ -187,9 +187,13 @@ module Generators
           models, db_tables = models_and_tables
           models_by_table_name = {}
           models.each do |m|
-            m.try(:field_specs)&.each do |_name, field_spec|
-              if (pre_migration = field_spec.options.delete(:pre_migration))
-                pre_migration.call(field_spec)
+            m.try(:field_specs)&.each do |field_name, field_spec|
+              if (resolver = field_spec.options.delete(:resolver))
+                # Backward compatible: callbacks may either mutate field_spec in place
+                # (legacy behavior) or return a replacement FieldSpec, which we swap in.
+                if (replacement = resolver.call(field_spec)).is_a?(::DeclareSchema::Model::FieldSpec)
+                  m.field_specs[field_name] = replacement
+                end
               end
             end
 
@@ -379,7 +383,7 @@ module Generators
           adds = to_add.map do |col_name_to_add|
             type, options =
               if (spec = model.field_specs[col_name_to_add])
-                [spec.type, spec.sql_options.merge(fk_field_options(model, col_name_to_add)).compact]
+                [spec.type, spec.sql_options.compact]
               else
                 [:integer, {}]
               end
@@ -400,13 +404,12 @@ module Generators
             spec_attrs         = spec.schema_attributes(column)
             column_declaration = ::DeclareSchema::Model::Column.new(model, current_table_name, column)
             col_attrs          = column_declaration.schema_attributes
-            normalized_schema_attrs = spec_attrs.merge(fk_field_options(model, col_name_to_change))
 
-            if !::DeclareSchema::Model::Column.equivalent_schema_attributes?(normalized_schema_attrs, col_attrs)
-              type = normalized_schema_attrs.delete(:type) or raise "no :type found in #{normalized_schema_attrs.inspect}"
+            if !::DeclareSchema::Model::Column.equivalent_schema_attributes?(spec_attrs, col_attrs)
+              type = spec_attrs.delete(:type) or raise "no :type found in #{spec_attrs.inspect}"
               old_type, old_options = change_column_back(model, current_table_name, orig_col_name)
               changes << ::DeclareSchema::SchemaChange::ColumnChange.new(new_table_name, col_name_to_change,
-                                                                         new_type: type, new_options: normalized_schema_attrs,
+                                                                         new_type: type, new_options: spec_attrs,
                                                                          old_type: old_type, old_options: old_options)
             end
           end
@@ -541,25 +544,6 @@ module Generators
               renamed_fks_to_drop << fk_to_drop
               renamed_fks_to_add << fk_to_add
             end
-          end
-        end
-
-        # TODO: switch this to depend on _infer_foreign_key_field_spec instead
-        def fk_field_options(model, field_name)
-          # check if the field_name is a foreign key
-          if (foreign_key = model.constraint_definitions.find { field_name == _1.foreign_key_column })
-            # if so, look up the target table's primary key column to get its limit (note: this is looking in the DB, not the spec)
-            parent_columns = connection.columns(foreign_key.parent_table_name) rescue []
-            pk_limit =
-              if (pk_column = parent_columns.find { _1.name.to_s == "id" }) # right now foreign keys assume id is the target
-                pk_column.limit
-              else
-                8
-              end
-
-            { limit: pk_limit }
-          else
-            {}
           end
         end
 

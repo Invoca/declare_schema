@@ -41,7 +41,15 @@ module DeclareSchema
 
       def field_specs
         foreign_keys.each_with_index.each_with_object({}) do |(foreign_key, i), result|
-          result[foreign_key] = parent_models[i]._foreign_key_field_spec(self, foreign_key, position: i, null: false)
+          parent_model = parent_models[i]
+          result[foreign_key] =
+            if parent_model.respond_to?(:_foreign_key_field_spec)
+              # declare_schema model: mirror the parent's primary key (type, limit, etc.)
+              parent_model._foreign_key_field_spec(self, foreign_key, position: i, null: false)
+            else
+              # Non-declare_schema parent: fall back to the historical :bigint default.
+              ::DeclareSchema::Model::FieldSpec.new(self, foreign_key, :bigint, position: i, null: false)
+            end
         end
       end
 
