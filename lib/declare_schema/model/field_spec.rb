@@ -120,7 +120,7 @@ module DeclareSchema
         @sql_options = @options.slice(*SQL_OPTIONS)
       end
 
-      def foreign_key_field_spec(model, name, position: 0, null: nil)
+      def foreign_key_field_spec(model, name, position:, null:)
         self.class.new(model, name, @type, position:, **@options.merge(null.nil? ? {} : { null: }))
       end
 
