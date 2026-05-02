@@ -256,9 +256,10 @@ module DeclareSchema
       end
 
       # Called at migration generation time to mirror the parent model's primary key.
-      # Returns a new FieldSpec to replace the placeholder, or nil to keep the placeholder
-      # (used when the parent class is not a declare_schema model, in which case the
-      # placeholder's :bigint default is the best we can offer without inspecting the DB).
+      # Always returns a FieldSpec: the placeholder unchanged when the parent class is not
+      # a declare_schema model (we can't ask for its PK spec, so the placeholder's :bigint
+      # default is the best we can offer without inspecting the DB), otherwise a fully
+      # mirrored FieldSpec.
       #
       # Reconciliation with the live DB: if the parent's PK column already exists in the
       # database with the same Rails type but a different :limit (e.g. a legacy table where
@@ -269,8 +270,18 @@ module DeclareSchema
       def _resolve_belongs_to_foreign_key_field_spec(reflection, placeholder)
         klass = reflection.klass or
           raise "Couldn't find belongs_to klass for #{reflection.name} on #{name} in #{reflection.inspect}"
-        return nil unless klass.respond_to?(:_primary_key_field_spec)
 
+        if klass.respond_to?(:_primary_key_field_spec)
+          _mirror_parent_primary_key(klass, placeholder)
+        else
+          placeholder
+        end
+      end
+
+      # Build a FieldSpec for the FK by mirroring the parent's declared primary key,
+      # then reconciling against the live DB column when it differs only in :limit
+      # (see _resolve_belongs_to_foreign_key_field_spec for the full rationale).
+      def _mirror_parent_primary_key(klass, placeholder)
         spec = klass._primary_key_field_spec.foreign_key_field_spec(
           placeholder.model, placeholder.name,
           position: placeholder.position, null: placeholder.null
@@ -282,14 +293,14 @@ module DeclareSchema
         # the table-doesn't-exist-yet case (greenfield migration).
         live_pk_column = klass.columns_hash[klass._declared_primary_key.to_s] rescue nil
         if live_pk_column && live_pk_column.type == spec.type && live_pk_column.limit && live_pk_column.limit != spec.limit
-          spec = FieldSpec.new(
+          FieldSpec.new(
             spec.model, spec.name, spec.type,
             position: spec.position,
             **spec.options.merge(limit: live_pk_column.limit)
           )
+        else
+          spec
         end
-
-        spec
       end
 
       # returns the primary key (String) as declared with primary_key =

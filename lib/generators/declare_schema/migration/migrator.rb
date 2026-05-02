@@ -189,11 +189,9 @@ module Generators
           models.each do |m|
             m.try(:field_specs)&.each do |field_name, field_spec|
               if (resolver = field_spec.options.delete(:resolver))
-                # Backward compatible: callbacks may either mutate field_spec in place
-                # (legacy behavior) or return a replacement FieldSpec, which we swap in.
-                if (replacement = resolver.call(field_spec)).is_a?(::DeclareSchema::Model::FieldSpec)
-                  m.field_specs[field_name] = replacement
-                end
+                # The resolver returns the final FieldSpec (mirrored from the parent's PK,
+                # or the placeholder unchanged when the resolver has no opinion).
+                m.field_specs[field_name] = resolver.call(field_spec)
               end
             end
 
