@@ -318,25 +318,23 @@ module DeclareSchema
       end
 
       def _primary_key_field_spec_from_table_options(declared_primary_key)
-        # `declare_schema id: ...` accepts either a Hash (`id: { type: :integer, limit: 4 }`)
-        # or a bare type Symbol (`id: :integer`). Handle both; otherwise fall back to the
-        # Rails generator default (or :bigint).
-        primary_key_options = _table_options[declared_primary_key.to_sym] || _table_options[declared_primary_key]
-        case primary_key_options
-        when Hash
-          options = primary_key_options.dup
-          type = options.delete(:type)
-        when Symbol
-          type = primary_key_options
-          options = {}
-        else
-          options = {}
-        end
+        type, options = _parse_pk_table_options(_table_options[declared_primary_key.to_sym] || _table_options[declared_primary_key])
         type ||= Rails.application.config.generators.options.dig(:active_record, :primary_key_type) || :bigint
         FieldSpec.new(self, declared_primary_key, type, **options)
       end
 
       private
+
+      # `declare_schema id: ...` accepts either a Hash (`id: { type: :integer, limit: 4 }`)
+      # or a bare type Symbol (`id: :integer`). Returns [type, options_hash], with type == nil
+      # when value is neither (caller falls back to a default).
+      def _parse_pk_table_options(value)
+        case value
+        when Hash   then [value[:type], value.except(:type)]
+        when Symbol then [value, {}]
+        else             [nil, {}]
+        end
+      end
 
       # if this is a derived class, returns the base class's _declared_primary_key
       # otherwise, returns 'id'
