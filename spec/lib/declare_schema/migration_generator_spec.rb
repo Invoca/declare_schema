@@ -988,6 +988,72 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       nuke_model_class(Creative)
     end
 
+    context 'WEB-8347: foreign keys mirror non-default primary key types' do
+      after do
+        nuke_model_class(Order)              if defined?(Order)
+        nuke_model_class(LineItem)           if defined?(LineItem)
+        nuke_model_class(Tag)                if defined?(Tag)
+        nuke_model_class(Product)            if defined?(Product)
+        nuke_model_class(ProductsTagsClass)  if defined?(ProductsTagsClass)
+      end
+
+      it 'belongs_to defers parent class lookup to migration time (no dependency cycle)' do
+        # LineItem.belongs_to :order is allowed to mention :order before Order is loaded.
+        # If we eagerly resolved reflection.klass at belongs_to time this would raise
+        # NameError: uninitialized constant LineItem::Order.
+        expect do
+          class LineItem < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+            declare_schema { integer :quantity, null: false }
+            belongs_to :order
+          end
+        end.to_not raise_error
+      end
+
+      it 'belongs_to mirrors the parent primary key type and limit (declared via _table_options)' do
+        # Order has a non-default :string primary key; LineItem.belongs_to :order should
+        # produce a :string foreign key with the same limit -- without forcing Order to
+        # load when LineItem is defined.
+        class LineItem < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+          declare_schema do
+            integer :quantity, null: false
+          end
+          belongs_to :order
+        end
+
+        class Order < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+          self.primary_key = "id"
+          declare_schema id: { type: :string, limit: 36 } do
+            string :customer_email, limit: 250, null: false
+          end
+        end
+
+        up, _ = Generators::DeclareSchema::Migration::Migrator.run
+
+        expect(up).to match(/t\.string\s+:order_id, limit: 36, null: false/)
+      end
+
+      it 'HABTM mirrors both parents primary key types (different non-default types)' do
+        class Product < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+          declare_schema id: { type: :string, limit: 36 } do
+            string :name, limit: 100, null: false
+          end
+          has_and_belongs_to_many :tags
+        end
+
+        class Tag < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+          declare_schema id: { type: :integer, limit: 4 } do
+            string :label, limit: 50, null: false
+          end
+          has_and_belongs_to_many :products
+        end
+
+        up, _ = Generators::DeclareSchema::Migration::Migrator.run
+
+        expect(up).to match(/t\.string\s+:product_id, limit: 36, null: false/)
+        expect(up).to match(/t\.integer\s+:tag_id, limit: 4, null: false/)
+      end
+    end
+
     context 'models with the same parent foreign key relation' do
       include_context 'skip if' do
         let(:adapter) { 'sqlite3' }
