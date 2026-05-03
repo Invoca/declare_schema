@@ -330,7 +330,12 @@ module DeclareSchema
       end
 
       def _primary_key_field_spec_from_table_options(declared_primary_key)
-        type, options = _parse_pk_table_options(_table_options[declared_primary_key.to_sym] || _table_options[declared_primary_key])
+        # _table_options is nil on STI subclasses that never call `declare_schema` themselves:
+        # they inherit `field_specs` etc. via `inheriting_cattr_reader`, but `@_table_options`
+        # is a plain class-instance variable on each class, so the subclass's reader returns
+        # nil. Treat that the same as an empty options hash and fall through to
+        # `default_generated_primary_key_type` below.
+        type, options = _parse_pk_table_options(_table_options&.[](declared_primary_key.to_sym))
         type ||= DeclareSchema.default_generated_primary_key_type
         FieldSpec.new(self, declared_primary_key, type, **options)
       end

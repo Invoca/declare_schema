@@ -990,6 +990,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
     context 'foreign keys mirror non-default primary key types' do
       after do
+        nuke_model_class(SpecialOrder)       if defined?(SpecialOrder)
         nuke_model_class(Order)              if defined?(Order)
         nuke_model_class(LineItem)           if defined?(LineItem)
         nuke_model_class(Tag)                if defined?(Tag)
@@ -1030,6 +1031,73 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         up, _ = Generators::DeclareSchema::Migration::Migrator.run
 
         expect(up).to match(/t\.string\s+:order_id, limit: 36, null: false/)
+      end
+
+      context 'when belongs_to points at an STI subclass' do
+        # An STI subclass inherits field_specs (via inheriting_cattr_reader) and the
+        # `_primary_key_field_spec` class method (mixed into its parent), but it never
+        # calls `declare_schema` on itself, so its own `@_table_options` is nil. When a
+        # belongs_to points at the STI subclass, the migrator's resolver calls
+        # `klass._primary_key_field_spec`, which previously crashed with
+        # `NoMethodError: undefined method '[]' for nil` because
+        # `_primary_key_field_spec_from_table_options` indexed `_table_options` without
+        # a nil guard.
+        before do
+          class Order < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+            declare_schema do
+              string :customer_email, limit: 250, null: false
+            end
+          end
+
+          class SpecialOrder < Order # rubocop:disable Lint/ConstantDefinitionInBlock
+          end
+
+          class LineItem < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+            declare_schema do
+              integer :quantity, null: false
+            end
+            belongs_to :special_order
+          end
+        end
+
+        let(:up) { Generators::DeclareSchema::Migration::Migrator.run.first }
+
+        it 'mirrors the base class primary key without crashing' do
+          expect(up).to match(/t\.integer\s+:special_order_id, limit: 8, null: false/)
+        end
+      end
+
+      context 'when a HABTM join table has a parent PK type that drifts from the live column' do
+        before do
+          conn = ActiveRecord::Base.connection
+          conn.create_table(:products) { |t| t.string :name, limit: 100, null: false }
+          conn.create_table(:tags)     { |t| t.string :label, limit: 50, null: false }
+          conn.create_table(:products_tags, primary_key: [:product_id, :tag_id]) do |t|
+            t.bigint :product_id, null: false
+            t.bigint :tag_id,     null: false
+          end
+          conn.schema_cache.clear!
+
+          class Product < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+            declare_schema do
+              string :name, limit: 100, null: false
+            end
+            has_and_belongs_to_many :tags
+          end
+
+          class Tag < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+            declare_schema id: { type: :string, limit: 36 } do
+              string :label, limit: 50, null: false
+            end
+            has_and_belongs_to_many :products
+          end
+        end
+
+        let(:up) { Generators::DeclareSchema::Migration::Migrator.run.first }
+
+        it 'generates change_column on the join table without crashing' do
+          expect(up).to match(/change_column\s+:products_tags,\s+:tag_id,\s+:string/)
+        end
       end
 
       it 'HABTM mirrors both parents primary key types (different non-default types)' do

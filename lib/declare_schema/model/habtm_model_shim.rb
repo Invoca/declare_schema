@@ -39,6 +39,23 @@ module DeclareSchema
         join_table
       end
 
+      # The migrator (in change_column_back / add_column_back / etc.) wraps column
+      # introspection in `with_previous_model_table_name`, which expects a model that
+      # exposes `table_name=`. Real AR classes do; this shim doesn't keep AR-style
+      # cached metadata keyed on table_name, so we just rewrite @join_table -- the
+      # only state our `table_name` reads.
+      def table_name=(new_table_name)
+        @join_table = new_table_name
+      end
+
+      # Mirror the AR class API for `model.columns_hash` so the migrator's
+      # change_column_back / add_column_back paths work uniformly across real AR
+      # models and HABTM shims. Backed by `connection.columns(table_name)` rather
+      # than AR's class-level cache because the shim has no class-level cache.
+      def columns_hash
+        connection.columns(table_name).index_by(&:name)
+      end
+
       def field_specs
         foreign_keys.each_with_index.each_with_object({}) do |(foreign_key, i), result|
           parent_model = parent_models[i]
