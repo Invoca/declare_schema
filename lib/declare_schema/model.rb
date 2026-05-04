@@ -371,13 +371,15 @@ module DeclareSchema
 
       # @param klass [Class] any ActiveRecord class
       # @return [ActiveRecord::ConnectionAdapters::Column, nil] the live PK column, or
-      #   nil when the table doesn't exist yet or can't otherwise be inspected. Reads
-      #   via `columns_hash` directly (not `_column`, whose `@table_exists` memoization
-      #   can pin a stale answer) so a parent table being created in this same
-      #   migration run is honored.
+      #   nil when the table doesn't exist yet or can't otherwise be inspected, or
+      #   when the model has a compound primary key (Array PK name misses
+      #   `columns_hash`). Reads via `columns_hash` directly (not `_column`, whose
+      #   `@table_exists` memoization can pin a stale answer) so a parent table
+      #   being created in this same migration run is honored.
       def _pk_column_for(klass)
-        pk_name = klass.respond_to?(:_declared_primary_key) ? klass._declared_primary_key : klass.primary_key
-        klass.columns_hash[pk_name.to_s] if pk_name
+        if (pk_name = klass.try(:_declared_primary_key) || klass.primary_key)
+          klass.columns_hash[pk_name]
+        end
       rescue ActiveRecord::StatementInvalid, ActiveRecord::NoDatabaseError
         nil
       end
