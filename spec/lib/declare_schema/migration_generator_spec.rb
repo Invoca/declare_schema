@@ -996,6 +996,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
         nuke_model_class(Tag)                if defined?(Tag)
         nuke_model_class(Product)            if defined?(Product)
         nuke_model_class(ProductsTagsClass)  if defined?(ProductsTagsClass)
+        nuke_model_class(LegacyChild)        if defined?(LegacyChild)
+        nuke_model_class(LegacyParent)       if defined?(LegacyParent)
       end
 
       it 'belongs_to defers parent class lookup to migration time (no dependency cycle)' do
@@ -1097,6 +1099,124 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
         it 'generates change_column on the join table without crashing' do
           expect(up).to match(/change_column\s+:products_tags,\s+:tag_id,\s+:string/)
+        end
+      end
+
+      context 'when a parent has no explicit PK declaration but the live PK column is int(4)' do
+        # Legacy schemas where every PK predates the gem's `:bigint` default. Without
+        # this behavior, declare_schema would force every belongs_to FK to bigint(8)
+        # while the parent PK stays int(4) -- which MySQL refuses with
+        # `Referencing column ... and referenced column ... in foreign key
+        # constraint ... are incompatible`.
+        before do
+          conn = ActiveRecord::Base.connection
+          conn.create_table(:legacy_parents, id: { type: :integer, limit: 4 }) do |t|
+            t.string :name, limit: 100, null: false
+          end
+          conn.schema_cache.clear!
+
+          class LegacyParent < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+            declare_schema do
+              string :name, limit: 100, null: false
+            end
+          end
+
+          class LegacyChild < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+            declare_schema do
+              integer :amount, null: false
+            end
+            belongs_to :legacy_parent
+          end
+        end
+
+        let(:up) { Generators::DeclareSchema::Migration::Migrator.run.first }
+
+        it 'mirrors the live int(4) PK in the FK rather than the gem default :bigint' do
+          expect(up).to match(/t\.integer\s+:legacy_parent_id, limit: 4, null: false/)
+          expect(up).not_to match(/:legacy_parent_id[^\n]*limit: 8/)
+        end
+      end
+
+      context 'when belongs_to declares a column option such as default:' do
+        # Regression: the resolver-built FK spec must preserve column options the child
+        # passed to belongs_to (default:, etc.). Forgetting to merge them silently drops
+        # them and generates a phantom change_column on every run.
+        before do
+          class DimParent < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+            declare_schema do
+              string :name, limit: 100, null: false
+            end
+          end
+
+          class DimChild < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+            declare_schema do
+              integer :amount, null: false
+            end
+            belongs_to :dim_parent, default: 1
+          end
+        end
+
+        let(:up) { Generators::DeclareSchema::Migration::Migrator.run.first }
+
+        it 'preserves the default: on the FK FieldSpec' do
+          expect(up).to match(/:dim_parent_id[^\n]*default: 1/)
+        end
+      end
+
+      context 'when a polymorphic FK column already exists as int(4)' do
+        # Polymorphic belongs_to has no parent klass to mirror; the gem grandfathers the
+        # live FK column. Without the type-too fix, FieldSpec forces :bigint -> limit: 8
+        # and a phantom int(4) -> bigint(8) change_column gets generated.
+        before do
+          conn = ActiveRecord::Base.connection
+          conn.create_table(:legacy_owners, id: { type: :integer, limit: 4 }) do |t|
+            t.integer :owner_id, limit: 4, null: false
+            t.string  :owner_type, limit: 100, null: false
+          end
+          conn.schema_cache.clear!
+
+          class LegacyOwner < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+            declare_schema do
+              # owner_id/owner_type already exist in the DB at int(4); declare_schema should mirror them
+            end
+            belongs_to :owner, polymorphic: true
+          end
+        end
+
+        let(:up) { Generators::DeclareSchema::Migration::Migrator.run.first }
+
+        it 'mirrors the live int(4) FK rather than forcing bigint(8)' do
+          expect(up).not_to match(/:owner_id[^\n]*limit: 8/)
+        end
+      end
+
+      context 'when the parent class is not a declare_schema model' do
+        # Mirrors the prior `int(4)` case but with a plain ActiveRecord parent that has
+        # never opted into declare_schema. We still need to mirror its live PK column so
+        # the FK doesn't drift to :bigint while the parent stays int(4).
+        before do
+          conn = ActiveRecord::Base.connection
+          conn.create_table(:plain_parents, id: { type: :integer, limit: 4 }) do |t|
+            t.string :name, limit: 100, null: false
+          end
+          conn.schema_cache.clear!
+
+          class PlainParent < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+          end
+
+          class PlainChild < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+            declare_schema do
+              integer :amount, null: false
+            end
+            belongs_to :plain_parent
+          end
+        end
+
+        let(:up) { Generators::DeclareSchema::Migration::Migrator.run.first }
+
+        it 'mirrors the parent live int(4) PK in the FK rather than the gem default :bigint' do
+          expect(up).to match(/t\.integer\s+:plain_parent_id, limit: 4, null: false/)
+          expect(up).not_to match(/:plain_parent_id[^\n]*limit: 8/)
         end
       end
 

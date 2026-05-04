@@ -128,8 +128,20 @@ module DeclareSchema
         @resolved ||= @resolver ? @resolver.call(self) : self
       end
 
-      def foreign_key_field_spec(model, name, position:, null:)
-        self.class.new(model, name, @type, position:, **@options.merge(null.nil? ? {} : { null: }))
+      # Build a FieldSpec for a foreign key that mirrors this PK's type/limit/charset/etc.
+      # Child column_options (e.g. `default:` from `belongs_to`) win over the parent's
+      # @options when they specify the same key.
+      #
+      # @param model [Class] the child ActiveRecord class
+      # @param name [Symbol] the FK column name (e.g. :user_id)
+      # @param position [Integer] FieldSpec position in the field_specs hash
+      # @param null [Boolean, nil] :null setting from `belongs_to`; nil leaves @options[:null] alone
+      # @param column_options [Hash] additional FK-side overrides (e.g. :default)
+      # @return [FieldSpec]
+      def foreign_key_field_spec(model, name, position:, null:, **column_options)
+        options = @options.merge(column_options)
+        options[:null] = null unless null.nil?
+        self.class.new(model, name, @type, position:, **options)
       end
 
       # returns the attributes for schema migrations as a Hash
