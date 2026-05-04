@@ -393,13 +393,25 @@ module DeclareSchema
       #   the column type doesn't round-trip cleanly
       def _field_spec_options_from_pk_column(column)
         if column&.type == :integer
-          column.limit == 8 ? [:bigint, {}] : [:integer, { limit: column.limit || 4 }]
+          if column.limit == 8
+            [:bigint, {}]
+          else
+            [:integer, { limit: column.limit || 4 }]
+          end
         end
       end
 
       # `declare_schema id: ...` accepts either a Hash (`id: { type: :integer, limit: 4 }`)
-      # or a bare type Symbol (`id: :integer`). Returns [type, options_hash], with type == nil
-      # when value is neither (caller falls back to a default).
+      # or a bare type Symbol (`id: :integer`). Normalizes both shapes -- plus the
+      # absent / unrecognized case -- into a uniform `[type, options]` pair so the
+      # caller (`_primary_key_field_spec_from_table_options`) can dispatch on
+      # `type.nil?` to decide whether to fall back to live-PK inspection or the
+      # gem default.
+      #
+      # @param value [Hash, Symbol, nil] the per-PK entry from `_table_options`
+      # @return [Array(Symbol, Hash), Array(nil, Hash)] `[type, options]` where
+      #   `type` is nil when `value` is neither a Hash nor a Symbol (signal to
+      #   caller to fall back). `options` always excludes `:type`.
       def _parse_pk_table_options(value)
         case value
         when Hash   then [value[:type], value.except(:type)]
