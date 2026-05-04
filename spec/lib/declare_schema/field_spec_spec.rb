@@ -38,8 +38,10 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
     context 'when a resolver was supplied' do
       it 'invokes the resolver with self and returns its result' do
         captured = nil
-        spec_under_test = described_class.new(model, :advertiser_id, :integer, limit: 8, null: false, position: 1,
-                                              resolver: ->(spec) { captured = spec; mirrored_spec })
+        spec_under_test = described_class.new(model, :advertiser_id, :integer, limit: 8, null: false, position: 1) do |spec|
+          captured = spec
+          mirrored_spec
+        end
 
         expect(spec_under_test.resolve).to equal(mirrored_spec)
         expect(captured).to equal(spec_under_test)
@@ -47,8 +49,10 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
 
       it 'memoizes the resolver result' do
         call_count = 0
-        spec_under_test = described_class.new(model, :advertiser_id, :integer, limit: 8, null: false, position: 1,
-                                              resolver: ->(_spec) { call_count += 1; mirrored_spec })
+        spec_under_test = described_class.new(model, :advertiser_id, :integer, limit: 8, null: false, position: 1) do |_spec|
+          call_count += 1
+          mirrored_spec
+        end
 
         3.times { spec_under_test.resolve }
 

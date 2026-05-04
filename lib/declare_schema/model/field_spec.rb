@@ -46,7 +46,7 @@ module DeclareSchema
         define_method(option) { @options[option] }
       end
 
-      def initialize(model, name, type, position: 0, resolver: nil, **options)
+      def initialize(model, name, type, position: 0, **options, &resolver)
         @model = model
         @name = name.to_sym
         type.is_a?(Symbol) or raise ArgumentError, "type must be a Symbol; got #{type.inspect}"
@@ -121,9 +121,12 @@ module DeclareSchema
         @sql_options = @options.slice(*SQL_OPTIONS)
       end
 
-      # Returns the final FieldSpec, invoking the deferred-resolution callback if one
-      # was supplied. Specs without a `resolver:` simply return `self`. Result is
-      # memoized so repeated calls (e.g. across migration generation passes) are cheap.
+      # Returns the final FieldSpec, invoking the deferred-resolution block if one was
+      # supplied to the constructor. Specs constructed without a block simply return
+      # `self`. Result is memoized so repeated calls (e.g. across migration generation
+      # passes) are cheap.
+      #
+      # @return [FieldSpec] the resolved spec (the resolver's return value, or `self`)
       def resolve
         @resolved ||= @resolver ? @resolver.call(self) : self
       end

@@ -233,7 +233,7 @@ module DeclareSchema
       # fall back to {DeclareSchema.default_generated_primary_key_type} otherwise.
       #
       # Non-polymorphic associations mirror the parent's PK at migration-generation time
-      # via a `resolver:` callback (see {#_resolve_belongs_to_foreign_key_field_spec}).
+      # via a deferred resolver block (see {#_resolve_belongs_to_foreign_key_field_spec}).
       # The deferral avoids loading `reflection.klass` here, which can trigger
       # dependency cycles between models.
       #
@@ -252,9 +252,10 @@ module DeclareSchema
           FieldSpec.new(self, foreign_key_column_name, type,
                         position: field_specs.size, **column_options.merge(live_options || {}))
         else
-          resolver = ->(default_spec) { _resolve_belongs_to_foreign_key_field_spec(reflection, default_spec) }
           FieldSpec.new(self, foreign_key_column_name, DeclareSchema.default_generated_primary_key_type,
-                        position: field_specs.size, resolver:, **column_options)
+                        position: field_specs.size, **column_options) do |default_spec|
+            _resolve_belongs_to_foreign_key_field_spec(reflection, default_spec)
+          end
         end
       end
 
