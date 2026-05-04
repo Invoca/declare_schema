@@ -12,11 +12,11 @@ RSpec.describe 'DeclareSchema.default_generated_primary_key_type integration wit
   include_context 'prepare test app'
 
   before do
-    if current_adapter == 'mysql2'
-      ActiveRecord::Base.connection.execute("CREATE TABLE foos (id int PRIMARY KEY, name varchar(250))")
-    else
-      ActiveRecord::Base.connection.execute("CREATE TABLE foos (id integer PRIMARY KEY AUTOINCREMENT NOT NULL, name varchar(250))")
-    end
+    # Cross-adapter DDL: `integer PRIMARY KEY NOT NULL` works on sqlite, mysql, and
+    # postgres. AUTOINCREMENT (sqlite) / AUTO_INCREMENT (mysql) / SERIAL (postgres)
+    # would all be valid, but the migrator inspects type/null, not auto-increment
+    # metadata, so we can skip the auto-increment dance entirely.
+    ActiveRecord::Base.connection.execute("CREATE TABLE foos (id integer PRIMARY KEY NOT NULL, name varchar(250))")
     ActiveRecord::Base.connection.schema_cache.clear!
 
     allow_any_instance_of(DeclareSchema::Support::ThorShell)
