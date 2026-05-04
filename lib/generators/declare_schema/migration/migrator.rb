@@ -80,7 +80,16 @@ module Generators
           self.class.native_types
         end
 
-        # return habtm reflections keyed by join table name (so that habtm from each side has just one entry)
+        # Collect every HABTM reflection across the application, keyed by its join
+        # table name. Each join table is shared by both sides of a HABTM
+        # association, so iterating all descendants would yield two reflections
+        # per join table (one from each parent model). Keying by `join_table` and
+        # using `||=` keeps the first occurrence and silently drops the duplicate
+        # from the other side, so the migrator emits exactly one shim per join
+        # table.
+        #
+        # @return [Hash{String => ActiveRecord::Reflection::HasAndBelongsToManyReflection}]
+        #   join table name -> the (first-seen) HABTM reflection that owns it
         def habtm_tables
           ActiveRecord::Base.send(:descendants).each_with_object({}) do |c, result|
             c.reflect_on_all_associations(:has_and_belongs_to_many).each do |a|
