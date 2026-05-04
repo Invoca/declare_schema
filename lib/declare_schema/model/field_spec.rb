@@ -46,13 +46,12 @@ module DeclareSchema
         define_method(option) { @options[option] }
       end
 
-      def initialize(model, name, type, position: 0, **options, &resolver)
+      def initialize(model, name, type, position: 0, **options)
         @model = model
         @name = name.to_sym
         type.is_a?(Symbol) or raise ArgumentError, "type must be a Symbol; got #{type.inspect}"
         @type = TYPE_SYNONYMS[type] || type
         @position = position
-        @resolver = resolver
         @options = options.dup
 
         @options.has_key?(:null) or @options[:null] = ::DeclareSchema.default_null
@@ -121,14 +120,13 @@ module DeclareSchema
         @sql_options = @options.slice(*SQL_OPTIONS)
       end
 
-      # Returns the final FieldSpec, invoking the deferred-resolution block if one was
-      # supplied to the constructor. Specs constructed without a block simply return
-      # `self`. Result is memoized so repeated calls (e.g. across migration generation
-      # passes) are cheap.
+      # Duck-type counterpart to {DeferredFieldSpec#resolve}. A concrete FieldSpec is
+      # already its own resolved form, so this just returns self. Lets the migrator's
+      # `transform_values!(&:resolve)` loop dispatch uniformly across both classes.
       #
-      # @return [FieldSpec] the resolved spec (the resolver's return value, or `self`)
+      # @return [FieldSpec] self
       def resolve
-        @resolved ||= @resolver ? @resolver.call(self) : self
+        self
       end
 
       # Build a FieldSpec for a foreign key that mirrors this PK's type/limit/charset/etc.

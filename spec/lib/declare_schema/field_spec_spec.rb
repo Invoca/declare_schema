@@ -25,42 +25,6 @@ RSpec.describe DeclareSchema::Model::FieldSpec do
     end
   end
 
-  describe '#resolve' do
-    let(:default_spec) { described_class.new(model, :advertiser_id, :integer, limit: 8, null: false, position: 1) }
-    let(:mirrored_spec) { described_class.new(model, :advertiser_id, :string, limit: 36, null: false, position: 1) }
-
-    context 'when no resolver was supplied' do
-      it 'returns self' do
-        expect(default_spec.resolve).to equal(default_spec)
-      end
-    end
-
-    context 'when a resolver was supplied' do
-      it 'invokes the resolver with self and returns its result' do
-        captured = nil
-        spec_under_test = described_class.new(model, :advertiser_id, :integer, limit: 8, null: false, position: 1) do |spec|
-          captured = spec
-          mirrored_spec
-        end
-
-        expect(spec_under_test.resolve).to equal(mirrored_spec)
-        expect(captured).to equal(spec_under_test)
-      end
-
-      it 'memoizes the resolver result' do
-        call_count = 0
-        spec_under_test = described_class.new(model, :advertiser_id, :integer, limit: 8, null: false, position: 1) do |_spec|
-          call_count += 1
-          mirrored_spec
-        end
-
-        3.times { spec_under_test.resolve }
-
-        expect(call_count).to eq(1)
-      end
-    end
-  end
-
   describe '#schema_attributes' do
     describe 'integer 4' do
       subject { described_class.new(model, :price, :integer, limit: 4, null: false, position: 0) }

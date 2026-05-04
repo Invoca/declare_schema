@@ -1515,7 +1515,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
                 belongs_to :ad_category, optional: true, null: false
               end
               expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_true)
-              expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(false)
+              expect(AdvertBelongsTo.field_specs['ad_category_id'].resolve.options[:null]).to eq(false)
             end
 
             it 'passes through optional: false, null: true' do
@@ -1526,7 +1526,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
                 belongs_to :ad_category, optional: false, null: true
               end
               expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_false)
-              expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(true)
+              expect(AdvertBelongsTo.field_specs['ad_category_id'].resolve.options[:null]).to eq(true)
             end
           end
 
@@ -1540,7 +1540,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
                   end
                 EOS
                 expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_flag[nullable])
-                expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(nullable)
+                expect(AdvertBelongsTo.field_specs['ad_category_id'].resolve.options[:null]).to eq(nullable)
               end
 
               it 'infers null: from optional:' do
@@ -1551,7 +1551,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
                   end
                 EOS
                 expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_flag[nullable])
-                expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(nullable)
+                expect(AdvertBelongsTo.field_specs['ad_category_id'].resolve.options[:null]).to eq(nullable)
               end
             end
           end

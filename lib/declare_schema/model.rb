@@ -252,9 +252,10 @@ module DeclareSchema
           FieldSpec.new(self, foreign_key_column_name, type,
                         position: field_specs.size, **column_options.merge(live_options || {}))
         else
-          FieldSpec.new(self, foreign_key_column_name, DeclareSchema.default_generated_primary_key_type,
-                        position: field_specs.size, **column_options) do |default_spec|
-            _resolve_belongs_to_foreign_key_field_spec(reflection, default_spec)
+          default_spec = FieldSpec.new(self, foreign_key_column_name, DeclareSchema.default_generated_primary_key_type,
+                                       position: field_specs.size, **column_options)
+          DeferredFieldSpec.new(default_spec) do |spec|
+            _resolve_belongs_to_foreign_key_field_spec(reflection, spec)
           end
         end
       end
