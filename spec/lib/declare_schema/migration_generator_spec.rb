@@ -988,6 +988,260 @@ RSpec.describe 'DeclareSchema Migration Generator' do
       nuke_model_class(Creative)
     end
 
+    context 'foreign keys mirror non-default primary key types' do
+      after do
+        nuke_model_class(SpecialOrder)       if defined?(SpecialOrder)
+        nuke_model_class(Order)              if defined?(Order)
+        nuke_model_class(LineItem)           if defined?(LineItem)
+        nuke_model_class(Tag)                if defined?(Tag)
+        nuke_model_class(Product)            if defined?(Product)
+        nuke_model_class(ProductsTagsClass)  if defined?(ProductsTagsClass)
+        nuke_model_class(LegacyChild)        if defined?(LegacyChild)
+        nuke_model_class(LegacyParent)       if defined?(LegacyParent)
+      end
+
+      it 'belongs_to defers parent class lookup to migration time (no dependency cycle)' do
+        # LineItem.belongs_to :order is allowed to mention :order before Order is loaded.
+        # If we eagerly resolved reflection.klass at belongs_to time this would raise
+        # NameError: uninitialized constant LineItem::Order.
+        expect do
+          class LineItem < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+            declare_schema { integer :quantity, null: false }
+            belongs_to :order
+          end
+        end.to_not raise_error
+      end
+
+      it 'belongs_to mirrors the parent primary key type and limit (declared via _table_options)' do
+        # Order has a non-default :string primary key; LineItem.belongs_to :order should
+        # produce a :string foreign key with the same limit -- without forcing Order to
+        # load when LineItem is defined.
+        class LineItem < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+          declare_schema do
+            integer :quantity, null: false
+          end
+          belongs_to :order
+        end
+
+        class Order < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+          self.primary_key = "id"
+          declare_schema id: { type: :string, limit: 36 } do
+            string :customer_email, limit: 250, null: false
+          end
+        end
+
+        up, _ = Generators::DeclareSchema::Migration::Migrator.run
+
+        expect(up).to match(/t\.string\s+:order_id, limit: 36, null: false/)
+      end
+
+      context 'when belongs_to points at an STI subclass' do
+        # An STI subclass inherits field_specs (via inheriting_cattr_reader) and the
+        # `_primary_key_field_spec` class method (mixed into its parent), but it never
+        # calls `declare_schema` on itself, so its own `@_table_options` is nil. When a
+        # belongs_to points at the STI subclass, the migrator's resolver calls
+        # `klass._primary_key_field_spec`, which previously crashed with
+        # `NoMethodError: undefined method '[]' for nil` because
+        # `_primary_key_field_spec_from_table_options` indexed `_table_options` without
+        # a nil guard.
+        before do
+          class Order < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+            declare_schema do
+              string :customer_email, limit: 250, null: false
+            end
+          end
+
+          class SpecialOrder < Order # rubocop:disable Lint/ConstantDefinitionInBlock
+          end
+
+          class LineItem < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+            declare_schema do
+              integer :quantity, null: false
+            end
+            belongs_to :special_order
+          end
+        end
+
+        let(:up) { Generators::DeclareSchema::Migration::Migrator.run.first }
+
+        it 'mirrors the base class primary key without crashing' do
+          expect(up).to match(/t\.integer\s+:special_order_id, limit: 8, null: false/)
+        end
+      end
+
+      context 'when a HABTM join table has a parent PK type that drifts from the live column' do
+        before do
+          conn = ActiveRecord::Base.connection
+          conn.create_table(:products) { |t| t.string :name, limit: 100, null: false }
+          conn.create_table(:tags)     { |t| t.string :label, limit: 50, null: false }
+          conn.create_table(:products_tags, primary_key: [:product_id, :tag_id]) do |t|
+            t.bigint :product_id, null: false
+            t.bigint :tag_id,     null: false
+          end
+          conn.schema_cache.clear!
+
+          class Product < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+            declare_schema do
+              string :name, limit: 100, null: false
+            end
+            has_and_belongs_to_many :tags
+          end
+
+          class Tag < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+            declare_schema id: { type: :string, limit: 36 } do
+              string :label, limit: 50, null: false
+            end
+            has_and_belongs_to_many :products
+          end
+        end
+
+        let(:up) { Generators::DeclareSchema::Migration::Migrator.run.first }
+
+        it 'generates change_column on the join table without crashing' do
+          expect(up).to match(/change_column\s+:products_tags,\s+:tag_id,\s+:string/)
+        end
+      end
+
+      context 'when a parent has no explicit PK declaration but the live PK column is int(4)' do
+        # Legacy schemas where every PK predates the gem's `:bigint` default. Without
+        # this behavior, declare_schema would force every belongs_to FK to bigint(8)
+        # while the parent PK stays int(4) -- which MySQL refuses with
+        # `Referencing column ... and referenced column ... in foreign key
+        # constraint ... are incompatible`.
+        before do
+          conn = ActiveRecord::Base.connection
+          conn.create_table(:legacy_parents, id: { type: :integer, limit: 4 }) do |t|
+            t.string :name, limit: 100, null: false
+          end
+          conn.schema_cache.clear!
+
+          class LegacyParent < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+            declare_schema do
+              string :name, limit: 100, null: false
+            end
+          end
+
+          class LegacyChild < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+            declare_schema do
+              integer :amount, null: false
+            end
+            belongs_to :legacy_parent
+          end
+        end
+
+        let(:up) { Generators::DeclareSchema::Migration::Migrator.run.first }
+
+        it 'mirrors the live int(4) PK in the FK rather than the gem default :bigint' do
+          expect(up).to match(/t\.integer\s+:legacy_parent_id, limit: 4, null: false/)
+          expect(up).not_to match(/:legacy_parent_id[^\n]*limit: 8/)
+        end
+      end
+
+      context 'when belongs_to declares a column option such as default:' do
+        # Regression: the resolver-built FK spec must preserve column options the child
+        # passed to belongs_to (default:, etc.). Forgetting to merge them silently drops
+        # them and generates a phantom change_column on every run.
+        before do
+          class DimParent < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+            declare_schema do
+              string :name, limit: 100, null: false
+            end
+          end
+
+          class DimChild < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+            declare_schema do
+              integer :amount, null: false
+            end
+            belongs_to :dim_parent, default: 1
+          end
+        end
+
+        let(:up) { Generators::DeclareSchema::Migration::Migrator.run.first }
+
+        it 'preserves the default: on the FK FieldSpec' do
+          expect(up).to match(/:dim_parent_id[^\n]*default: 1/)
+        end
+      end
+
+      context 'when a polymorphic FK column already exists as int(4)' do
+        # Polymorphic belongs_to has no parent klass to mirror; the gem grandfathers the
+        # live FK column. Without the type-too fix, FieldSpec forces :bigint -> limit: 8
+        # and a phantom int(4) -> bigint(8) change_column gets generated.
+        before do
+          conn = ActiveRecord::Base.connection
+          conn.create_table(:legacy_owners, id: { type: :integer, limit: 4 }) do |t|
+            t.integer :owner_id, limit: 4, null: false
+            t.string  :owner_type, limit: 100, null: false
+          end
+          conn.schema_cache.clear!
+
+          class LegacyOwner < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+            declare_schema do
+              # owner_id/owner_type already exist in the DB at int(4); declare_schema should mirror them
+            end
+            belongs_to :owner, polymorphic: true
+          end
+        end
+
+        let(:up) { Generators::DeclareSchema::Migration::Migrator.run.first }
+
+        it 'mirrors the live int(4) FK rather than forcing bigint(8)' do
+          expect(up).not_to match(/:owner_id[^\n]*limit: 8/)
+        end
+      end
+
+      context 'when the parent class is not a declare_schema model' do
+        # Mirrors the prior `int(4)` case but with a plain ActiveRecord parent that has
+        # never opted into declare_schema. We still need to mirror its live PK column so
+        # the FK doesn't drift to :bigint while the parent stays int(4).
+        before do
+          conn = ActiveRecord::Base.connection
+          conn.create_table(:plain_parents, id: { type: :integer, limit: 4 }) do |t|
+            t.string :name, limit: 100, null: false
+          end
+          conn.schema_cache.clear!
+
+          class PlainParent < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+          end
+
+          class PlainChild < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+            declare_schema do
+              integer :amount, null: false
+            end
+            belongs_to :plain_parent
+          end
+        end
+
+        let(:up) { Generators::DeclareSchema::Migration::Migrator.run.first }
+
+        it 'mirrors the parent live int(4) PK in the FK rather than the gem default :bigint' do
+          expect(up).to match(/t\.integer\s+:plain_parent_id, limit: 4, null: false/)
+          expect(up).not_to match(/:plain_parent_id[^\n]*limit: 8/)
+        end
+      end
+
+      it 'HABTM mirrors both parents primary key types (different non-default types)' do
+        class Product < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+          declare_schema id: { type: :string, limit: 36 } do
+            string :name, limit: 100, null: false
+          end
+          has_and_belongs_to_many :tags
+        end
+
+        class Tag < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+          declare_schema id: { type: :integer, limit: 4 } do
+            string :label, limit: 50, null: false
+          end
+          has_and_belongs_to_many :products
+        end
+
+        up, _ = Generators::DeclareSchema::Migration::Migrator.run
+
+        expect(up).to match(/t\.string\s+:product_id, limit: 36, null: false/)
+        expect(up).to match(/t\.integer\s+:tag_id, limit: 4, null: false/)
+      end
+    end
+
     context 'models with the same parent foreign key relation' do
       include_context 'skip if' do
         let(:adapter) { 'sqlite3' }
@@ -1261,7 +1515,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
                 belongs_to :ad_category, optional: true, null: false
               end
               expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_true)
-              expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(false)
+              expect(AdvertBelongsTo.field_specs['ad_category_id'].resolve.options[:null]).to eq(false)
             end
 
             it 'passes through optional: false, null: true' do
@@ -1272,7 +1526,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
                 belongs_to :ad_category, optional: false, null: true
               end
               expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_false)
-              expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(true)
+              expect(AdvertBelongsTo.field_specs['ad_category_id'].resolve.options[:null]).to eq(true)
             end
           end
 
@@ -1286,7 +1540,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
                   end
                 EOS
                 expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_flag[nullable])
-                expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(nullable)
+                expect(AdvertBelongsTo.field_specs['ad_category_id'].resolve.options[:null]).to eq(nullable)
               end
 
               it 'infers null: from optional:' do
@@ -1297,7 +1551,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
                   end
                 EOS
                 expect(AdvertBelongsTo.reflections['ad_category'].options).to eq(optional_flag[nullable])
-                expect(AdvertBelongsTo.field_specs['ad_category_id'].options&.[](:null)).to eq(nullable)
+                expect(AdvertBelongsTo.field_specs['ad_category_id'].resolve.options[:null]).to eq(nullable)
               end
             end
           end

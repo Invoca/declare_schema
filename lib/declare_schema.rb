@@ -162,19 +162,24 @@ module DeclareSchema
     end
 
     def current_adapter(model_class = ActiveRecord::Base)
-      if Rails::VERSION::MAJOR >= 6.1
-        model_class.connection_db_config.adapter
-      else
-        model_class.connection_config[:adapter]
-      end
+      model_class.connection_db_config.adapter
+    end
+
+    # Default primary key type for generated foreign keys when we have no parent
+    # model to mirror (e.g. polymorphic FKs, non-declare_schema parents). Mirrors
+    # `config.generators.primary_key_type` so apps that override the Rails default
+    # get consistent behavior. Memoized — Rails config is set at boot.
+    def default_generated_primary_key_type
+      @default_generated_primary_key_type ||=
+        Rails.application.config.generators.options.dig(:active_record, :primary_key_type) || :bigint
     end
   end
 end
 
 require 'declare_schema/extensions/active_record/fields_declaration'
-require 'declare_schema/field_declaration_dsl'
 require 'declare_schema/model'
 require 'declare_schema/model/field_spec'
+require 'declare_schema/model/deferred_field_spec'
 require 'declare_schema/model/index_definition'
 require 'declare_schema/model/foreign_key_definition'
 require 'declare_schema/model/table_options_definition'

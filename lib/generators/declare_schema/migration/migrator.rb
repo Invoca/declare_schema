@@ -80,15 +80,22 @@ module Generators
           self.class.native_types
         end
 
-        # list habtm join tables
+        # Collect every HABTM reflection across the application, keyed by its join
+        # table name. Each join table is shared by both sides of a HABTM
+        # association, so iterating all descendants would yield two reflections
+        # per join table (one from each parent model). Keying by `join_table` and
+        # using `||=` keeps the first occurrence and silently drops the duplicate
+        # from the other side, so the migrator emits exactly one shim per join
+        # table.
+        #
+        # @return [Hash{String => ActiveRecord::Reflection::HasAndBelongsToManyReflection}]
+        #   join table name -> the (first-seen) HABTM reflection that owns it
         def habtm_tables
-          reflections = Hash.new { |h, k| h[k] = [] }
-          ActiveRecord::Base.send(:descendants).map do |c|
+          ActiveRecord::Base.send(:descendants).each_with_object({}) do |c, result|
             c.reflect_on_all_associations(:has_and_belongs_to_many).each do |a|
-              reflections[a.join_table] << a
+              result[a.join_table] ||= a
             end
           end
-          reflections
         end
 
         # Returns an array of model classes and an array of table names
@@ -189,11 +196,7 @@ module Generators
           models, db_tables = models_and_tables
           models_by_table_name = {}
           models.each do |m|
-            m.try(:field_specs)&.each do |_name, field_spec|
-              if (pre_migration = field_spec.options.delete(:pre_migration))
-                pre_migration.call(field_spec)
-              end
-            end
+            m.try(:field_specs)&.transform_values!(&:resolve)
 
             if !models_by_table_name.has_key?(m.table_name)
               models_by_table_name[m.table_name] = m
@@ -204,8 +207,8 @@ module Generators
             end
           end
           # generate shims for HABTM models
-          habtm_tables.each do |name, reflections|
-            models_by_table_name[name] = ::DeclareSchema::Model::HabtmModelShim.from_reflection(reflections.first)
+          habtm_tables.each do |name, reflection|
+            models_by_table_name[name] = ::DeclareSchema::Model::HabtmModelShim.from_reflection(reflection)
           end
           model_table_names = models_by_table_name.keys
 
@@ -376,21 +379,26 @@ module Generators
             ::DeclareSchema::SchemaChange::ColumnRename.new(new_table_name, old_name, new_name)
           end
 
-          to_add.sort_by! { |c| model.field_specs[c]&.position || 0 }
+          to_add.sort_by! { model.field_specs[_1]&.position || 0 }
 
-          adds = to_add.map do |c|
+          adds = to_add.map do |col_name_to_add|
             type, options =
-              if (spec = model.field_specs[c])
-                [spec.type, spec.sql_options.merge(fk_field_options(model, c)).compact]
+              if (spec = model.field_specs[col_name_to_add])
+                [spec.type, spec.sql_options.compact]
               else
-                [:integer, {}]
+                # No FieldSpec for this column: it's the declared PK appended at line 366
+                # because it isn't in the DB yet. Use the configured default PK type so
+                # apps that override config.generators.primary_key_type get consistent
+                # behavior; the actual PRIMARY KEY designation is added separately by
+                # PrimaryKeyChange.
+                [::DeclareSchema.default_generated_primary_key_type, {}]
               end
-            ::DeclareSchema::SchemaChange::ColumnAdd.new(new_table_name, c, type, **options)
+            ::DeclareSchema::SchemaChange::ColumnAdd.new(new_table_name, col_name_to_add, type, **options)
           end
 
-          removes = to_remove.map do |c|
-            old_type, old_options = add_column_back(model, current_table_name, c)
-            ::DeclareSchema::SchemaChange::ColumnRemove.new(new_table_name, c, old_type, **old_options)
+          removes = to_remove.map do |col_name_to_remove|
+            old_type, old_options = add_column_back(model, current_table_name, col_name_to_remove)
+            ::DeclareSchema::SchemaChange::ColumnRemove.new(new_table_name, col_name_to_remove, old_type, **old_options)
           end
 
           old_names = to_rename.invert
@@ -402,13 +410,12 @@ module Generators
             spec_attrs         = spec.schema_attributes(column)
             column_declaration = ::DeclareSchema::Model::Column.new(model, current_table_name, column)
             col_attrs          = column_declaration.schema_attributes
-            normalized_schema_attrs = spec_attrs.merge(fk_field_options(model, col_name_to_change))
 
-            if !::DeclareSchema::Model::Column.equivalent_schema_attributes?(normalized_schema_attrs, col_attrs)
-              type = normalized_schema_attrs.delete(:type) or raise "no :type found in #{normalized_schema_attrs.inspect}"
+            if !::DeclareSchema::Model::Column.equivalent_schema_attributes?(spec_attrs, col_attrs)
+              type = spec_attrs.delete(:type) or raise "no :type found in #{spec_attrs.inspect}"
               old_type, old_options = change_column_back(model, current_table_name, orig_col_name)
               changes << ::DeclareSchema::SchemaChange::ColumnChange.new(new_table_name, col_name_to_change,
-                                                                         new_type: type, new_options: normalized_schema_attrs,
+                                                                         new_type: type, new_options: spec_attrs,
                                                                          old_type: old_type, old_options: old_options)
             end
           end
@@ -543,22 +550,6 @@ module Generators
               renamed_fks_to_drop << fk_to_drop
               renamed_fks_to_add << fk_to_add
             end
-          end
-        end
-
-        def fk_field_options(model, field_name)
-          if (foreign_key = model.constraint_definitions.find { |fk| field_name == fk.foreign_key_column })
-            parent_columns = connection.columns(foreign_key.parent_table_name) rescue []
-            pk_limit =
-              if (pk_column = parent_columns.find { |column| column.name.to_s == "id" }) # right now foreign keys assume id is the target
-                pk_column.limit
-              else
-                8
-              end
-
-            { limit: pk_limit }
-          else
-            {}
           end
         end
 

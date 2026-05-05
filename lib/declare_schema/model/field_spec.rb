@@ -47,10 +47,6 @@ module DeclareSchema
       end
 
       def initialize(model, name, type, position: 0, **options)
-        _declared_primary_key = model._declared_primary_key
-
-        name.to_s == _declared_primary_key and raise ArgumentError, "you may not provide a field spec for the primary key #{name.inspect}"
-
         @model = model
         @name = name.to_sym
         type.is_a?(Symbol) or raise ArgumentError, "type must be a Symbol; got #{type.inspect}"
@@ -122,6 +118,31 @@ module DeclareSchema
         @options = Hash[@options.sort_by { |k, _v| OPTION_INDEXES[k] || 9999 }]
 
         @sql_options = @options.slice(*SQL_OPTIONS)
+      end
+
+      # Duck-type counterpart to {DeferredFieldSpec#resolve}. A concrete FieldSpec is
+      # already its own resolved form, so this just returns self. Lets the migrator's
+      # `transform_values!(&:resolve)` loop dispatch uniformly across both classes.
+      #
+      # @return [FieldSpec] self
+      def resolve
+        self
+      end
+
+      # Build a FieldSpec for a foreign key that mirrors this PK's type/limit/charset/etc.
+      # Child column_options (e.g. `default:` from `belongs_to`) win over the parent's
+      # @options when they specify the same key.
+      #
+      # @param model [Class] the child ActiveRecord class
+      # @param name [Symbol] the FK column name (e.g. :user_id)
+      # @param position [Integer] FieldSpec position in the field_specs hash
+      # @param null [Boolean, nil] :null setting from `belongs_to`; nil leaves @options[:null] alone
+      # @param column_options [Hash] additional FK-side overrides (e.g. :default)
+      # @return [FieldSpec]
+      def foreign_key_field_spec(model, name, position:, null:, **column_options)
+        options = @options.merge(column_options)
+        options[:null] = null unless null.nil?
+        self.class.new(model, name, @type, position:, **options)
       end
 
       # returns the attributes for schema migrations as a Hash

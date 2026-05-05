@@ -41,7 +41,12 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
   end
 
   describe 'instance methods' do
-    subject { described_class.new(join_table, foreign_keys, parent_table_names, connection: connection) }
+    let(:parent_models) { [User, Customer] }
+    let(:parents) { foreign_keys.zip(parent_models) }
+
+    subject do
+      described_class.new(join_table, parents, connection: connection)
+    end
 
     describe '#initialize' do
       it 'stores initialization attributes' do
@@ -88,8 +93,8 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
     end
 
     describe '#primary_key' do
-      it 'returns false because there is no single-column PK for ActiveRecord to use' do
-        expect(subject.primary_key).to eq(false)
+      it 'returns the composite of the two foreign keys (alphabetically sorted)' do
+        expect(subject.primary_key).to eq(["customer_id", "user_id"])
       end
     end
 
@@ -116,14 +121,15 @@ RSpec.describe DeclareSchema::Model::HabtmModelShim do
       let(:foreign_keys_and_table_names) { [["advertiser_id", "advertisers"], ["campaign_id", "campaigns"]] }
       let(:foreign_keys) { foreign_keys_and_table_names.map(&:first) }
       let(:parent_table_names) { foreign_keys_and_table_names.map(&:last) }
+      let(:parent_models) { [Table1, Table2] }
 
       before do
-        class Table1 < ActiveRecord::Base
-          self.table_name = 'advertiser_campaign'
+        class Table1 < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+          self.table_name = 'advertisers'
         end
 
-        class Table2 < ActiveRecord::Base
-          self.table_name = 'tracking_pixel'
+        class Table2 < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
+          self.table_name = 'campaigns'
         end
       end
 
