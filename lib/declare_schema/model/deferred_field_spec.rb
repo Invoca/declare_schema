@@ -12,7 +12,7 @@ module DeclareSchema
     # The migrator calls {#resolve} on every value in `field_specs` at the start
     # of migration generation (see `Migrator#generate`); for plain {FieldSpec}s
     # `#resolve` is a no-op returning self, while for instances of this class it
-    # invokes the block (memoized) with the default spec and returns the produced
+    # invokes the resolver block with the default spec and returns the produced
     # {FieldSpec}.
     class DeferredFieldSpec
       # @param default_spec [FieldSpec] the eager placeholder spec
@@ -24,14 +24,26 @@ module DeclareSchema
         @resolver = resolver
       end
 
-      # Invoke the resolver block with the default spec and return its result.
-      # The migrator's `transform_values!(&:resolve)` swaps this DeferredFieldSpec
-      # out of `field_specs` for the produced FieldSpec, so resolve is called
-      # exactly once per instance in production -- no memoization needed.
+      # Resolve and memoize the produced FieldSpec. Memoization matters because
+      # application code can hit several FieldSpec accessors per request (e.g.
+      # ModelReport reads `.options`, ApplicationModel reads `.limit`); without
+      # it each one would re-run the resolver and re-touch `reflection.klass`.
       #
       # @return [FieldSpec]
       def resolve
-        @resolver.call(@default_spec)
+        @resolved ||= @resolver.call(@default_spec)
+      end
+
+      def respond_to_missing?(name, include_private = false)
+        resolve.respond_to?(name, include_private) || super
+      end
+
+      def method_missing(name, *args, **kwargs, &)
+        if resolve.respond_to?(name)
+          resolve.public_send(name, *args, **kwargs, &)
+        else
+          super
+        end
       end
     end
   end
