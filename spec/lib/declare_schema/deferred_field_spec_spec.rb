@@ -24,5 +24,59 @@ RSpec.describe DeclareSchema::Model::DeferredFieldSpec do
       expect(deferred.resolve).to equal(mirrored_spec)
       expect(captured).to equal(default_spec)
     end
+
+    it 'memoizes the resolver result so repeated calls invoke it only once' do
+      call_count = 0
+      deferred = described_class.new(default_spec) do |_|
+        call_count += 1
+        mirrored_spec
+      end
+
+      3.times { deferred.resolve }
+
+      expect(call_count).to eq(1)
+    end
+  end
+
+  # Application code can read from `field_specs` without first calling `.resolve`. The deferred spec must
+  # therefore quack like the resolved FieldSpec; otherwise we get NoMethodError at runtime
+  # in apps that read FieldSpec attributes.
+  describe 'FieldSpec API delegation' do
+    let(:deferred) { described_class.new(default_spec) { mirrored_spec } }
+
+    it 'delegates #options to the resolved spec (parent-mirrored, not default)' do
+      expect(deferred.options).to eq(mirrored_spec.options)
+    end
+
+    it 'delegates #type to the resolved spec' do
+      expect(deferred.type).to eq(:string)
+    end
+
+    it 'delegates #limit to the resolved spec' do
+      expect(deferred.limit).to eq(36)
+    end
+
+    it 'delegates #null to the resolved spec' do
+      expect(deferred.null).to eq(false)
+    end
+
+    it 'reports respond_to? for delegated methods' do
+      expect(deferred).to respond_to(:options, :type, :limit, :null, :name, :position)
+    end
+
+    it 'invokes the resolver only once across many delegated reads' do
+      call_count = 0
+      deferred = described_class.new(default_spec) do |_|
+        call_count += 1
+        mirrored_spec
+      end
+
+      deferred.options
+      deferred.type
+      deferred.limit
+      deferred.null
+
+      expect(call_count).to eq(1)
+    end
   end
 end
