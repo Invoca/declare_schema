@@ -4,9 +4,11 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.1.0] - Unreleased
+## [4.0.0] - 2026-05-05
 ### Added
-- Add HABTM support for arbitrary primary key in the referenced table (rather than just :bigint). 
+- Generalized `belongs_to` foreign keys to always match the primary key they point at, including
+  in HABTM intersection tables. (Previously this was just a special case that matched up
+  :integer vs :bigint.)
 
 ### Removed
 - Drop support for Rails 6.x. Minimum supported Rails is now 7.0.
