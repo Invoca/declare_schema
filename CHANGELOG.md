@@ -4,6 +4,15 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.1] - 2026-05-06
+### Fixed
+- `DeferredFieldSpec` (the lazy stand-in introduced in 4.0.0 for `belongs_to`
+  foreign-key field specs) now transparently delegates the `FieldSpec` read
+  API (`.options`, `.type`, `.limit`, `.null`, etc.) to its memoized resolved
+  spec. Application code that reads `Model.field_specs[name].options` at
+  runtime would raise `NoMethodError: undefined method 'options' for an
+  instance of DeclareSchema::Model::DeferredFieldSpec`.
+
 ## [4.0.0] - 2026-05-05
 ### Added
 - Generalized `belongs_to` foreign keys to always match the primary key they point at, including
