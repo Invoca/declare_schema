@@ -36,6 +36,21 @@ RSpec.describe DeclareSchema::Model::DeferredFieldSpec do
 
       expect(call_count).to eq(1)
     end
+
+    it 'memoizes the resolver result across many delegated reads' do
+      call_count = 0
+      deferred = described_class.new(default_spec) do |_|
+        call_count += 1
+        mirrored_spec
+      end
+
+      deferred.options
+      deferred.type
+      deferred.limit
+      deferred.null
+
+      expect(call_count).to eq(1)
+    end
   end
 
   # Application code can read from `field_specs` without first calling `.resolve`. The deferred spec must
@@ -62,21 +77,6 @@ RSpec.describe DeclareSchema::Model::DeferredFieldSpec do
 
     it 'reports respond_to? for delegated methods' do
       expect(deferred).to respond_to(:options, :type, :limit, :null, :name, :position)
-    end
-
-    it 'invokes the resolver only once across many delegated reads' do
-      call_count = 0
-      deferred = described_class.new(default_spec) do |_|
-        call_count += 1
-        mirrored_spec
-      end
-
-      deferred.options
-      deferred.type
-      deferred.limit
-      deferred.null
-
-      expect(call_count).to eq(1)
     end
   end
 end
