@@ -4,7 +4,7 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [4.0.1] - 2026-05-06
+## [4.0.1] - 2026-05-07
 ### Fixed
 - `DeferredFieldSpec` (the lazy stand-in introduced in 4.0.0 for `belongs_to`
   foreign-key field specs) now transparently delegates the `FieldSpec` read
