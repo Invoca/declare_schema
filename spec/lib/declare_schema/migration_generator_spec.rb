@@ -1295,8 +1295,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
           class << self
             attr_reader :serialize_args
 
-            def serialize(*args)
-              @serialize_args << args
+            def serialize(*args, **kwargs)
+              @serialize_args << (kwargs.empty? ? args : [*args, kwargs])
             end
           end
         end
@@ -1338,7 +1338,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
             end
           end
 
-          expect(Ad.serialize_args).to eq([[:allow_list, Array]])
+          expected = ActiveRecord.gem_version >= Gem::Version.new('7.2') ? [[:allow_list, { type: Array }]] : [[:allow_list, Array]]
+          expect(Ad.serialize_args).to eq(expected)
         end
 
         it 'allows Array defaults' do
@@ -1366,7 +1367,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
             end
           end
 
-          expect(Ad.serialize_args).to eq([[:allow_list, Hash]])
+          expected = ActiveRecord.gem_version >= Gem::Version.new('7.2') ? [[:allow_list, { type: Hash }]] : [[:allow_list, Hash]]
+          expect(Ad.serialize_args).to eq(expected)
         end
 
         it 'allows Hash defaults' do
@@ -1392,7 +1394,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
             end
           end
 
-          expect(Ad.serialize_args).to eq([[:allow_list, JSON]])
+          expected = ActiveRecord.gem_version >= Gem::Version.new('7.2') ? [[:allow_list, { coder: JSON }]] : [[:allow_list, JSON]]
+          expect(Ad.serialize_args).to eq(expected)
         end
 
         it 'allows JSON defaults' do
@@ -1442,7 +1445,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
             end
           end
 
-          expect(Ad.serialize_args).to eq([[:allow_list, ValueClass]])
+          expected = ActiveRecord.gem_version >= Gem::Version.new('7.2') ? [[:allow_list, { coder: ValueClass }]] : [[:allow_list, ValueClass]]
+          expect(Ad.serialize_args).to eq(expected)
         end
 
         it 'allows ValueClass defaults' do

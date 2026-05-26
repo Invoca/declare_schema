@@ -477,8 +477,17 @@ module DeclareSchema
       def _add_serialize_for_field(name, type, options)
         if (serialize_class = options.delete(:serialize))
           type == :string || type == :text or raise ArgumentError, "serialize field type must be :string or :text"
-          serialize_args = Array((serialize_class unless serialize_class == true))
-          serialize(name, *serialize_args)
+          if serialize_class == true
+            serialize(name)
+          elsif ActiveRecord.gem_version >= Gem::Version.new('7.2')
+            if serialize_class.respond_to?(:load)
+              serialize(name, coder: serialize_class)
+            else
+              serialize(name, type: serialize_class)
+            end
+          else
+            serialize(name, serialize_class)
+          end
           if options.has_key?(:default)
             options[:default] = _serialized_default(name, serialize_class == true ? Object : serialize_class, options[:default])
           end
