@@ -1310,7 +1310,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
             end
           end
 
-          expect(Ad.serialize_args).to eq([[:allow_list]])
+          expected = ActiveRecord.gem_version >= Gem::Version.new('7.2') ? [[:allow_list, { coder: ::YAML }]] : [[:allow_list]]
+          expect(Ad.serialize_args).to eq(expected)
         end
 
         it 'converts defaults with .to_yaml' do
@@ -1338,9 +1339,10 @@ RSpec.describe 'DeclareSchema Migration Generator' do
             end
           end
 
-          expected = ActiveRecord.gem_version >= Gem::Version.new('7.2') ? [[:allow_list, { type: Array }]] : [[:allow_list, Array]]
+          expected = ActiveRecord.gem_version >= Gem::Version.new('7.2') ? [[:allow_list, { coder: ::YAML, type: Array }]] : [[:allow_list, Array]]
           expect(Ad.serialize_args).to eq(expected)
         end
+
 
         it 'allows Array defaults' do
           class Ad < ActiveRecord::Base # rubocop:disable Lint/ConstantDefinitionInBlock
@@ -1367,7 +1369,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
             end
           end
 
-          expected = ActiveRecord.gem_version >= Gem::Version.new('7.2') ? [[:allow_list, { type: Hash }]] : [[:allow_list, Hash]]
+          expected = ActiveRecord.gem_version >= Gem::Version.new('7.2') ? [[:allow_list, { coder: ::YAML, type: Hash }]] : [[:allow_list, Hash]]
           expect(Ad.serialize_args).to eq(expected)
         end
 
