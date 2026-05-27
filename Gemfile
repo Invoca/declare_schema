@@ -20,7 +20,7 @@ gem 'responders'
 gem 'rspec'
 gem 'rspec-its'
 gem 'rubocop'
-gem 'yard'
+gem 'yard', '>= 0.9.42'
 
 # Adapters to test against
 gem 'mysql2',  '~> 0.5'
