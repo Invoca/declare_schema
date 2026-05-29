@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    declare_schema (4.0.2.pre.yr.0)
+    declare_schema (4.0.2)
       rails (>= 7.0)
 
 GEM
