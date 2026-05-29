@@ -4,6 +4,20 @@ Inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note: this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.2] - 2026-05-26
+### Fixed
+- Fixed Rails 7.2 compatibility for the `serialize:` field option. Rails 7.2 changed
+  `serialize` from a positional second argument to keyword-only (`coder:` / `type:`),
+  causing an `ArgumentError` in any app using `serialize: Array`, `serialize: Hash`,
+  `serialize: JSON`, or a custom coder. The fix branches on Rails version and uses
+  the correct keyword API for Rails ≥ 7.2:
+  - `serialize: true` → `serialize(attr, coder: ::YAML)`
+  - `serialize: Array` / `serialize: Hash` → `serialize(attr, coder: ::YAML, type: ClassName)`
+  - `serialize: JSON` → `serialize(attr, coder: JSON)`
+  - `serialize: MyCoder` (custom coder) → `serialize(attr, coder: MyCoder)`
+  Note: `::YAML` is used explicitly rather than relying on `default_column_serializer`,
+  which is `nil` by default in Rails 7.2 apps using `load_defaults 7.2`.
+
 ## [4.0.1] - 2026-05-07
 ### Fixed
 - `DeferredFieldSpec` (the lazy stand-in introduced in 4.0.0 for `belongs_to`

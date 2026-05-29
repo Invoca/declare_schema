@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    declare_schema (4.0.1)
+    declare_schema (4.0.2.pre.yr.0)
       rails (>= 7.0)
 
 GEM
@@ -269,7 +269,7 @@ GEM
       base64
       websocket-extensions (>= 0.1.0)
     websocket-extensions (0.1.5)
-    yard (0.9.36)
+    yard (0.9.44)
     zeitwerk (2.7.5)
 
 PLATFORMS
@@ -297,7 +297,7 @@ DEPENDENCIES
   rspec-its
   rubocop
   sqlite3 (~> 1.4)
-  yard
+  yard (>= 0.9.42)
 
 BUNDLED WITH
    2.2.29
