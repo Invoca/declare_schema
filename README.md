@@ -89,6 +89,75 @@ create_table :companies, id: :bigint do |t|
     ...
 end
 ```
+### The `field` Macro
+Every `t.<type> :<column_name>, <options>` declaration shown above is syntactic sugar for calling the `field` macro directly:
+```ruby
+create_table :companies, id: :bigint do |t|
+  t.field :company_name, :string, null: false, limit: 100
+    ...
+end
+```
+`field(name, type, *flags, **options)` is the primitive method underlying every typed shorthand (`t.string`, `t.integer`, etc.), as well as the `timestamps` and `optimistic_lock` helpers. A call like `t.string :company_name, limit: 100` is dispatched (via `method_missing`) to `t.field :company_name, :string, limit: 100`.
+
+`field` only exists inside the `declare_schema do ... end` block, but within it, it can be called either with an explicit `t.` receiver (`t.field ...`) or bare (`field ...`), since the block is `instance_eval`'d against the DSL object -- both forms are equivalent. `field` cannot be called outside of the `declare_schema do ... end` block.
+
+Calling `field` directly is useful when you need to dynamically declare field(s) based on meta-data that is available at runtime:
+```ruby
+declare_schema do
+  [[:company_name, :string, { limit: 100 }], [:employee_count, :integer, {}]].each do |name, type, options|
+    field name, type, **options
+  end
+end
+```
+
+#### `:required` and `:unique` Flags
+In addition to keyword options, `field` (and by extension, `t.<type>`) accepts optional positional flags placed immediately after the column name:
+- `:required` - adds `validates_presence_of :<column_name>` to the model.
+- `:unique` - adds `validates_uniqueness_of :<column_name>, allow_nil: <true unless :required is also given>` to the model.
+
+For example:
+```ruby
+declare_schema do
+  string :title, :required, limit: 255
+  string :slug,  :unique,   limit: 255
+end
+```
+is equivalent to:
+```ruby
+declare_schema do
+  field :title, :string, :required, limit: 255
+  field :slug,  :string, :unique,   limit: 255
+end
+```
+
+#### Calling `declare_field` outside the block
+`field` is DSL sugar that simply calls the model's `declare_field` class method: `field(name, type, *flags, **options)` calls `declare_field(name, type, *flags, **options)`. Unlike `field`, `declare_field` is a regular class method, so it can be called directly on the model outside of a `declare_schema do ... end` block, e.g. from a shared concern that adds a field to any model that includes it:
+```ruby
+module SoftDeletable
+  extend ActiveSupport::Concern
+
+  included do
+    declare_schema { }
+    declare_field :title, :string, :required, limit: 255
+    declare_field :slug,  :string, :unique,   limit: 255
+  end
+end
+```
+which is equivalent to:
+```ruby
+module SoftDeletable
+  extend ActiveSupport::Concern
+
+  included do
+    declare_schema do
+      field :title, :string, :required, limit: 255
+      field :slug,  :string, :unique,   limit: 255
+    end
+  end
+end
+```
+**Note:** `declare_field` is only defined once `declare_schema` has been called at least once on the model (even with no block, e.g. bare `declare_schema`), since that's what mixes in the `DeclareSchema` class methods.
+
 ### Field (Column) Types
 All of the ActiveRecord field types are supported, as returned by the database driver in use at the time.
 These typically include:
