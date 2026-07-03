@@ -32,9 +32,12 @@ module DeclareSchema
   @default_generate_foreign_keys        = true
   @default_generate_indexing            = true
   @db_migrate_command                   = "bundle exec rails db:migrate"
+  @ignore_tables                        = []
+  @ignore_models                        = []
 
   class << self
     attr_writer :mysql_version
+    attr_accessor :ignore_tables, :ignore_models
     attr_reader :default_text_limit, :default_string_limit, :default_null,
                 :default_generate_foreign_keys, :default_generate_indexing, :db_migrate_command
 

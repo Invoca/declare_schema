@@ -56,6 +56,48 @@ module Generators
           end
         end
 
+        describe '#ignore_tables' do
+          subject { described_class.ignore_tables }
+
+          context 'when not explicitly set' do
+            it { should eq([]) }
+          end
+
+          context 'when explicitly set' do
+            before { described_class.ignore_tables = ["green_fishes"] }
+            after  { described_class.ignore_tables = [] }
+            it     { should eq(["green_fishes"]) }
+          end
+
+          it 'should output deprecation warning' do
+            expect { described_class.ignore_tables = ["green_fishes"] }.to output(/DEPRECATION WARNING: ignore_tables= is deprecated/).to_stderr
+            expect { subject }.to output(/DEPRECATION WARNING: ignore_tables is deprecated/).to_stderr
+          end
+
+          after { ::DeclareSchema.ignore_tables = [] }
+        end
+
+        describe '#ignore_models' do
+          subject { described_class.ignore_models }
+
+          context 'when not explicitly set' do
+            it { should eq([]) }
+          end
+
+          context 'when explicitly set' do
+            before { described_class.ignore_models = ["Fish"] }
+            after  { described_class.ignore_models = [] }
+            it     { should eq(["Fish"]) }
+          end
+
+          it 'should output deprecation warning' do
+            expect { described_class.ignore_models = ["Fish"] }.to output(/DEPRECATION WARNING: ignore_models= is deprecated/).to_stderr
+            expect { subject }.to output(/DEPRECATION WARNING: ignore_models is deprecated/).to_stderr
+          end
+
+          after { ::DeclareSchema.ignore_models = [] }
+        end
+
         describe '#load_rails_models' do
           before do
             expect(Rails.application).to receive(:eager_load!)
