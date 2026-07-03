@@ -388,8 +388,8 @@ For example:
 ```
 
 **Deprecated:** `Generators::DeclareSchema::Migration::Migrator.ignore_tables` is a deprecated alias for
-`DeclareSchema.ignore_tables` above. It still works, but new code should use `DeclareSchema.ignore_tables`
-directly.
+`DeclareSchema.ignore_tables` above. New code should use `DeclareSchema.ignore_tables` directly;
+`Migrator.ignore_tables` will be removed in version 5.0.
 
 Note: `declare_schema` always ignores these tables:
 - The ActiveRecord `schema_info` table
@@ -410,8 +410,8 @@ generated for their table) by adding the model's underscored name to the array a
 ```
 
 **Deprecated:** `Generators::DeclareSchema::Migration::Migrator.ignore_models` is a deprecated alias for
-`DeclareSchema.ignore_models` above. It still works, but new code should use `DeclareSchema.ignore_models`
-directly.
+`DeclareSchema.ignore_models` above. New code should use `DeclareSchema.ignore_models` directly;
+`Migrator.ignore_models` will be removed in version 5.0.
 
 ## Maximum Length of Index and Constraint Names
 

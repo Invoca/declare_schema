@@ -44,7 +44,7 @@ module Generators
                    :ignore_tables=, :ignore_tables, :ignore_models=, :ignore_models, to: ::DeclareSchema
           deprecate :default_charset=, :default_collation=, :default_charset, :default_collation,
                     :ignore_tables=, :ignore_tables, :ignore_models=, :ignore_models,
-                    deprecator: ActiveSupport::Deprecation.new('1.0', 'declare_schema')
+                    deprecator: ActiveSupport::Deprecation.new('5.0', 'declare_schema')
         end
 
         def initialize(renames: nil, &block)
