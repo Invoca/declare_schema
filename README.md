@@ -376,22 +376,42 @@ infers foreign keys (and the intersection table).
 
 ## Ignored Tables
 If a table's schema or metadata are managed elsewhere, `declare_schema` can be instructed to ignore it
-by adding those table names to the array assigned to `Generators::DeclareSchema::Migration::Migrator.ignore_tables`.
+by adding those table names to the array assigned to `DeclareSchema.ignore_tables`.
 For example:
 
 ```ruby
-::Generators::DeclareSchema::Migration::Migrator.ignore_tables = [
+::DeclareSchema.ignore_tables = [
   "delayed_jobs",
   "my_snowflake_table",
   ...
 ]
 ```
 
+**Deprecated:** `Generators::DeclareSchema::Migration::Migrator.ignore_tables` is a deprecated alias for
+`DeclareSchema.ignore_tables` above. It still works, but new code should use `DeclareSchema.ignore_tables`
+directly.
+
 Note: `declare_schema` always ignores these tables:
 - The ActiveRecord `schema_info` table
 - The ActiveRecord schema migrations table (generally named `schema_migrations`)
 - The ActiveRecord internal metadata table (generally named `ar_internal_metadata`)
 - If defined/configured, the CGI ActiveRecordStore session table
+
+## Ignored Models
+Similarly, `declare_schema` can be instructed to ignore specific models (so that no migration is
+generated for their table) by adding the model's underscored name to the array assigned to
+`DeclareSchema.ignore_models`. For example:
+
+```ruby
+::DeclareSchema.ignore_models = [
+  "my_legacy_model",
+  ...
+]
+```
+
+**Deprecated:** `Generators::DeclareSchema::Migration::Migrator.ignore_models` is a deprecated alias for
+`DeclareSchema.ignore_models` above. It still works, but new code should use `DeclareSchema.ignore_models`
+directly.
 
 ## Maximum Length of Index and Constraint Names
 
