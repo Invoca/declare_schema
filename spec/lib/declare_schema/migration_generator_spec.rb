@@ -51,6 +51,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
   end
 
   context 'Using declare_schema' do
+    after { ::DeclareSchema.ignore_tables = [] }
+
     # DeclareSchema - Migration Generator
     it 'generates migrations' do
       ## The migration generator -- introduction

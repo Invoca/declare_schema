@@ -37,8 +37,7 @@ module DeclareSchema
 
   class << self
     attr_writer :mysql_version
-    attr_accessor :ignore_tables, :ignore_models
-    attr_reader :default_text_limit, :default_string_limit, :default_null,
+    attr_reader :ignore_tables, :ignore_models, :default_text_limit, :default_string_limit, :default_null,
                 :default_generate_foreign_keys, :default_generate_indexing, :db_migrate_command
 
     def to_class(type)
@@ -123,6 +122,16 @@ module DeclareSchema
     def default_generate_indexing=(generate_indexing)
       generate_indexing.in?([true, false]) or raise ArgumentError, "generate_indexing must be either true or false (got #{generate_indexing.inspect})"
       @default_generate_indexing = generate_indexing
+    end
+
+    def ignore_tables=(ignore_tables)
+      ignore_tables.nil? or ignore_tables.is_a?(Array) or raise ArgumentError, "ignore_tables must be an array or nil (got #{ignore_tables.inspect})"
+      @ignore_tables = ignore_tables || []
+    end
+
+    def ignore_models=(ignore_models)
+      ignore_models.nil? or ignore_models.is_a?(Array) or raise ArgumentError, "ignore_models must be an array or nil (got #{ignore_models.inspect})"
+      @ignore_models = ignore_models || []
     end
 
     def default_schema(&block)

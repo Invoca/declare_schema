@@ -193,6 +193,58 @@ RSpec.describe DeclareSchema do
     end
   end
 
+  describe '#ignore_tables' do
+    subject { described_class.ignore_tables }
+
+    context 'when not explicitly set' do
+      it { is_expected.to eq([]) }
+    end
+
+    context 'when explicitly set to an array' do
+      before { described_class.ignore_tables = ["green_fishes"] }
+      after  { described_class.ignore_tables = [] }
+      it     { is_expected.to eq(["green_fishes"]) }
+    end
+
+    context 'when explicitly set to nil' do
+      before { described_class.ignore_tables = nil }
+      after  { described_class.ignore_tables = [] }
+      it     { is_expected.to eq([]) }
+    end
+
+    context 'when set to a non-Array' do
+      it 'raises ArgumentError' do
+        expect { described_class.ignore_tables = "green_fishes" }.to raise_error(ArgumentError, /ignore_tables must be an array or nil/)
+      end
+    end
+  end
+
+  describe '#ignore_models' do
+    subject { described_class.ignore_models }
+
+    context 'when not explicitly set' do
+      it { is_expected.to eq([]) }
+    end
+
+    context 'when explicitly set to an array' do
+      before { described_class.ignore_models = ["Fish"] }
+      after  { described_class.ignore_models = [] }
+      it     { is_expected.to eq(["Fish"]) }
+    end
+
+    context 'when explicitly set to nil' do
+      before { described_class.ignore_models = nil }
+      after  { described_class.ignore_models = [] }
+      it     { is_expected.to eq([]) }
+    end
+
+    context 'when set to a non-Array' do
+      it 'raises ArgumentError' do
+        expect { described_class.ignore_models = "Fish" }.to raise_error(ArgumentError, /ignore_models must be an array or nil/)
+      end
+    end
+  end
+
   describe '#max_index_and_constraint_name_length' do
     subject { described_class.max_index_and_constraint_name_length }
 
