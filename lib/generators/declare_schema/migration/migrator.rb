@@ -11,13 +11,10 @@ module Generators
       class Migrator
         class Error < RuntimeError; end
 
-        @ignore_models                        = []
-        @ignore_tables                        = []
         @before_generating_migration_callback = nil
         @active_record_class                  = ActiveRecord::Base
 
         class << self
-          attr_accessor :ignore_models, :ignore_tables
           attr_reader :active_record_class, :before_generating_migration_callback
 
           def active_record_class
@@ -43,8 +40,11 @@ module Generators
             @before_generating_migration_callback = block
           end
 
-          delegate :default_charset=, :default_collation=, :default_charset, :default_collation, to: ::DeclareSchema
-          deprecate :default_charset=, :default_collation=, :default_charset, :default_collation, deprecator: ActiveSupport::Deprecation.new('1.0', 'declare_schema')
+          delegate :default_charset=, :default_collation=, :default_charset, :default_collation,
+                   :ignore_tables=, :ignore_tables, :ignore_models=, :ignore_models, to: ::DeclareSchema
+          deprecate :default_charset=, :default_collation=, :default_charset, :default_collation,
+                    :ignore_tables=, :ignore_tables, :ignore_models=, :ignore_models,
+                    deprecator: ActiveSupport::Deprecation.new('5.0', 'declare_schema')
         end
 
         def initialize(renames: nil, &block)
@@ -101,14 +101,14 @@ module Generators
         # Returns an array of model classes and an array of table names
         # that generation needs to take into account
         def models_and_tables
-          ignore_model_names = Migrator.ignore_models.map { |model| model.to_s.underscore }
+          ignore_model_names = ::DeclareSchema.ignore_models.map { |model| model.to_s.underscore }
           all_models = table_model_classes
           declare_schema_models = all_models.select do |m|
             (m.name['HABTM_'] ||
               (m.include_in_migration if m.respond_to?(:include_in_migration))) && !m.name.underscore.in?(ignore_model_names)
           end
           non_declare_schema_models = all_models - declare_schema_models
-          db_tables = connection.tables - Migrator.ignore_tables.map(&:to_s) - non_declare_schema_models.map(&:table_name)
+          db_tables = connection.tables - ::DeclareSchema.ignore_tables.map(&:to_s) - non_declare_schema_models.map(&:table_name)
           [declare_schema_models, db_tables]
         end
 

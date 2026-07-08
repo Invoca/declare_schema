@@ -51,6 +51,8 @@ RSpec.describe 'DeclareSchema Migration Generator' do
   end
 
   context 'Using declare_schema' do
+    after { ::DeclareSchema.ignore_tables = [] }
+
     # DeclareSchema - Migration Generator
     it 'generates migrations' do
       ## The migration generator -- introduction
@@ -61,7 +63,7 @@ RSpec.describe 'DeclareSchema Migration Generator' do
 
       expect(Generators::DeclareSchema::Migration::Migrator.run).to migrate_up("").and migrate_down("")
 
-      Generators::DeclareSchema::Migration::Migrator.ignore_tables = ["green_fishes"]
+      ::DeclareSchema.ignore_tables = ["green_fishes"]
 
       Advert.connection.schema_cache.clear!
       Advert.reset_column_information
